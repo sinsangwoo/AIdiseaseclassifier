@@ -9,8 +9,7 @@ app = Flask(__name__)
 CORS(app) # 모든 경로에 대해 CORS 허용. 실제 서비스에서는 특정 Origin만 허용하도록 설정하는 것이 안전합니다.
 
 # 모델 로드 (앱 시작 시 한 번만 로드)
-MODEL_PATH = '모델파일명.h5' # 여기에 Teachable Machine에서 내보낸 .h5 파일 경로를 정확히 입력하세요.
-# 예: MODEL_PATH = 'keras_model.h5' (만약 같은 폴더에 있다면)
+MODEL_PATH = 'keras_model.h5' 
 
 try:
     model = tf.keras.models.load_model(MODEL_PATH)
