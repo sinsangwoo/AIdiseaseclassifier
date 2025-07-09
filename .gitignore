@@ -5,13 +5,9 @@ venv/
 # Python Caches
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
+
+# ONNX Model (필요시 추가)
+# model.onnx 
 
 # IDE / Editor specific
 .vscode/
-.idea/
-
-# OS specific
-.DS_Store
-Thumbs.db
