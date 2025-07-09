@@ -9,7 +9,7 @@ import numpy as np
 # Flask 앱 초기화
 app = Flask(__name__)
 # CORS 설정: 모든 출처에서의 요청을 허용합니다.
-CORS(app, resources={r"/predict": {"origins": "*"}})
+CORS(app)
 
 # --- 설정 ---
 MODEL_PATH = 'keras_model.h5'
