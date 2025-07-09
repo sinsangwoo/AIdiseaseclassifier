@@ -30,25 +30,6 @@ try:
 except Exception as e:
     print(f"❌ 모델 또는 레이블 로드 실패: {e}")
 
-# 이미지 전처리 함수
-def preprocess_image(img_bytes, target_size=(224, 224)):
-    try:
-        # BytesIO로 받은 데이터를 Pillow 이미지 객체로 직접 엽니다.
-        img = Image.open(io.BytesIO(img_bytes))
-        
-        # 이미지가 RGB가 아닐 경우 RGB로 변환합니다 (예: 흑백, RGBA 등)
-        if img.mode != "RGB":
-            img = img.convert("RGB")
-
-        img = img.resize(target_size, Image.LANCZOS)
-        img_array = np.array(img).astype('float32')
-        img_array = np.expand_dims(img_array, axis=0)
-        img_array /= 255.0
-        return img_array
-    except Exception as e:
-        # Pillow가 이미지를 열지 못하면 에러를 발생시킵니다.
-        raise IOError(f"Pillow 라이브러리가 이미지를 열 수 없습니다: {e}")
-
 # --- API 엔드포인트 정의 ---
 
 # '/predict' URL로 POST 요청이 오면 이미지 분석 수행
@@ -61,16 +42,18 @@ def predict():
         return jsonify({'error': '요청에서 파일을 찾을 수 없습니다.'}), 400
 
     file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': '선택된 파일이 없습니다.'}), 400
+    if not file or file.filename == '':
+        return jsonify({'error': '선택된 파일이 없거나 파일 이름이 없습니다.'}), 400
 
     try:
-        # ✅ file.read()를 통해 파일의 전체 바이트 데이터를 한번에 읽습니다.
-        img_bytes = file.read()
-        if not img_bytes:
-            return jsonify({'error': '전송된 이미지 파일이 비어있습니다.'}), 400
+        # ✅ file.stream에서 직접 데이터를 읽어 BytesIO 객체를 생성합니다.
+        # 이것이 file.read()보다 더 안정적일 수 있습니다.
+        in_memory_file = io.BytesIO()
+        file.save(in_memory_file)
+        in_memory_file.seek(0) # 스트림의 포인터를 맨 처음으로 되돌립니다. (매우 중요!)
 
-        processed_image = preprocess_image(img_bytes)
+        # 전처리 함수 호출
+        processed_image = preprocess_image(in_memory_file)
         
         # ONNX 모델로 예측 실행
         predictions = sess.run([output_name], {input_name: processed_image})[0]
@@ -83,13 +66,27 @@ def predict():
                 'probability': float(probability)
             })
         return jsonify({'predictions': results})
-
-    except IOError as e:
-        print(f"이미지 식별 오류: {e}")
-        return jsonify({'error': f'서버에서 이미지 파일을 인식할 수 없습니다. 다른 형식의 이미지로 시도해보세요. 상세: {e}'}), 500
+    
     except Exception as e:
-        print(f"예측 중 에러 발생: {e}")
-        return jsonify({'error': f'이미지 처리 중 서버 오류 발생: {str(e)}'}), 500
+        # 에러 로그를 더 자세하게 남깁니다.
+        print(f"예측 중 심각한 에러 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'이미지 처리 중 예측 불가능한 서버 오류 발생: {e}'}), 500
+    
+# 이미지 전처리 함수
+def preprocess_image(img_bytes_stream, target_size=(224, 224)):
+    try:
+        img = Image.open(img_bytes_stream) # 이제 스트림 객체를 직접 받습니다.
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        img = img.resize(target_size, Image.LANCZOS)
+        img_array = np.array(img).astype('float32')
+        img_array = np.expand_dims(img_array, axis=0)
+        img_array /= 255.0
+        return img_array
+    except Exception as e:
+        raise IOError(f"Pillow 라이브러리가 이미지를 열 수 없습니다: {e}")
 
 # 파이썬 스크립트를 직접 실행했을 때 Flask 서버 구동
 if __name__ == '__main__':
