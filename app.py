@@ -2,53 +2,49 @@ import os
 import io
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
-import tensorflow as tf
-from tensorflow.keras.preprocessing import image
 import numpy as np
+from PIL import Image # Pillow 라이브러리 직접 사용
+import onnxruntime as rt # onnxruntime 임포트
 
-# Flask 앱 초기화
 app = Flask(__name__)
-# CORS 설정: 모든 출처에서의 요청을 허용합니다.
 CORS(app)
 
 # --- 설정 ---
-MODEL_PATH = 'keras_model.h5'
+MODEL_PATH = 'model.onnx' # ONNX 모델 사용
 LABELS_PATH = 'labels.txt'
 
-# --- 모델 및 레이블 로드 (앱 실행 시 한 번만) ---
-model = None
+# --- 모델 및 레이블 로드 ---
+sess = None
 class_names = []
 try:
-    # Teachable Machine 모델은 compile=False 옵션으로 로드하는 것이 안전합니다.
-    model = tf.keras.models.load_model(MODEL_PATH, compile=False)
+    # ONNX 런타임 세션 생성
+    sess = rt.InferenceSession(MODEL_PATH)
+    # 모델의 입력/출력 이름 가져오기
+    input_name = sess.get_inputs()[0].name
+    output_name = sess.get_outputs()[0].name
+
     with open(LABELS_PATH, 'r', encoding='utf-8') as f:
-        # labels.txt 파일 형식("0 정상", "1 폐렴")을 파싱합니다.
         class_names = [line.strip().split(' ', 1)[1] for line in f.readlines()]
-    print("AI 모델과 레이블이 성공적으로 로드되었습니다.")
-    print(f"인식 가능한 클래스: {class_names}")
+    print("✅ ONNX 모델과 레이블이 성공적으로 로드되었습니다.")
+    print(f"🔍 인식 가능한 클래스: {class_names}")
 except Exception as e:
-    print(f"모델 또는 레이블 로드 실패: {e}")
+    print(f"❌ 모델 또는 레이블 로드 실패: {e}")
 
 # 이미지 전처리 함수
 def preprocess_image(img_bytes, target_size=(224, 224)):
-    # 파일 경로가 아닌 바이트 데이터에서 직접 이미지를 엽니다.
-    img = image.load_img(io.BytesIO(img_bytes), target_size=target_size)
-    img_array = image.img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0) # 배치 차원 추가
-    img_array /= 255.0 # 0-1 스케일링
+    img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
+    img = img.resize(target_size, Image.LANCZOS)
+    img_array = np.array(img).astype('float32')
+    img_array = np.expand_dims(img_array, axis=0)
+    img_array /= 255.0
     return img_array
 
 # --- API 엔드포인트 정의 ---
 
-# 루트 URL ('/') 접속 시 index.html 파일을 렌더링
-@app.route('/')
-def home():
-    return render_template('index.html')
-
 # '/predict' URL로 POST 요청이 오면 이미지 분석 수행
 @app.route('/predict', methods=['POST'])
 def predict():
-    if model is None or not class_names:
+    if sess is None or not class_names:
         return jsonify({'error': '서버에 모델이 로드되지 않았습니다.'}), 500
 
     if 'file' not in request.files:
@@ -59,21 +55,19 @@ def predict():
         return jsonify({'error': '파일이 선택되지 않았습니다.'}), 400
 
     try:
-        # 파일을 디스크에 저장하지 않고 메모리에서 바로 처리하여 효율성 증대
         img_bytes = file.read()
         processed_image = preprocess_image(img_bytes)
         
-        # 모델 예측
-        predictions = model.predict(processed_image)
+        # ONNX 모델로 예측 실행
+        predictions = sess.run([output_name], {input_name: processed_image})[0]
 
-        # 예측 결과를 JSON 형식으로 가공
+        # 결과 처리
         results = []
         for i, probability in enumerate(predictions[0]):
             results.append({
                 'className': class_names[i],
                 'probability': float(probability)
             })
-
         return jsonify({'predictions': results})
 
     except Exception as e:
