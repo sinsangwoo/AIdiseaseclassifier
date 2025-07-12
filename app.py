@@ -8,8 +8,8 @@ import onnxruntime as rt
 
 app = Flask(__name__)
 
-# CORS 설정 개선
-CORS(app, origins=['https://sinsangwoo.github.io', 'http://localhost:3000', 'http://127.0.0.1:3000'])
+# CORS 설정 개선 - 모든 오리진 허용으로 테스트
+CORS(app, origins=['*'], supports_credentials=True)
 
 # --- 설정 ---
 MODEL_PATH = 'model.onnx'
@@ -63,9 +63,9 @@ def health_check():
 @app.route('/predict', methods=['OPTIONS'])
 def handle_options():
     response = jsonify({'message': 'OK'})
-    response.headers.add('Access-Control-Allow-Origin', 'https://sinsangwoo.github.io')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    response.headers.add('Access-Control-Allow-Methods', 'POST')
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
     return response
 
 # '/predict' URL로 POST 요청이 오면 이미지 분석 수행
@@ -123,9 +123,10 @@ def predict():
 # 추가 CORS 헤더 설정
 @app.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'https://sinsangwoo.github.io')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
 
 if __name__ == '__main__':
