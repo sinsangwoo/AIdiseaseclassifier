@@ -1,5 +1,6 @@
 // --- 전역 변수 ---
-const API_URL = "https://pneumonia-api.onrender.com/predict"; 
+const API_URL = "https://pneumonia-api-j3t8.onrender.com/predict"; // 새로운 URL로 변경
+const SERVER_BASE_URL = "https://pneumonia-api-j3t8.onrender.com"; // 서버 기본 URL
 
 // HTML 요소 가져오기 (기존과 동일)
 const uploadSection = document.getElementById('uploadSection');
@@ -44,6 +45,7 @@ function handleFile(file) {
     }
 }
 
+// 개선된 analyzeImage 함수
 async function analyzeImage() {
     if (!uploadedFile) {
         alert("분석할 이미지가 없습니다.");
@@ -51,29 +53,94 @@ async function analyzeImage() {
     }
 
     setLoadingState(true);
+    
+    // 서버 상태 먼저 확인
+    try {
+        console.log("🔍 서버 상태 확인 중...");
+        const healthCheck = await fetch(SERVER_BASE_URL + "/", {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            }
+        });
+        
+        if (!healthCheck.ok) {
+            throw new Error(`서버가 응답하지 않습니다. 상태 코드: ${healthCheck.status}`);
+        }
+        
+        const healthData = await healthCheck.json();
+        console.log("✅ 서버 상태:", healthData);
+        
+        if (!healthData.model_loaded) {
+            throw new Error("서버에 AI 모델이 로드되지 않았습니다.");
+        }
+        
+    } catch (error) {
+        console.error("❌ 서버 상태 확인 실패:", error);
+        alert(`서버 연결 실패: ${error.message}\n\n서버가 시작 중이거나 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해주세요.`);
+        setLoadingState(false);
+        return;
+    }
 
+    // 이미지 분석 요청
     const formData = new FormData();
     formData.append('file', uploadedFile);
+    
+    console.log("📤 이미지 분석 요청 시작...");
+    console.log("📁 파일 정보:", {
+        name: uploadedFile.name,
+        size: uploadedFile.size,
+        type: uploadedFile.type
+    });
 
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
             body: formData,
+            // Content-Type 헤더는 FormData 사용 시 설정하지 않음
         });
 
+        console.log("📥 서버 응답 상태:", response.status);
+        console.log("📥 서버 응답 헤더:", [...response.headers.entries()]);
+
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `서버 응답 오류: ${response.status}`);
+            let errorMessage = `서버 응답 오류: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorMessage;
+            } catch {
+                errorMessage = await response.text() || errorMessage;
+            }
+            throw new Error(errorMessage);
         }
 
         const data = await response.json();
+        console.log("✅ 분석 결과:", data);
+        
+        if (!data.predictions || !Array.isArray(data.predictions)) {
+            throw new Error("서버에서 올바른 예측 결과를 받지 못했습니다.");
+        }
+
         setTimeout(() => {
             displayResults(data.predictions);
         }, 500);
 
     } catch (error) {
-        console.error("분석 요청 중 오류 발생:", error);
-        alert(`분석 중 오류가 발생했습니다: ${error.message}`);
+        console.error("❌ 분석 요청 중 오류 발생:", error);
+        
+        let userMessage = "분석 중 오류가 발생했습니다.";
+        
+        if (error.message.includes("Failed to fetch")) {
+            userMessage = "네트워크 연결 오류입니다. 인터넷 연결을 확인하고 다시 시도해주세요.";
+        } else if (error.message.includes("404")) {
+            userMessage = "서버의 분석 기능을 찾을 수 없습니다. 서버 설정을 확인해주세요.";
+        } else if (error.message.includes("CORS")) {
+            userMessage = "서버 접근 권한 오류입니다. 서버 설정을 확인해주세요.";
+        } else {
+            userMessage = `오류 상세: ${error.message}`;
+        }
+        
+        alert(userMessage);
         setLoadingState(false);
     }
 }
@@ -202,17 +269,60 @@ function saveReport(format) {
     });
 }
 
-// --- 이벤트 리스너 설정 ---
-document.addEventListener('DOMContentLoaded', () => {
-    clearAll(); 
+// 추가: 서버 상태 확인 함수
+async function checkServerStatus() {
+    try {
+        const response = await fetch(SERVER_BASE_URL + "/", {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log("서버 상태:", data);
+            return data;
+        } else {
+            console.error("서버 상태 확인 실패:", response.status);
+            return null;
+        }
+    } catch (error) {
+        console.error("서버 연결 실패:", error);
+        return null;
+    }
+}
 
-    // ✅ [수정] 클릭 이벤트 핸들러를 HTML onclick 대신 여기서 명시적으로 설정합니다.
+// --- 이벤트 리스너 설정 ---
+document.addEventListener('DOMContentLoaded', async () => {
+    clearAll();
+    
+    console.log("🔄 서버 상태 확인 중...");
+    const serverStatus = await checkServerStatus();
+    
+    if (serverStatus) {
+        console.log("✅ 서버 연결 성공:", serverStatus);
+    } else {
+        console.log("⚠️ 서버 연결 실패 - 서버가 시작 중일 수 있습니다.");
+    }
+
+    // 이벤트 리스너 설정
     if (uploadSection) {
         uploadSection.onclick = () => imageInput.click();
         
-        uploadSection.addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--primary-color)'; });
-        uploadSection.addEventListener('dragleave', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-color)'; });
-        uploadSection.addEventListener('drop', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-color)'; handleFile(e.dataTransfer.files[0]); });
+        uploadSection.addEventListener('dragover', (e) => { 
+            e.preventDefault(); 
+            e.currentTarget.style.borderColor = 'var(--primary-color)'; 
+        });
+        uploadSection.addEventListener('dragleave', (e) => { 
+            e.preventDefault(); 
+            e.currentTarget.style.borderColor = 'var(--border-color)'; 
+        });
+        uploadSection.addEventListener('drop', (e) => { 
+            e.preventDefault(); 
+            e.currentTarget.style.borderColor = 'var(--border-color)'; 
+            handleFile(e.dataTransfer.files[0]); 
+        });
     }
 
     if (analyzeBtn) analyzeBtn.addEventListener('click', analyzeImage);
