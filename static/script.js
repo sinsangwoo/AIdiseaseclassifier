@@ -30,7 +30,6 @@ function handleFile(file) {
         reader.onload = (e) => {
             imagePreview.src = e.target.result;
             analyzeBtn.disabled = !agreeCheckbox.checked;
-            // UI 상태 변경
             uploadSection.style.display = 'none';
             previewContainer.style.display = 'block';
             agreementBox.style.display = 'flex';
@@ -59,19 +58,15 @@ async function analyzeImage() {
         });
 
         if (!response.ok) {
-            // 서버가 보낸 에러 메시지를 파싱하여 throw
             const errorData = await response.json();
             throw new Error(errorData.error || `서버 응답 오류: ${response.status}`);
         }
 
         const data = await response.json();
-        
-        // 성공적으로 데이터를 받으면 결과 표시
         displayResults(data.predictions);
 
     } catch (error) {
         console.error("분석 요청 중 오류 발생:", error);
-        // 사용자에게 간결한 에러 메시지 표시
         let userMessage = error.message.includes("Failed to fetch") 
             ? "서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요."
             : `분석 실패: ${error.message}`;
@@ -81,7 +76,6 @@ async function analyzeImage() {
 }
 
 function displayResults(predictions) {
-    // 리포트 UI 업데이트 로직 (이전과 동일)
     reportImageContainer.innerHTML = '';
     const imgClone = imagePreview.cloneNode(true);
     imgClone.style.maxWidth = '100%';
@@ -100,7 +94,10 @@ function displayResults(predictions) {
     drawGaugeChart(pneumoniaProbability);
 
     resultsContent.innerHTML = '';
-    sorted.forEach(p => resultsContent.appendChild(createResultItem(p.className, p.probability)));
+    sorted.forEach(p => {
+        const resultItem = createResultItem(p.className, p.probability);
+        resultsContent.appendChild(resultItem);
+    });
     
     const { text, className } = getResultComment(pneumoniaProbability);
     resultComment.innerHTML = `<i class="fa-solid fa-comment-medical"></i> <div>${text}</div>`;
@@ -109,7 +106,6 @@ function displayResults(predictions) {
 
     reportTimestamp.textContent = `진단 시각: ${new Date().toLocaleString()}`;
     
-    // 최종 UI 상태 변경
     setLoadingState(false);
     previewContainer.style.display = 'none';
     reportContainer.style.display = 'block';
@@ -119,7 +115,6 @@ function displayResults(predictions) {
 }
 
 function clearAll() {
-    // UI 초기화 로직 (이전과 동일)
     uploadedFile = null;
     imageInput.value = '';
     imagePreview.src = '';
@@ -128,6 +123,7 @@ function clearAll() {
     analyzeBtn.disabled = true;
     clearBtn.style.display = 'none';
     reportContainer.style.display = 'none';
+    document.querySelector('.report-actions').style.display = 'none';
     agreementBox.style.display = 'none';
     previewContainer.style.display = 'none';
     progressContainer.style.display = 'none';
@@ -153,6 +149,7 @@ function setLoadingState(isLoading) {
 function simulateProgress() {
     let width = 0;
     const progressBarFill = document.getElementById('progressBarFill');
+    if (!progressBarFill) return;
     progressBarFill.style.width = '0%';
     const interval = setInterval(() => {
         width += Math.random() * 10;
@@ -171,7 +168,6 @@ function drawGaugeChart(value) {
     gaugeChart = new Chart(ctx, { type: 'gauge', data: { datasets: [{ value: value, data: [50, 75, 90, 100], backgroundColor: ['#28a745', '#ffc107', '#dc3545'], borderWidth: 0, }] }, options: { responsive: true, maintainAspectRatio: false, needle: { radiusPercentage: 2, widthPercentage: 3.2, lengthPercentage: 80, color: needleColor, }, valueLabel: { display: true, formatter: (val) => val.toFixed(1) + '%', color: 'rgba(0, 0, 0, 0.8)', backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 5, padding: { top: 5, bottom: 5 } } } });
 }
 
-// ✅ [수정] return item; 이 반드시 있어야 합니다.
 function createResultItem(className, probability) {
     const percentage = (probability * 100).toFixed(1);
     const item = document.createElement('div');
@@ -182,7 +178,6 @@ function createResultItem(className, probability) {
     return item;
 }
 
-// ✅ [수정] return { text, className }; 이 반드시 있어야 합니다.
 function getResultComment(probability) {
     let text = '', className = '';
     if (probability > 90) { text = "<strong>높은 위험:</strong> 폐렴일 가능성이 매우 높게 예측되었습니다. 즉시 의료 전문가의 진단이 필요합니다."; className = 'warning'; }
@@ -193,16 +188,14 @@ function getResultComment(probability) {
     return { text, className };
 }
 
-// ✅ [수정] saveReport 함수 전체를 복원합니다.
 function saveReport(format) {
     const reportCard = document.getElementById('reportCard');
-    const filename = `AI_폐렴_진단_리포트_${Date.now()}`;
     html2canvas(reportCard, { scale: 2, useCORS: true }).then(canvas => {
+        const filename = `AI_폐렴_진단_리포트_${Date.now()}`;
         if (format === 'png') { const link = document.createElement('a'); link.download = `${filename}.png`; link.href = canvas.toDataURL('image/png'); link.click(); }
         else if (format === 'pdf') { const { jsPDF } = window.jspdf; const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' }); const imgProps = pdf.getImageProperties(imgData); const pdfWidth = pdf.internal.pageSize.getWidth() - 20; const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width; pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight); pdf.save(`${filename}.pdf`); }
     });
 }
-
 
 // --- 이벤트 리스너 설정 ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -216,7 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (uploadedFile) analyzeBtn.disabled = !agreeCheckbox.checked;
     });
 
-    // 드래그 앤 드롭 이벤트
     uploadSection.addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--primary-color)'; });
     uploadSection.addEventListener('dragleave', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-color)'; });
     uploadSection.addEventListener('drop', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-color)'; handleFile(e.dataTransfer.files[0]); });
