@@ -45,7 +45,6 @@ function handleFile(file) {
 
 async function analyzeImage() {
     if (!uploadedFile) return alert("분석할 이미지가 없습니다.");
-
     setLoadingState(true);
 
     const formData = new FormData();
@@ -67,7 +66,7 @@ async function analyzeImage() {
 
     } catch (error) {
         console.error("분석 요청 중 오류 발생:", error);
-        let userMessage = error.message.includes("Failed to fetch") 
+        let userMessage = error.message.includes("Failed to fetch")
             ? "서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요."
             : `분석 실패: ${error.message}`;
         alert(userMessage);
@@ -95,8 +94,8 @@ function displayResults(predictions) {
 
     resultsContent.innerHTML = '';
     sorted.forEach(p => {
-        const resultItem = createResultItem(p.className, p.probability);
-        resultsContent.appendChild(resultItem);
+        const item = createResultItem(p.className, p.probability);
+        resultsContent.appendChild(item);
     });
     
     const { text, className } = getResultComment(pneumoniaProbability);
@@ -105,7 +104,6 @@ function displayResults(predictions) {
     resultComment.style.display = 'flex';
 
     reportTimestamp.textContent = `진단 시각: ${new Date().toLocaleString()}`;
-    
     setLoadingState(false);
     previewContainer.style.display = 'none';
     reportContainer.style.display = 'block';
@@ -123,14 +121,13 @@ function clearAll() {
     analyzeBtn.disabled = true;
     clearBtn.style.display = 'none';
     reportContainer.style.display = 'none';
-    document.querySelector('.report-actions').style.display = 'none';
     agreementBox.style.display = 'none';
     previewContainer.style.display = 'none';
     progressContainer.style.display = 'none';
     uploadSection.style.display = 'block';
 }
 
-// --- 보조 함수들 ---
+// --- 보조 함수들 (여기가 완전한 버전입니다) ---
 function setLoadingState(isLoading) {
     if (isLoading) {
         analyzeBtn.disabled = true;
@@ -149,16 +146,17 @@ function setLoadingState(isLoading) {
 function simulateProgress() {
     let width = 0;
     const progressBarFill = document.getElementById('progressBarFill');
-    if (!progressBarFill) return;
-    progressBarFill.style.width = '0%';
-    const interval = setInterval(() => {
-        width += Math.random() * 10;
-        if (width >= 100) {
-            width = 100;
-            clearInterval(interval);
-        }
-        progressBarFill.style.width = width + '%';
-    }, 300);
+    if(progressBarFill) {
+        progressBarFill.style.width = '0%';
+        const interval = setInterval(() => {
+            width += Math.random() * 10;
+            if (width >= 100) {
+                width = 100;
+                clearInterval(interval);
+            }
+            progressBarFill.style.width = width + '%';
+        }, 300);
+    }
 }
 
 function drawGaugeChart(value) {
@@ -190,8 +188,8 @@ function getResultComment(probability) {
 
 function saveReport(format) {
     const reportCard = document.getElementById('reportCard');
+    const filename = `AI_폐렴_진단_리포트_${Date.now()}`;
     html2canvas(reportCard, { scale: 2, useCORS: true }).then(canvas => {
-        const filename = `AI_폐렴_진단_리포트_${Date.now()}`;
         if (format === 'png') { const link = document.createElement('a'); link.download = `${filename}.png`; link.href = canvas.toDataURL('image/png'); link.click(); }
         else if (format === 'pdf') { const { jsPDF } = window.jspdf; const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' }); const imgProps = pdf.getImageProperties(imgData); const pdfWidth = pdf.internal.pageSize.getWidth() - 20; const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width; pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight); pdf.save(`${filename}.pdf`); }
     });
