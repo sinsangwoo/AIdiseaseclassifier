@@ -1,5 +1,6 @@
 // --- 전역 변수 ---
-const API_URL = "https://pneumonia-api-j3t8.onrender.com/predict";
+// ✅ [필수 수정] Teachable Machine에서 '모델 업로드' 후 받은 자신의 공유 링크로 교체하세요!
+const MODEL_URL = "https://teachablemachine.withgoogle.com/models/3wMtRD9Yg/"; 
 
 // HTML 요소 가져오기
 const uploadSection = document.getElementById('uploadSection');
@@ -18,18 +19,51 @@ const previewContainer = document.getElementById('previewContainer');
 const reportImageContainer = document.getElementById('reportImageContainer');
 
 // 상태 관리 변수
+let model; // AI 모델을 저장할 변수
 let uploadedFile = null;
 let gaugeChart = null;
 
 // --- 핵심 함수들 ---
 
+/**
+ * 페이지 로드 시 Teachable Machine 모델을 비동기적으로 로드합니다.
+ */
+async function initModel() {
+    const modelURL = MODEL_URL + "model.json";
+    const metadataURL = MODEL_URL + "metadata.json";
+    try {
+        console.log("AI 모델 로드를 시작합니다...");
+        analyzeBtn.disabled = true;
+        analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 모델 로딩 중...';
+        
+        model = await tmImage.load(modelURL, metadataURL);
+        
+        console.log("✅ AI 모델이 성공적으로 로드되었습니다.");
+        analyzeBtn.innerHTML = '<i class="fa-solid fa-brain"></i> AI 분석 시작';
+        // 이미지가 먼저 업로드된 경우, 모델 로딩 후 버튼 활성화
+        if (uploadedFile && agreeCheckbox.checked) {
+            analyzeBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error("❌ 모델 로드 실패:", error);
+        alert("AI 모델을 로드하는 데 실패했습니다. 인터넷 연결을 확인하거나 잠시 후 다시 시도해주세요.");
+        analyzeBtn.innerHTML = '<i class="fa-solid fa-times"></i> 모델 로드 실패';
+    }
+}
+
+/**
+ * 파일이 업로드되었을 때 UI를 처리하는 함수
+ * @param {File} file 사용자가 업로드한 파일 객체
+ */
 function handleFile(file) {
     if (file && file.type.startsWith('image/')) {
         uploadedFile = file;
         const reader = new FileReader();
         reader.onload = (e) => {
             imagePreview.src = e.target.result;
-            analyzeBtn.disabled = !agreeCheckbox.checked;
+            // 모델이 로드되었고, 동의 체크박스가 선택되었다면 분석 버튼 활성화
+            analyzeBtn.disabled = !(model && agreeCheckbox.checked);
+            
             uploadSection.style.display = 'none';
             previewContainer.style.display = 'block';
             agreementBox.style.display = 'flex';
@@ -43,48 +77,44 @@ function handleFile(file) {
     }
 }
 
+/**
+ * 'AI 분석 시작' 버튼 클릭 시 로드된 모델로 이미지를 분석합니다.
+ */
 async function analyzeImage() {
-    if (!uploadedFile) return alert("분석할 이미지가 없습니다.");
+    if (!model) return alert("AI 모델이 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.");
+    if (!imagePreview.src) return alert("분석할 이미지가 없습니다.");
+
     setLoadingState(true);
 
-    const formData = new FormData();
-    formData.append('file', uploadedFile);
-
     try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            body: formData,
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `서버 응답 오류: ${response.status}`);
-        }
-
-        const data = await response.json();
-        displayResults(data.predictions);
-
+        const predictions = await model.predict(imagePreview);
+        // 서버 통신이 없으므로, 프로그레스 바를 위한 가짜 딜레이를 줍니다.
+        setTimeout(() => {
+            displayResults(predictions);
+        }, 500);
     } catch (error) {
-        console.error("분석 요청 중 오류 발생:", error);
-        let userMessage = error.message.includes("Failed to fetch")
-            ? "서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요."
-            : `분석 실패: ${error.message}`;
-        alert(userMessage);
+        console.error("분석 중 오류 발생:", error);
+        alert(`분석 중 오류가 발생했습니다: ${error.message}`);
         setLoadingState(false);
     }
 }
 
+/**
+ * 분석 결과를 받아 화면에 리포트를 표시하는 함수
+ * @param {Array} predictions 예측 결과 배열
+ */
 function displayResults(predictions) {
     reportImageContainer.innerHTML = '';
     const imgClone = imagePreview.cloneNode(true);
     imgClone.style.maxWidth = '100%';
+    imgClone.style.maxHeight = 'none';
     reportImageContainer.appendChild(imgClone);
 
     const sorted = predictions.sort((a, b) => b.probability - a.probability);
-    const pneumoniaResult = sorted.find(p => !p.className.toLowerCase().includes('정상'));
+    const pneumoniaResult = sorted.find(p => !(p.className.toLowerCase().includes('정상') || p.className.toLowerCase().includes('normal')));
     
     if (!pneumoniaResult) {
-        alert("결과에 '폐렴' 클래스가 없습니다.");
+        alert("결과에 '폐렴' 클래스가 없습니다. Teachable Machine 모델을 확인해주세요.");
         setLoadingState(false);
         return;
     }
@@ -107,27 +137,38 @@ function displayResults(predictions) {
     setLoadingState(false);
     previewContainer.style.display = 'none';
     reportContainer.style.display = 'block';
+    document.querySelector('.report-actions').style.display = 'flex';
 
     document.getElementById('savePngBtn').onclick = () => saveReport('png');
     document.getElementById('savePdfBtn').onclick = () => saveReport('pdf');
 }
 
+/**
+ * 모든 상태와 UI를 초기 상태로 되돌리는 함수
+ */
 function clearAll() {
     uploadedFile = null;
     imageInput.value = '';
     imagePreview.src = '';
     agreeCheckbox.checked = false;
     if (gaugeChart) { gaugeChart.destroy(); gaugeChart = null; }
+    
+    // 모델이 로드 중이 아닐 때만 버튼 텍스트를 변경
+    if (model) {
+        analyzeBtn.innerHTML = '<i class="fa-solid fa-brain"></i> AI 분석 시작';
+    }
     analyzeBtn.disabled = true;
+    
     clearBtn.style.display = 'none';
     reportContainer.style.display = 'none';
+    document.querySelector('.report-actions').style.display = 'none';
     agreementBox.style.display = 'none';
     previewContainer.style.display = 'none';
     progressContainer.style.display = 'none';
     uploadSection.style.display = 'block';
 }
 
-// --- 보조 함수들 (여기가 완전한 버전입니다) ---
+// --- 보조 함수들 ---
 function setLoadingState(isLoading) {
     if (isLoading) {
         analyzeBtn.disabled = true;
@@ -197,17 +238,24 @@ function saveReport(format) {
 
 // --- 이벤트 리스너 설정 ---
 document.addEventListener('DOMContentLoaded', () => {
-    clearAll();
+    clearAll(); 
+    initModel(); // 페이지가 열리면 바로 모델 로딩을 시작합니다.
     
-    uploadSection.onclick = () => imageInput.click();
-    imageInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
-    analyzeBtn.addEventListener('click', analyzeImage);
-    clearBtn.addEventListener('click', clearAll);
-    agreeCheckbox.addEventListener('click', () => {
-        if (uploadedFile) analyzeBtn.disabled = !agreeCheckbox.checked;
-    });
-
-    uploadSection.addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--primary-color)'; });
-    uploadSection.addEventListener('dragleave', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-color)'; });
-    uploadSection.addEventListener('drop', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-color)'; handleFile(e.dataTransfer.files[0]); });
+    if (uploadSection) {
+        uploadSection.onclick = () => imageInput.click();
+        uploadSection.addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--primary-color)'; });
+        uploadSection.addEventListener('dragleave', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-color)'; });
+        uploadSection.addEventListener('drop', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-color)'; handleFile(e.dataTransfer.files[0]); });
+    }
+    if (analyzeBtn) analyzeBtn.addEventListener('click', analyzeImage);
+    if (clearBtn) clearBtn.addEventListener('click', clearAll);
+    if (imageInput) imageInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    if (agreeCheckbox) {
+        agreeCheckbox.addEventListener('click', () => {
+            // 모델이 로드되었고, 파일이 업로드 된 상태에서만 체크박스로 버튼 활성화
+            if (model && uploadedFile) {
+                analyzeBtn.disabled = !agreeCheckbox.checked;
+            }
+        });
+    }
 });
