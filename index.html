@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 폐렴 진단 시스템</title>
+    <link rel="stylesheet" href="./static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <script src="https://unpkg.com/chart.js-gauge/dist/chart.js-gauge.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fa-solid fa-lungs-virus"></i> AI 폐렴 진단 시스템</h1>
+        <p class="subtitle">흉부 X-ray 이미지를 업로드하여 AI 기반 진단 리포트를 받아보세요</p>
+        <p class="subtitle">제작(30814 신상우)</p>
+
+        <!-- 1. 파일 업로드 영역 -->
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-icon"><i class="fa-solid fa-upload"></i></div>
+            <div class="upload-text">클릭하여 X-ray 이미지 업로드</div>
+            <div class="upload-subtext">또는 이미지를 여기로 드래그하세요 (JPG, PNG)</div>
+        </div>
+        <input type="file" id="imageInput" accept="image/*" hidden>
+
+        <!-- 2. 업로드된 이미지 미리보기 전용 영역 -->
+        <div class="preview-container" id="previewContainer">
+            <h4>업로드된 이미지</h4>
+            <img id="imagePreview" alt="업로드된 이미지">
+        </div>
+
+        <!-- 3. 분석 진행 상태 (프로그레스 바) -->
+        <div class="progress-container" id="progressContainer">
+            <p>AI 서버가 이미지를 분석하고 있습니다...</p>
+            <div class="progress-bar">
+                <div class="progress-bar-fill" id="progressBarFill"></div>
+            </div>
+        </div>
+
+        <!-- 4. 진단 리포트 영역 -->
+        <div class="report-container" id="reportContainer">
+            <div class="report-card" id="reportCard">
+                <h3 class="report-title">📊 AI 진단 리포트</h3>
+                <p class="report-timestamp" id="reportTimestamp"></p>
+                <div class="report-content">
+                    <div class="report-image">
+                        <h4>분석 이미지</h4>
+                        <div id="reportImageContainer"></div>
+                    </div>
+                    <div class="report-results">
+                        <h4>진단 결과</h4>
+                        <div class="chart-container" style="position: relative; height:150px; width:100%;">
+                            <canvas id="gaugeChart"></canvas>
+                        </div>
+                        <div id="resultsContent"></div>
+                        <div id="resultComment" class="notice-box" style="margin-top: 20px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="report-actions">
+                <button id="savePngBtn"><i class="fa-solid fa-file-image"></i> PNG로 저장</button>
+                <button id="savePdfBtn"><i class="fa-solid fa-file-pdf"></i> PDF로 저장</button>
+            </div>
+        </div>
+
+        <!-- 5. 동의 체크박스 영역 -->
+        <div class="agreement-box" id="agreementBox">
+            <input type="checkbox" id="agreeCheckbox">
+            <label for="agreeCheckbox">본인은 이 AI 분석 결과가 참고용이며, 실제 의료 진단을 대체할 수 없음을 이해합니다.</label>
+        </div>
+
+        <!-- 6. 메인 버튼 영역 -->
+        <div class="main-buttons">
+            <button id="analyzeBtn" disabled><i class="fa-solid fa-brain"></i> AI 분석 시작</button>
+            <button id="clearBtn"><i class="fa-solid fa-trash-can"></i> 초기화</button>
+        </div>
+        
+        <!-- 7. 주의사항 및 개인정보보호 문구 -->
+        <div class="notice-box warning">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <div><strong>주의사항:</strong> 이 시스템은 교육 및 연구 목적으로 제작되었습니다. 실제 의료 진단을 대체할 수 없으며, 정확한 진단을 위해서는 반드시 의료진과 상담하시기 바랍니다.</div>
+        </div>
+        <div class="notice-box privacy">
+            <i class="fa-solid fa-shield-halved"></i>
+            <div><strong>개인정보보호:</strong> 업로드된 이미지는 분석을 위해 일시적으로 서버에 전송되나, 분석 후 즉시 폐기되며 별도로 저장되지 않습니다.</div>
+        </div>
+    </div>
+    <script src="./static/script.js"></script>
+</body>
+</html>

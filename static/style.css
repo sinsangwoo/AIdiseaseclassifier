@@ -1,0 +1,110 @@
+/* --- 1. 기본 설정 및 폰트 --- */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
+:root {
+    --primary-color: #007bff;
+    --primary-hover-color: #0056b3;
+    --secondary-color: #6c757d;
+    --secondary-hover-color: #5a6268;
+    --success-color: #28a745;
+    --gradient-start: #e0c3fc;
+    --gradient-end: #8ec5fc;
+    --text-dark: #2c3e50;
+    --text-light: #8492a6;
+    --danger-color: #e74c3c;
+    --warning-bg: #fffbe6;
+    --warning-border: #ffc107;
+    --warning-text: #856404;
+    --privacy-bg: #e6f7ff;
+    --privacy-border: #17a2b8;
+    --privacy-text: #0c5460;
+    --bg-light: #f8f9fa;
+    --border-color: #dee2e6;
+    --white-color: #ffffff;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans KR', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 40px 20px;
+    background-image: linear-gradient(120deg, var(--gradient-start), var(--gradient-end));
+    color: var(--text-dark);
+    line-height: 1.6;
+}
+
+.container {
+    background-color: var(--white-color);
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px var(--shadow-color);
+    text-align: center;
+    width: 100%;
+    max-width: 600px;
+}
+
+h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; color: var(--text-dark); display: flex; align-items: center; justify-content: center; gap: 10px; }
+.subtitle { color: var(--text-light); font-size: 1.1rem; margin-bottom: 30px; }
+
+.upload-section { border: 3px dashed var(--border-color); border-radius: 12px; padding: 30px; margin-bottom: 25px; cursor: pointer; background-color: var(--bg-light); transition: border-color 0.3s, background-color 0.3s; }
+.upload-section:hover { border-color: var(--primary-color); background-color: #fdfdff; }
+.upload-icon { font-size: 3rem; color: var(--primary-color); margin-bottom: 10px; }
+.upload-text { font-size: 1.2rem; font-weight: 500; color: var(--text-dark); }
+.upload-subtext { font-size: 0.9rem; color: var(--text-light); }
+
+.preview-container { margin-bottom: 25px; text-align: center; }
+.preview-container h4 { margin-bottom: 15px; font-size: 1.2rem; color: var(--text-dark); }
+#imagePreview { display: block; max-width: 50%; max-height: 250px; border-radius: 8px; border: 2px solid var(--border-color); box-shadow: 0 4px 10px var(--shadow-color); margin: 0 auto; }
+#reportImageContainer img { width: 100%; border-radius: 8px; border: 1px solid var(--border-color); }
+
+.progress-container { width: 100%; margin: 25px 0; text-align: center; }
+.progress-container p { color: var(--text-light); margin-bottom: 10px; }
+.progress-bar { width: 100%; height: 10px; background-color: #e9ecef; border-radius: 5px; overflow: hidden; }
+.progress-bar-fill { width: 0%; height: 100%; background-color: var(--primary-color); border-radius: 5px; transition: width 0.5s ease-in-out; }
+
+.report-container { width: 100%; margin-top: 25px; }
+.report-card { background-color: var(--bg-light); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; margin-bottom: 20px; text-align: left; }
+.report-title { text-align: center; font-size: 1.5rem; color: var(--text-dark); margin-bottom: 5px; }
+.report-timestamp { text-align: center; font-size: 0.8rem; color: var(--text-light); margin-bottom: 25px; }
+.report-content { display: flex; gap: 20px; }
+.report-image, .report-results { flex: 1; }
+.report-content h4 { margin-bottom: 10px; border-bottom: 2px solid var(--border-color); padding-bottom: 5px; }
+
+.result-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-radius: 8px; margin-bottom: 10px; font-weight: 500; }
+.result-percentage { font-weight: 700; font-size: 1.1rem; }
+.result-normal { background-color: #e9f7ef; color: var(--success-color); border-left: 5px solid var(--success-color); }
+.result-pneumonia { background-color: #fdedec; color: var(--danger-color); border-left: 5px solid var(--danger-color); }
+
+.main-buttons, .report-actions { margin-top: 25px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+button { color: white; border: none; padding: 12px 25px; border-radius: 50px; cursor: pointer; font-size: 1rem; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); display: inline-flex; align-items: center; gap: 8px; }
+button:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); }
+button:active:not(:disabled) { transform: translateY(-1px); }
+#analyzeBtn { background-color: var(--primary-color); }
+#analyzeBtn:hover:not(:disabled) { background-color: var(--primary-hover-color); }
+#clearBtn { background-color: var(--secondary-color); }
+.report-actions button { background-color: var(--success-color); }
+button:disabled { background-color: #c0c0c0; cursor: not-allowed; opacity: 0.7; }
+
+.agreement-box { margin-top: 20px; margin-bottom: -15px; padding: 10px; background-color: var(--bg-light); border-radius: 8px; font-size: 0.9rem; color: var(--text-light); display: flex; align-items: center; justify-content: center; gap: 10px; }
+.agreement-box input[type="checkbox"] { transform: scale(1.2); margin: 0; }
+
+.notice-box { margin-top: 30px; padding: 15px; border-left: 5px solid; text-align: left; font-size: 0.9rem; border-radius: 4px; display: flex; align-items: center; gap: 15px; }
+.notice-box i { font-size: 1.2rem; }
+.notice-box.warning { background-color: var(--warning-bg); border-color: var(--warning-border); color: var(--warning-text); }
+.notice-box.warning i { color: var(--warning-border); }
+.notice-box.privacy { background-color: var(--privacy-bg); border-color: var(--privacy-border); color: var(--privacy-text); margin-top: 15px; }
+.notice-box.privacy i { color: var(--privacy-border); }
+
+@media (max-width: 768px) {
+    body { padding: 10px; align-items: flex-start; }
+    .container { padding: 25px; }
+    h1 { font-size: 1.8rem; }
+    .subtitle { font-size: 1rem; }
+    .report-content, .main-buttons, .report-actions { flex-direction: column; }
+    button { width: 100%; justify-content: center; }
+}
