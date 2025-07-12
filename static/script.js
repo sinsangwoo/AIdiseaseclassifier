@@ -200,11 +200,109 @@ function simulateProgress() {
     }
 }
 
+/**
+ * 개선된 게이지 차트 그리기 함수 (도넛 차트 기반)
+ * @param {number} value 폐렴 확률 값 (0-100)
+ */
 function drawGaugeChart(value) {
     const ctx = document.getElementById('gaugeChart').getContext('2d');
     if (gaugeChart) gaugeChart.destroy();
-    const needleColor = value > 50 ? 'rgba(231, 76, 60, 1)' : 'rgba(40, 167, 69, 1)';
-    gaugeChart = new Chart(ctx, { type: 'gauge', data: { datasets: [{ value: value, data: [50, 75, 90, 100], backgroundColor: ['#28a745', '#ffc107', '#dc3545'], borderWidth: 0, }] }, options: { responsive: true, maintainAspectRatio: false, needle: { radiusPercentage: 2, widthPercentage: 3.2, lengthPercentage: 80, color: needleColor, }, valueLabel: { display: true, formatter: (val) => val.toFixed(1) + '%', color: 'rgba(0, 0, 0, 0.8)', backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 5, padding: { top: 5, bottom: 5 } } } });
+    
+    // 색상 결정 (단계별)
+    let gaugeColor;
+    if (value <= 30) gaugeColor = '#28a745'; // 초록 (안전)
+    else if (value <= 50) gaugeColor = '#ffc107'; // 노랑 (주의)
+    else if (value <= 70) gaugeColor = '#fd7e14'; // 주황 (경고)
+    else gaugeColor = '#dc3545'; // 빨강 (위험)
+    
+    gaugeChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [value, 100 - value],
+                backgroundColor: [gaugeColor, '#e9ecef'],
+                borderWidth: 0,
+                circumference: 180, // 반원 형태
+                rotation: 270, // 시작 각도 (하단부터)
+                borderRadius: 8, // 둥근 모서리
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    enabled: false
+                }
+            },
+            cutout: '75%', // 내부 구멍 크기
+            animation: {
+                animateRotate: true,
+                duration: 1500, // 애니메이션 시간
+                easing: 'easeOutCubic'
+            }
+        },
+        plugins: [{
+            afterDraw: function(chart) {
+                const ctx = chart.ctx;
+                const centerX = chart.chartArea.left + (chart.chartArea.right - chart.chartArea.left) / 2;
+                const centerY = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2 + 20;
+                
+                // 중앙에 큰 숫자 표시
+                ctx.save();
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 28px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(value.toFixed(1) + '%', centerX, centerY - 10);
+                
+                // 하단에 라벨 표시
+                ctx.fillStyle = '#666';
+                ctx.font = '14px Arial';
+                ctx.fillText('폐렴 확률', centerX, centerY + 25);
+                
+                // 위험도 표시
+                let riskLevel = '';
+                if (value <= 30) riskLevel = '낮음';
+                else if (value <= 50) riskLevel = '보통';
+                else if (value <= 70) riskLevel = '높음';
+                else riskLevel = '매우 높음';
+                
+                ctx.fillStyle = gaugeColor;
+                ctx.font = 'bold 12px Arial';
+                ctx.fillText(`위험도: ${riskLevel}`, centerX, centerY + 45);
+                
+                // 눈금 표시
+                const radius = (chart.chartArea.right - chart.chartArea.left) / 2 * 0.8;
+                for (let i = 0; i <= 100; i += 25) {
+                    const angle = (Math.PI * i / 100) - Math.PI / 2;
+                    const x1 = centerX + Math.cos(angle) * (radius - 10);
+                    const y1 = centerY + Math.sin(angle) * (radius - 10);
+                    const x2 = centerX + Math.cos(angle) * (radius + 5);
+                    const y2 = centerY + Math.sin(angle) * (radius + 5);
+                    
+                    ctx.strokeStyle = '#ccc';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                    
+                    // 눈금 숫자
+                    const x3 = centerX + Math.cos(angle) * (radius + 20);
+                    const y3 = centerY + Math.sin(angle) * (radius + 20);
+                    ctx.fillStyle = '#888';
+                    ctx.font = '10px Arial';
+                    ctx.fillText(i.toString(), x3, y3);
+                }
+                
+                ctx.restore();
+            }
+        }]
+    });
 }
 
 function createResultItem(className, probability) {
@@ -219,20 +317,59 @@ function createResultItem(className, probability) {
 
 function getResultComment(probability) {
     let text = '', className = '';
-    if (probability > 90) { text = "<strong>높은 위험:</strong> 폐렴일 가능성이 매우 높게 예측되었습니다. 즉시 의료 전문가의 진단이 필요합니다."; className = 'warning'; }
-    else if (probability > 70) { text = "<strong>주의 필요:</strong> 폐렴 가능성이 있습니다. 의료 전문가와 상담하여 정확한 진단을 받는 것을 권장합니다."; className = 'warning'; }
-    else if (probability > 50) { text = "<strong>경계:</strong> 일부 비정상적인 패턴이 감지되었습니다. 상태를 지켜보거나 예방 차원에서 상담을 고려해볼 수 있습니다."; className = 'privacy'; }
-    else { text = "<strong>낮은 위험:</strong> 정상 범위로 예측되었습니다. 하지만 이 결과는 참고용이며, 의심 증상이 있다면 반드시 의사와 상담하세요."; className = 'privacy'; }
-    if (probability > 40 && probability < 60) { text += "<br><br><strong>참고:</strong> AI가 이미지를 판단하기 어려워하는 경계선상의 확률입니다. X-ray 이미지의 품질이나 각도에 따라 결과가 달라질 수 있습니다."; }
+    if (probability > 90) { 
+        text = "<strong>높은 위험:</strong> 폐렴일 가능성이 매우 높게 예측되었습니다. 즉시 의료 전문가의 진단이 필요합니다."; 
+        className = 'warning'; 
+    }
+    else if (probability > 70) { 
+        text = "<strong>주의 필요:</strong> 폐렴 가능성이 있습니다. 의료 전문가와 상담하여 정확한 진단을 받는 것을 권장합니다."; 
+        className = 'warning'; 
+    }
+    else if (probability > 50) { 
+        text = "<strong>경계:</strong> 일부 비정상적인 패턴이 감지되었습니다. 상태를 지켜보거나 예방 차원에서 상담을 고려해볼 수 있습니다."; 
+        className = 'privacy'; 
+    }
+    else { 
+        text = "<strong>낮은 위험:</strong> 정상 범위로 예측되었습니다. 하지만 이 결과는 참고용이며, 의심 증상이 있다면 반드시 의사와 상담하세요."; 
+        className = 'privacy'; 
+    }
+    
+    if (probability > 40 && probability < 60) { 
+        text += "<br><br><strong>참고:</strong> AI가 이미지를 판단하기 어려워하는 경계선상의 확률입니다. X-ray 이미지의 품질이나 각도에 따라 결과가 달라질 수 있습니다."; 
+    }
+    
     return { text, className };
 }
 
 function saveReport(format) {
     const reportCard = document.getElementById('reportCard');
     const filename = `AI_폐렴_진단_리포트_${Date.now()}`;
-    html2canvas(reportCard, { scale: 2, useCORS: true }).then(canvas => {
-        if (format === 'png') { const link = document.createElement('a'); link.download = `${filename}.png`; link.href = canvas.toDataURL('image/png'); link.click(); }
-        else if (format === 'pdf') { const { jsPDF } = window.jspdf; const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' }); const imgProps = pdf.getImageProperties(imgData); const pdfWidth = pdf.internal.pageSize.getWidth() - 20; const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width; pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight); pdf.save(`${filename}.pdf`); }
+    
+    html2canvas(reportCard, { 
+        scale: 2, 
+        useCORS: true,
+        backgroundColor: '#ffffff'
+    }).then(canvas => {
+        if (format === 'png') { 
+            const link = document.createElement('a'); 
+            link.download = `${filename}.png`; 
+            link.href = canvas.toDataURL('image/png'); 
+            link.click(); 
+        }
+        else if (format === 'pdf') { 
+            const { jsPDF } = window.jspdf; 
+            const imgData = canvas.toDataURL('image/png'); 
+            const pdf = new jsPDF({ 
+                orientation: 'p', 
+                unit: 'mm', 
+                format: 'a4' 
+            }); 
+            const imgProps = pdf.getImageProperties(imgData); 
+            const pdfWidth = pdf.internal.pageSize.getWidth() - 20; 
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width; 
+            pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight); 
+            pdf.save(`${filename}.pdf`); 
+        }
     });
 }
 
@@ -243,13 +380,25 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (uploadSection) {
         uploadSection.onclick = () => imageInput.click();
-        uploadSection.addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--primary-color)'; });
-        uploadSection.addEventListener('dragleave', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-color)'; });
-        uploadSection.addEventListener('drop', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-color)'; handleFile(e.dataTransfer.files[0]); });
+        uploadSection.addEventListener('dragover', (e) => { 
+            e.preventDefault(); 
+            e.currentTarget.style.borderColor = 'var(--primary-color)'; 
+        });
+        uploadSection.addEventListener('dragleave', (e) => { 
+            e.preventDefault(); 
+            e.currentTarget.style.borderColor = 'var(--border-color)'; 
+        });
+        uploadSection.addEventListener('drop', (e) => { 
+            e.preventDefault(); 
+            e.currentTarget.style.borderColor = 'var(--border-color)'; 
+            handleFile(e.dataTransfer.files[0]); 
+        });
     }
+    
     if (analyzeBtn) analyzeBtn.addEventListener('click', analyzeImage);
     if (clearBtn) clearBtn.addEventListener('click', clearAll);
     if (imageInput) imageInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    
     if (agreeCheckbox) {
         agreeCheckbox.addEventListener('click', () => {
             // 모델이 로드되었고, 파일이 업로드 된 상태에서만 체크박스로 버튼 활성화

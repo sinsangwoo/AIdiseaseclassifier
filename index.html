@@ -13,9 +13,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     
-    <!-- 3. 차트 라이브러리 (본체 -> 플러그인 순서로 로드) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/chart.js-gauge/dist/chart.js-gauge.js"></script>
+    <!-- 3. 차트 라이브러리 (안정적인 버전) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
     <!-- 4. 기타 유틸리티 라이브러리 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -61,7 +60,7 @@
                     </div>
                     <div class="report-results">
                         <h4>진단 결과</h4>
-                        <div class="chart-container" style="position: relative; height:150px; width:100%;">
+                        <div class="chart-container" style="position: relative; height:200px; width:100%; margin: 20px 0;">
                             <canvas id="gaugeChart"></canvas>
                         </div>
                         <div id="resultsContent"></div>
