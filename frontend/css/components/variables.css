@@ -1,0 +1,241 @@
+/**
+ * variables.css
+ * 프로젝트 전역 CSS 변수 정의
+ * 색상, 타이포그래피, 간격, 애니메이션 등 디자인 토큰을 관리합니다.
+ */
+
+:root {
+  /* ============================================
+     색상 시스템 (Color System)
+     ============================================ */
+  
+  /* Primary Colors - 주요 브랜드 색상 */
+  --color-primary: #007bff;
+  --color-primary-hover: #0056b3;
+  --color-primary-light: #cce5ff;
+  --color-primary-dark: #004085;
+  
+  /* Secondary Colors - 보조 색상 */
+  --color-secondary: #6c757d;
+  --color-secondary-hover: #5a6268;
+  --color-secondary-light: #e9ecef;
+  
+  /* Semantic Colors - 의미론적 색상 */
+  --color-success: #28a745;
+  --color-success-light: #e9f7ef;
+  --color-success-dark: #1e7e34;
+  
+  --color-danger: #e74c3c;
+  --color-danger-light: #fdedec;
+  --color-danger-dark: #c0392b;
+  
+  --color-warning: #ffc107;
+  --color-warning-light: #fffbe6;
+  --color-warning-dark: #856404;
+  
+  --color-info: #17a2b8;
+  --color-info-light: #e6f7ff;
+  --color-info-dark: #0c5460;
+  
+  /* Neutral Colors - 중립 색상 */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-gray-100: #f8f9fa;
+  --color-gray-200: #e9ecef;
+  --color-gray-300: #dee2e6;
+  --color-gray-400: #ced4da;
+  --color-gray-500: #adb5bd;
+  --color-gray-600: #6c757d;
+  --color-gray-700: #495057;
+  --color-gray-800: #343a40;
+  --color-gray-900: #212529;
+  
+  /* Text Colors - 텍스트 색상 */
+  --color-text-primary: #2c3e50;
+  --color-text-secondary: #8492a6;
+  --color-text-muted: #6c757d;
+  --color-text-disabled: #c0c0c0;
+  
+  /* Background Colors - 배경 색상 */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f8f9fa;
+  --color-bg-disabled: #e9ecef;
+  
+  /* Gradient Colors - 그라디언트 */
+  --gradient-primary: linear-gradient(120deg, #e0c3fc, #8ec5fc);
+  --gradient-success: linear-gradient(120deg, #d4fc79, #96e6a1);
+  --gradient-danger: linear-gradient(120deg, #ff9a9e, #fecfef);
+  
+  /* Border Colors - 테두리 색상 */
+  --color-border-light: #dee2e6;
+  --color-border-medium: #ced4da;
+  --color-border-dark: #adb5bd;
+  
+  
+  /* ============================================
+     타이포그래피 (Typography)
+     ============================================ */
+  
+  /* Font Families */
+  --font-family-primary: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 
+                         'Segoe UI', sans-serif;
+  --font-family-monospace: 'Courier New', monospace;
+  
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;      /* 12px */
+  --font-size-sm: 0.875rem;     /* 14px */
+  --font-size-base: 1rem;       /* 16px */
+  --font-size-md: 1.125rem;     /* 18px */
+  --font-size-lg: 1.25rem;      /* 20px */
+  --font-size-xl: 1.5rem;       /* 24px */
+  --font-size-2xl: 2rem;        /* 32px */
+  --font-size-3xl: 2.5rem;      /* 40px */
+  
+  /* Font Weights */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* Line Heights */
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.6;
+  --line-height-loose: 2;
+  
+  
+  /* ============================================
+     간격 시스템 (Spacing System)
+     ============================================ */
+  
+  --spacing-xs: 0.25rem;    /* 4px */
+  --spacing-sm: 0.5rem;     /* 8px */
+  --spacing-md: 1rem;       /* 16px */
+  --spacing-lg: 1.5rem;     /* 24px */
+  --spacing-xl: 2rem;       /* 32px */
+  --spacing-2xl: 3rem;      /* 48px */
+  --spacing-3xl: 4rem;      /* 64px */
+  
+  
+  /* ============================================
+     레이아웃 (Layout)
+     ============================================ */
+  
+  /* Container */
+  --container-max-width: 600px;
+  --container-padding: 40px;
+  --container-padding-mobile: 25px;
+  
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 50px;
+  --radius-circle: 50%;
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.15);
+  --shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.15);
+  
+  /* Z-index Layers */
+  --z-index-dropdown: 100;
+  --z-index-modal: 200;
+  --z-index-tooltip: 300;
+  --z-index-notification: 400;
+  
+  
+  /* ============================================
+     애니메이션 (Animation)
+     ============================================ */
+  
+  /* Transition Durations */
+  --transition-fast: 0.15s;
+  --transition-base: 0.3s;
+  --transition-slow: 0.5s;
+  
+  /* Transition Easings */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  
+  /* ============================================
+     컴포넌트별 변수 (Component Variables)
+     ============================================ */
+  
+  /* Button */
+  --btn-padding-y: 12px;
+  --btn-padding-x: 25px;
+  --btn-border-radius: var(--radius-full);
+  --btn-font-size: var(--font-size-base);
+  --btn-font-weight: var(--font-weight-medium);
+  --btn-transition: all var(--transition-base) var(--ease-in-out);
+  --btn-transform-hover: translateY(-3px);
+  --btn-transform-active: translateY(-1px);
+  
+  /* Card */
+  --card-padding: 25px;
+  --card-border-radius: var(--radius-lg);
+  --card-bg: var(--color-bg-secondary);
+  --card-border: 1px solid var(--color-border-light);
+  --card-shadow: var(--shadow-md);
+  
+  /* Input */
+  --input-padding-y: 10px;
+  --input-padding-x: 15px;
+  --input-border-radius: var(--radius-md);
+  --input-border: 1px solid var(--color-border-medium);
+  --input-focus-border: var(--color-primary);
+  
+  /* Progress Bar */
+  --progress-height: 10px;
+  --progress-border-radius: var(--radius-sm);
+  --progress-bg: var(--color-gray-200);
+  --progress-fill-bg: var(--color-primary);
+  --progress-transition: width var(--transition-slow) var(--ease-in-out);
+  
+  /* Upload Section */
+  --upload-border-width: 3px;
+  --upload-border-style: dashed;
+  --upload-border-color: var(--color-border-light);
+  --upload-border-radius: var(--radius-lg);
+  --upload-padding: 30px;
+  --upload-bg: var(--color-bg-secondary);
+  --upload-hover-border: var(--color-primary);
+  --upload-hover-bg: #fdfdff;
+  
+  /* Notice Box */
+  --notice-padding: 15px;
+  --notice-border-width: 5px;
+  --notice-border-radius: var(--radius-sm);
+  --notice-gap: 15px;
+  
+  
+  /* ============================================
+     반응형 브레이크포인트 (Responsive Breakpoints)
+     ============================================ */
+  
+  --breakpoint-xs: 0;
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+  --breakpoint-2xl: 1400px;
+}
+
+/* ============================================
+   다크 모드 지원 (Dark Mode Support)
+   향후 다크 모드 구현 시 사용할 변수
+   ============================================ */
+
+/*@media (prefers-color-scheme: dark) {
+  :root {
+    /* 다크 모드 색상은 필요 시 추가 */
+    /* --color-bg-primary: #1a1a1a; */
+    /* --color-text-primary: #ffffff; */
+  
