@@ -3,91 +3,290 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 폐렴 진단 시스템</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
-    <script src="https://unpkg.com/chart.js-gauge/dist/chart.js-gauge.js"></script>
+    <meta name="description" content="AI 기반 흉부 X-ray 폐렴 진단 시스템 - 의료 영상을 업로드하여 실시간 분석 결과를 확인하세요">
+    <meta name="keywords" content="AI, 폐렴 진단, 의료 영상, X-ray, 딥러닝, 헬스케어">
+    <meta name="author" content="신상우 (30814)">
+    <meta name="theme-color" content="#007bff">
+    
+    <title>Smart Medical AI | 폐렴 진단 솔루션</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫁</text></svg>">
+    
+    <!-- CSS Modules -->
+    <link rel="stylesheet" href="./css/components/variables.css">
+    <link rel="stylesheet" href="./css/components/layout.css">
+    <link rel="stylesheet" href="./css/components/typography.css">
+    <link rel="stylesheet" href="./css/components/button.css">
+    <link rel="stylesheet" href="./css/components/card.css">
+    <link rel="stylesheet" href="./css/components/upload.css">
+    <link rel="stylesheet" href="./css/components/progress.css">
+    <link rel="stylesheet" href="./css/components/notice.css">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0" defer></script>
 </head>
+
 <body>
-    <div class="container">
-        <h1><i class="fa-solid fa-lungs-virus"></i> AI 폐렴 진단 시스템</h1>
-        <p class="subtitle">흉부 X-ray 이미지를 업로드하여 AI 기반 진단 리포트를 받아보세요</p>
-        <p class="subtitle">제작(30814 신상우)</p>
-
-        <!-- 1. 파일 업로드 영역 -->
-        <div class="upload-section" id="uploadSection" onclick="document.getElementById('imageInput').click()">
-            <div class="upload-icon"><i class="fa-solid fa-upload"></i></div>
-            <div class="upload-text">클릭하여 X-ray 이미지 업로드</div>
-            <div class="upload-subtext">또는 이미지를 여기로 드래그하세요 (JPG, PNG)</div>
-        </div>
-        <input type="file" id="imageInput" accept="image/*" hidden>
-
-        <!-- 2. 업로드된 이미지 미리보기 전용 영역 -->
-        <div class="preview-container" id="previewContainer">
-            <h4>업로드된 이미지</h4>
-            <img id="imagePreview" alt="업로드된 이미지">
-        </div>
-
-        <!-- 3. 분석 진행 상태 (프로그레스 바) -->
-        <div class="progress-container" id="progressContainer">
-            <p>AI 서버가 이미지를 분석하고 있습니다... (약 5-10초 소요)</p>
-            <div class="progress-bar">
-                <div class="progress-bar-fill" id="progressBarFill"></div>
-            </div>
-        </div>
-
-        <!-- 4. 진단 리포트 영역 -->
-        <div class="report-container" id="reportContainer">
-            <div class="report-card" id="reportCard">
-                <h3 class="report-title">📊 AI 진단 리포트</h3>
-                <p class="report-timestamp" id="reportTimestamp"></p>
-                <div class="report-content">
-                    <div class="report-image">
-                        <h4>분석 이미지</h4>
-                        <div id="reportImageContainer"></div>
-                    </div>
-                    <div class="report-results">
-                        <h4>진단 결과</h4>
-                        <div class="chart-container" style="position: relative; height:150px; width:100%;">
-                            <canvas id="gaugeChart"></canvas>
-                        </div>
-                        <div id="resultsContent"></div>
-                        <div id="resultComment" class="notice-box" style="margin-top: 20px;"></div>
-                    </div>
+    <!-- Background Elements (Layout.css의 body::before/after 활용) -->
+    
+    <!-- Main Application Container -->
+    <main class="container" role="main">
+        
+        <!-- 1. Header Section: 브랜드 아이덴티티 강조 -->
+        <header class="section mb-xl">
+            <div class="text-center">
+                <div class="mb-sm">
+                    <span class="text-small text-uppercase text-primary text-bold" style="letter-spacing: 2px;">Medical AI Solution</span>
+                </div>
+                <h1 class="heading-1 mb-sm">
+                    <i class="fa-solid fa-lungs-virus text-primary" aria-hidden="true"></i>
+                    <span>AI 폐렴 진단 시스템</span>
+                </h1>
+                <p class="subtitle text-large">
+                    딥러닝 알고리즘을 활용한 흉부 X-ray 실시간 정밀 분석
+                </p>
+                <div class="flex-center gap-sm mt-md">
+                    <span class="text-tiny text-muted bg-gray-100 p-sm" style="border-radius: 20px; padding: 4px 12px;">
+                        <i class="fa-solid fa-code-branch"></i> v2.0.1
+                    </span>
+                    <span class="text-tiny text-muted bg-gray-100 p-sm" style="border-radius: 20px; padding: 4px 12px;">
+                        <i class="fa-solid fa-user-doctor"></i> Dev: 신상우
+                    </span>
                 </div>
             </div>
-            <div class="report-actions">
-                <button id="savePngBtn"><i class="fa-solid fa-file-image"></i> PNG로 저장</button>
-                <button id="savePdfBtn"><i class="fa-solid fa-file-pdf"></i> PDF로 저장</button>
+        </header>
+
+        <div class="section-divider" aria-hidden="true"></div>
+
+        <!-- 2. Workflow Section: 업로드 -> 분석 -> 결과 -->
+        <div class="grid grid--1-col gap-xl">
+            
+            <!-- Step 1: Image Upload -->
+            <section aria-labelledby="upload-heading">
+                <div class="flex-between mb-md">
+                    <h3 id="upload-heading" class="heading-4 mb-0">
+                        <span class="text-primary mr-sm">01.</span>영상 업로드
+                    </h3>
+                    <span class="text-tiny text-muted"><i class="fa-solid fa-circle-info"></i> JPG, PNG 지원</span>
+                </div>
+
+                <div class="upload-section upload" 
+                     id="uploadSection" 
+                     role="button"
+                     tabindex="0"
+                     aria-label="X-ray 이미지 업로드 영역"
+                     onclick="document.getElementById('imageInput').click()"
+                     onkeypress="if(event.key==='Enter') document.getElementById('imageInput').click()">
+                    
+                    <div class="upload__icon">
+                        <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+                    </div>
+                    <div class="upload__text text-large">
+                        X-ray 이미지를 이곳에 드래그하세요
+                    </div>
+                    <div class="upload__subtext mb-md">
+                        또는 클릭하여 파일을 선택하십시오
+                    </div>
+                    <div class="upload__formats">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span>의료 데이터 보안 프로토콜 적용됨</span>
+                    </div>
+                </div>
+                
+                <input type="file" id="imageInput" accept="image/jpeg,image/png,image/jpg" hidden>
+            </section>
+
+            <!-- Step 2: Preview & Analysis (Conditions apply via JS) -->
+            <div id="previewContainer" class="preview-container preview hidden">
+                <section aria-labelledby="preview-heading" class="card card--bordered p-lg">
+                    <h3 id="preview-heading" class="heading-4 text-center mb-lg">
+                        <span class="text-primary mr-sm">02.</span>영상 확인 및 분석
+                    </h3>
+                    
+                    <div class="grid grid--2-cols gap-lg" style="align-items: center;">
+                        <!-- Image Preview -->
+                        <div class="card__image-container">
+                            <img id="imagePreview" class="preview__image" alt="업로드된 X-ray 미리보기">
+                            <div class="card__image-label">
+                                <i class="fa-solid fa-microscope"></i> Analysis Ready
+                            </div>
+                        </div>
+
+                        <!-- Analysis Controls -->
+                        <div class="flex-column gap-md">
+                            <div class="notice notice--info notice--small mb-md">
+                                <i class="notice__icon fa-solid fa-circle-info"></i>
+                                <div class="notice__content">
+                                    <strong>분석 준비 완료</strong><br>
+                                    이미지가 정상적으로 로드되었습니다. 아래 버튼을 눌러 AI 진단을 시작하세요.
+                                </div>
+                            </div>
+
+                            <!-- Agreement -->
+                            <div class="agreement-box agreement agreement--visible" id="agreementBox">
+                                <input type="checkbox" id="agreeCheckbox" class="agreement__checkbox">
+                                <label for="agreeCheckbox" class="agreement__label text-small">
+                                    본 결과는 보조적 수단이며, 전문의의 진단을 대체할 수 없음에 동의합니다.
+                                </label>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="btn-group btn-group--start mt-md">
+                                <button id="analyzeBtn" class="btn btn--primary btn--large btn--block" type="button" disabled>
+                                    <i class="btn__icon fa-solid fa-brain"></i>
+                                    <span>AI 정밀 분석 시작</span>
+                                </button>
+                                <button id="clearBtn" class="btn btn--secondary btn--outline btn--block" type="button">
+                                    <i class="btn__icon fa-solid fa-rotate-left"></i>
+                                    <span>다시 선택</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
+
+            <!-- Step 3: Progress Indicator -->
+            <section id="progressContainer" class="progress-container hidden" aria-live="polite">
+                <div class="card card--glass p-xl text-center">
+                    <div class="spinner spinner--pulse spinner--large mb-lg"></div>
+                    <h3 class="heading-3 mb-sm">AI 분석 진행 중...</h3>
+                    <p class="text-muted mb-lg">딥러닝 모델이 흉부 영상을 분석하고 있습니다.</p>
+                    
+                    <div class="progress-bar progress--gradient progress--ai-analyzing">
+                        <div class="progress-bar-fill" id="progressBarFill"></div>
+                    </div>
+                    <div class="flex-between mt-sm">
+                        <span class="text-tiny text-muted">Data Preprocessing</span>
+                        <span class="text-tiny text-muted">Feature Extraction</span>
+                        <span class="text-tiny text-muted">Classification</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 4: Diagnostic Report -->
+            <section id="reportContainer" class="report-container hidden" aria-labelledby="report-heading">
+                <div class="flex-between mb-md align-items-end">
+                    <h3 id="report-heading" class="heading-4 mb-0">
+                        <span class="text-primary mr-sm">03.</span>진단 리포트
+                    </h3>
+                    <span class="text-tiny text-muted" id="reportTimestamp"></span>
+                </div>
+
+                <article class="card card--report card--elevated" id="reportCard">
+                    <!-- Report Header -->
+                    <header class="card__header card__header--accent flex-between">
+                        <div class="flex-center gap-sm">
+                            <i class="fa-solid fa-file-medical text-primary text-large"></i>
+                            <span class="text-bold text-large">AI Diagnosis Result</span>
+                        </div>
+                        <div class="text-tiny text-muted bg-white p-sm" style="border-radius: 4px; border: 1px solid var(--color-border-light);">
+                            ID: <span id="reportId">REQ-2024-AI</span>
+                        </div>
+                    </header>
+                    
+                    <!-- Report Body -->
+                    <div class="card__body card__body--divided">
+                        <!-- Left: Analyzed Image -->
+                        <section class="card__section" style="flex: 1;">
+                            <h4 class="card__section-title">분석된 영상</h4>
+                            <div id="reportImageContainer" class="card__image-container">
+                                <!-- Image injected by JS -->
+                            </div>
+                            <p class="text-tiny text-center text-muted mt-sm">
+                                * AI가 주요 특징을 추출하여 분석한 원본 이미지입니다.
+                            </p>
+                        </section>
+                        
+                        <!-- Right: Analysis Data -->
+                        <section class="card__section" style="flex: 1.2;">
+                            <h4 class="card__section-title">상세 분석 결과</h4>
+                            
+                            <!-- Gauge Chart Area -->
+                            <div class="chart-container mb-lg" style="position: relative; height:180px; width:100%; display: flex; justify-content: center;">
+                                <canvas id="gaugeChart"></canvas>
+                            </div>
+                            
+                            <!-- Detailed Metrics -->
+                            <div id="resultsContent" class="grid gap-sm mb-lg">
+                                <!-- Results injected by JS -->
+                            </div>
+                            
+                            <!-- AI Comment Box -->
+                            <div id="resultComment" class="notice notice--diagnosis notice--info" role="alert">
+                                <!-- Comment injected by JS -->
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Report Footer / Actions -->
+                    <footer class="card__footer bg-gray-100 flex-between">
+                        <div class="text-tiny text-muted flex-center gap-sm">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            개인정보 보호를 위해 분석 후 데이터는 즉시 파기됩니다.
+                        </div>
+                        <div class="btn-group btn-group--end gap-sm m-0">
+                            <button id="savePngBtn" class="btn btn--success btn--small btn--outline">
+                                <i class="fa-solid fa-file-image"></i> PNG 저장
+                            </button>
+                            <button id="savePdfBtn" class="btn btn--success btn--small">
+                                <i class="fa-solid fa-file-pdf"></i> PDF 리포트
+                            </button>
+                        </div>
+                    </footer>
+                </article>
+            </section>
+
         </div>
 
-        <!-- 5. 동의 체크박스 영역 -->
-        <div class="agreement-box" id="agreementBox">
-            <input type="checkbox" id="agreeCheckbox">
-            <label for="agreeCheckbox">본인은 이 AI 분석 결과가 참고용이며, 실제 의료 진단을 대체할 수 없음을 이해합니다.</label>
-        </div>
+        <div class="section-divider" aria-hidden="true"></div>
 
-        <!-- 6. 메인 버튼 영역 -->
-        <div class="main-buttons">
-            <button id="analyzeBtn" disabled><i class="fa-solid fa-brain"></i> AI 분석 시작</button>
-            <button id="clearBtn"><i class="fa-solid fa-trash-can"></i> 초기화</button>
-        </div>
-        
-        <!-- 7. 주의사항 및 개인정보보호 문구 -->
-        <div class="notice-box warning">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            <div><strong>주의사항:</strong> 이 시스템은 교육 및 연구 목적으로 제작되었습니다. 실제 의료 진단을 대체할 수 없으며, 정확한 진단을 위해서는 반드시 의료진과 상담하시기 바랍니다.</div>
-        </div>
-        <div class="notice-box privacy">
-            <i class="fa-solid fa-shield-halved"></i>
-            <div><strong>개인정보보호:</strong> 업로드된 이미지는 분석을 위해 일시적으로 서버에 전송되나, 분석 후 즉시 폐기되며 별도로 저장되지 않습니다.</div>
-        </div>
-    </div>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+        <!-- Footer Section -->
+        <footer class="section mt-xl">
+            <!-- Medical Disclaimer -->
+            <div class="notice-box notice--warning notice--medical-warning mb-lg">
+                <i class="notice__icon fa-solid fa-triangle-exclamation"></i>
+                <div class="notice__content">
+                    <strong class="notice__title">의료적 주의사항</strong>
+                    <p class="mb-0">이 시스템은 <strong>교육 및 연구 목적</strong>으로 개발되었습니다. 제공되는 분석 결과는 참고용이며, 실제 환자의 진단 및 치료 결정은 반드시 전문 의료진과의 상담을 통해 이루어져야 합니다.</p>
+                </div>
+            </div>
+
+            <div class="text-center text-muted">
+                <p class="text-small mb-xs">
+                    <i class="fa-solid fa-code"></i> Developed by <strong>신상우 (30814)</strong>
+                </p>
+                <p class="text-tiny opacity-75">
+                    © 2024 Smart Medical Diagnosis System. All rights reserved.
+                </p>
+            </div>
+        </footer>
+
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/script.js" defer></script>
+    
+    <!-- Screen Reader Utility -->
+    <style>
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+    </style>
 </body>
 </html>

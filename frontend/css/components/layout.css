@@ -1,0 +1,816 @@
+/**
+ * layout.css
+ * 전체 레이아웃 및 페이지 구조
+/* ============================================
+   전역 리셋 (Global Reset)
+   ============================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 스크롤바 스타일링 (현대적인 느낌) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    var(--color-primary) 0%,
+    var(--color-primary-hover) 100%
+  );
+  border-radius: 10px;
+  transition: background var(--transition-fast);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    var(--color-primary-hover) 0%,
+    var(--color-primary-dark) 100%
+  );
+}
+
+/* Firefox 스크롤바 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) rgba(0, 0, 0, 0.05);
+}
+
+
+/* ============================================
+   HTML 기본 설정
+   ============================================ */
+
+html {
+  /* 스크롤 동작 */
+  scroll-behavior: smooth;
+  
+  /* 텍스트 크기 조정 방지 */
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  
+  /* 기본 폰트 크기 */
+  font-size: 16px;
+  
+  /* 높이 */
+  height: 100%;
+}
+
+
+/* ============================================
+   Body - 프리미엄 배경과 레이아웃
+   ============================================ */
+
+body {
+  /* 레이아웃 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  
+  /* 간격 */
+  padding: var(--spacing-xl);
+  
+  /* 배경 - 감각적인 다층 그라디언트 */
+  background: 
+    /* 미묘한 노이즈 텍스처 */
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.03"/></svg>'),
+    /* 메인 그라디언트 */
+    linear-gradient(
+      135deg,
+      #667eea 0%,
+      #764ba2 25%,
+      #f093fb 50%,
+      #4facfe 75%,
+      #00f2fe 100%
+    );
+  background-size: 100px 100px, 400% 400%;
+  background-position: 0 0, 0% 50%;
+  
+  /* 애니메이션 - 배경이 살아있는 느낌 */
+  animation: gradient-shift 20s ease infinite;
+  
+  /* 색상 */
+  color: var(--color-text-primary);
+  
+  /* 오버플로우 */
+  overflow-x: hidden;
+  overflow-y: auto;
+  
+  /* 안티에일리어싱 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* 렌더링 최적화 */
+  text-rendering: optimizeLegibility;
+  
+  /* 상대 위치 (가상 요소용) */
+  position: relative;
+}
+
+/* 배경 그라디언트 애니메이션 */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0 0, 0% 50%;
+  }
+  25% {
+    background-position: 0 0, 50% 50%;
+  }
+  50% {
+    background-position: 0 0, 100% 50%;
+  }
+  75% {
+    background-position: 0 0, 50% 100%;
+  }
+}
+
+/* 배경 오버레이 (깊이감) */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  
+  /* 방사형 그라디언트 오버레이 */
+  background: radial-gradient(
+    circle at 30% 20%,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 50%
+  ),
+  radial-gradient(
+    circle at 70% 80%,
+    rgba(0, 123, 255, 0.15) 0%,
+    transparent 50%
+  );
+  
+  /* 포인터 이벤트 무시 */
+  pointer-events: none;
+  
+  /* 레이어 순서 */
+  z-index: 0;
+  
+  /* 애니메이션 */
+  animation: overlay-pulse 10s ease-in-out infinite;
+}
+
+@keyframes overlay-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* 떠다니는 요소들 (백그라운드 장식) */
+body::after {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  
+  background-image: 
+    radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px, 100px 100px;
+  background-position: 0 0, 25px 25px;
+  
+  pointer-events: none;
+  z-index: 0;
+  
+  animation: stars-drift 120s linear infinite;
+}
+
+@keyframes stars-drift {
+  from {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  to {
+    transform: translate(-50px, -50px) rotate(360deg);
+  }
+}
+
+
+/* ============================================
+   메인 컨테이너 - Glassmorphism
+   ============================================ */
+
+.container {
+  /* 레이아웃 */
+  position: relative;
+  z-index: 1;
+  
+  /* 크기 */
+  width: 100%;
+  max-width: var(--container-max-width);
+  
+  /* 간격 */
+  padding: var(--container-padding);
+  
+  /* 배경 - 유리 효과 */
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  
+  /* 테두리 */
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-xl);
+  
+  /* 그림자 - 다층 깊이감 */
+  box-shadow: 
+    /* 주 그림자 */
+    0 20px 60px rgba(0, 123, 255, 0.12),
+    /* 보조 그림자 */
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    /* 하이라이트 */
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    /* 깊이 */
+    0 0 1px rgba(0, 0, 0, 0.04);
+  
+  /* 텍스트 정렬 */
+  text-align: center;
+  
+  /* 애니메이션 - 부드러운 등장 */
+  animation: container-entrance 1s var(--ease-out);
+  
+  /* 오버플로우 */
+  overflow: hidden;
+}
+
+@keyframes container-entrance {
+  0% {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+    filter: blur(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* 컨테이너 상단 하이라이트 (3D 효과) */
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-primary) 50%,
+    transparent 100%
+  );
+  
+  opacity: 0.6;
+  
+  animation: top-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes top-shimmer {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scaleX(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+/* 컨테이너 빛 반사 효과 */
+.container::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.3) 0%,
+    transparent 70%
+  );
+  
+  pointer-events: none;
+  opacity: 0;
+  
+  animation: light-sweep 8s ease-in-out infinite;
+}
+
+@keyframes light-sweep {
+  0%, 100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translate(50%, 50%) rotate(180deg);
+  }
+}
+
+
+/* ============================================
+   섹션 간격 시스템
+   ============================================ */
+
+.section {
+  margin-bottom: var(--spacing-2xl);
+  
+  animation: section-fade-in 0.6s var(--ease-out);
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+@keyframes section-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 섹션 구분선 */
+.section-divider {
+  height: 1px;
+  margin: var(--spacing-2xl) 0;
+  
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-border-light) 20%,
+    var(--color-border-light) 80%,
+    transparent 100%
+  );
+  
+  opacity: 0.5;
+}
+
+
+/* ============================================
+   그리드 시스템 (유연한 레이아웃)
+   ============================================ */
+
+.grid {
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+.grid--2-cols {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid--3-cols {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid--auto-fit {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* 그리드 아이템 애니메이션 */
+.grid > * {
+  animation: grid-item-entrance 0.5s var(--ease-out);
+  animation-fill-mode: both;
+}
+
+.grid > *:nth-child(1) { animation-delay: 0.1s; }
+.grid > *:nth-child(2) { animation-delay: 0.2s; }
+.grid > *:nth-child(3) { animation-delay: 0.3s; }
+.grid > *:nth-child(4) { animation-delay: 0.4s; }
+
+@keyframes grid-item-entrance {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+
+/* ============================================
+   Flexbox 유틸리티
+   ============================================ */
+
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.gap-sm { gap: var(--spacing-sm); }
+.gap-md { gap: var(--spacing-md); }
+.gap-lg { gap: var(--spacing-lg); }
+.gap-xl { gap: var(--spacing-xl); }
+
+
+/* ============================================
+   여백 유틸리티 (Spacing Utilities)
+   ============================================ */
+
+/* 마진 */
+.mt-0 { margin-top: 0; }
+.mt-sm { margin-top: var(--spacing-sm); }
+.mt-md { margin-top: var(--spacing-md); }
+.mt-lg { margin-top: var(--spacing-lg); }
+.mt-xl { margin-top: var(--spacing-xl); }
+
+.mb-0 { margin-bottom: 0; }
+.mb-sm { margin-bottom: var(--spacing-sm); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+.mb-xl { margin-bottom: var(--spacing-xl); }
+
+/* 패딩 */
+.p-0 { padding: 0; }
+.p-sm { padding: var(--spacing-sm); }
+.p-md { padding: var(--spacing-md); }
+.p-lg { padding: var(--spacing-lg); }
+.p-xl { padding: var(--spacing-xl); }
+
+
+/* ============================================
+   가시성 유틸리티
+   ============================================ */
+
+.hidden {
+  display: none !important;
+}
+
+.invisible {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.fade-in {
+  animation: fade-in 0.5s var(--ease-out);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-out {
+  animation: fade-out 0.5s var(--ease-out);
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.slide-up {
+  animation: slide-up 0.5s var(--ease-out);
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* ============================================
+   반응형 브레이크포인트
+   ============================================ */
+
+/* 태블릿 (768px 이하) */
+@media (max-width: 768px) {
+  body {
+    padding: var(--spacing-md);
+  }
+  
+  .container {
+    padding: var(--container-padding-mobile);
+    border-radius: var(--radius-lg);
+  }
+  
+  .grid--2-cols,
+  .grid--3-cols {
+    grid-template-columns: 1fr;
+  }
+  
+  .section {
+    margin-bottom: var(--spacing-xl);
+  }
+}
+
+/* 모바일 (480px 이하) */
+@media (max-width: 480px) {
+  body {
+    padding: var(--spacing-sm);
+    
+    /* 배경 애니메이션 단순화 (성능) */
+    animation: gradient-shift-simple 15s ease infinite;
+  }
+  
+  @keyframes gradient-shift-simple {
+    0%, 100% { background-position: 0 0, 0% 50%; }
+    50% { background-position: 0 0, 100% 50%; }
+  }
+  
+  .container {
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    
+    /* 모바일에서 애니메이션 간소화 */
+    animation: container-entrance-mobile 0.8s var(--ease-out);
+  }
+  
+  @keyframes container-entrance-mobile {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* 모바일에서 장식 요소 제거 (성능) */
+  body::after {
+    display: none;
+  }
+}
+
+/* 작은 모바일 (360px 이하) */
+@media (max-width: 360px) {
+  html {
+    font-size: 14px;
+  }
+  
+  .container {
+    padding: var(--spacing-md);
+  }
+}
+
+
+/* ============================================
+   와이드 스크린 (1200px 이상)
+   ============================================ */
+
+@media (min-width: 1200px) {
+  .container {
+    max-width: 800px;
+    padding: calc(var(--container-padding) * 1.2);
+  }
+  
+  /* 배경 애니메이션 더 화려하게 */
+  body {
+    background-size: 100px 100px, 500% 500%;
+  }
+}
+
+
+/* ============================================
+   다크 모드 대응 (준비)
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  /* 향후 다크 모드 구현 시 활성화 */
+  /*
+  body {
+    background: 
+      linear-gradient(
+        135deg,
+        #1a1a2e 0%,
+        #16213e 50%,
+        #0f3460 100%
+      );
+  }
+  
+  .container {
+    background: rgba(30, 30, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  */
+}
+
+
+/* ============================================
+   고대비 모드
+   ============================================ */
+
+@media (prefers-contrast: high) {
+  body {
+    background: #ffffff;
+  }
+  
+  .container {
+    background: #ffffff;
+    border: 2px solid #000000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+}
+
+
+/* ============================================
+   애니메이션 감소 모드
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  html {
+    scroll-behavior: auto;
+  }
+  
+  body,
+  body::before,
+  body::after {
+    animation: none;
+  }
+  
+  .container,
+  .container::before,
+  .container::after {
+    animation: none;
+  }
+}
+
+
+/* ============================================
+   프린트 스타일
+   ============================================ */
+
+@media print {
+  body {
+    background: #ffffff;
+    padding: 0;
+  }
+  
+  body::before,
+  body::after {
+    display: none;
+  }
+  
+  .container {
+    max-width: 100%;
+    box-shadow: none;
+    border: 1px solid #000000;
+    background: #ffffff;
+    backdrop-filter: none;
+    page-break-inside: avoid;
+  }
+  
+  .container::before,
+  .container::after {
+    display: none;
+  }
+  
+  .hidden-print {
+    display: none !important;
+  }
+}
+
+
+/* ============================================
+   로딩 오버레이 (전체 화면)
+   ============================================ */
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  
+  display: none;
+  justify-content: center;
+  align-items: center;
+  
+  z-index: 9999;
+  
+  animation: overlay-fade-in 0.3s var(--ease-out);
+}
+
+.loading-overlay.active {
+  display: flex;
+}
+
+@keyframes overlay-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+
+/* ============================================
+   스크롤 인디케이터 (선택적)
+   ============================================ */
+
+.scroll-indicator {
+  position: fixed;
+  bottom: var(--spacing-xl);
+  left: 50%;
+  transform: translateX(-50%);
+  
+  width: 24px;
+  height: 40px;
+  
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
+  
+  z-index: 10;
+  
+  animation: scroll-bounce 2s ease-in-out infinite;
+}
+
+.scroll-indicator::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  
+  width: 4px;
+  height: 8px;
+  
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
+  
+  animation: scroll-dot 2s ease-in-out infinite;
+}
+
+@keyframes scroll-bounce {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(8px);
+  }
+}
+
+@keyframes scroll-dot {
+  0%, 100% {
+    opacity: 0;
+    top: 8px;
+  }
+  50% {
+    opacity: 1;
+    top: 20px;
+  }
+}

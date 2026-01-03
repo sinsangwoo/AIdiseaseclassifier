@@ -1,0 +1,583 @@
+/**
+ * typography.css
+ * 타이포그래피 시스템
+ * 
+ * 의료 AI 웹사이트의 신뢰감과 전문성을 전달하는 핵심 요소
+
+/* ============================================
+   기본 타이포그래피 설정 (Base Typography)
+   ============================================ */
+
+/* 폰트 임포트 - 한글 최적화 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+
+/* 전역 텍스트 설정 */
+body {
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  
+  /* 고품질 텍스트 렌더링 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  
+  /* 단어 분절 개선 */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* 텍스트 선택 색상 - 브랜드 컬러 */
+::selection {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+::-moz-selection {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+
+/* ============================================
+   제목 스타일 (Headings)
+   ============================================ */
+
+/* 메인 타이틀 - H1 */
+h1,
+.heading-1 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text-primary);
+  
+  margin: 0 0 var(--spacing-sm) 0;
+  
+  /* 아이콘과 함께 사용 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  
+  /* 텍스트 그라디언트 효과 (선택적) */
+  background: linear-gradient(
+    135deg,
+    var(--color-text-primary) 0%,
+    var(--color-primary) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  
+  /* 애니메이션 */
+  animation: title-entrance 0.8s var(--ease-out);
+}
+
+@keyframes title-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 타이틀 아이콘 */
+h1 i,
+.heading-1__icon {
+  font-size: 0.9em;
+  
+  /* 그라디언트 무시하고 단색 유지 */
+  -webkit-text-fill-color: var(--color-primary);
+  
+  /* 미묘한 펄스 애니메이션 */
+  animation: icon-pulse 3s ease-in-out infinite;
+}
+
+@keyframes icon-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.05);
+  }
+}
+
+/* 서브 타이틀 - H2 */
+h2,
+.heading-2 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text-primary);
+  
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+/* 섹션 타이틀 - H3 */
+h3,
+.heading-3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text-primary);
+  
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+/* 서브섹션 타이틀 - H4 */
+h4,
+.heading-4 {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  
+  margin: 0 0 var(--spacing-md) 0;
+  padding-bottom: var(--spacing-sm);
+  
+  /* 세련된 하단 보더 */
+  border-bottom: 2px solid transparent;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary) 0%,
+    var(--color-primary-light) 60%,
+    transparent 100%
+  );
+  background-position: 0 100%;
+  background-size: 100% 2px;
+  background-repeat: no-repeat;
+  
+  /* 애니메이션 */
+  transition: all var(--transition-base) var(--ease-out);
+}
+
+h4:hover,
+.heading-4:hover {
+  background-size: 100% 3px;
+}
+
+/* 소제목 - H5 */
+h5,
+.heading-5 {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+
+/* ============================================
+   부제목 & 설명 텍스트 (Subtitles & Descriptions)
+   ============================================ */
+
+.subtitle,
+.text-subtitle {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+  
+  margin: 0 0 var(--spacing-lg) 0;
+  
+  /* 애니메이션 */
+  animation: subtitle-entrance 1s var(--ease-out) 0.2s both;
+}
+
+@keyframes subtitle-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 작은 부제목 */
+.subtitle--small {
+  font-size: var(--font-size-base);
+  margin-bottom: var(--spacing-md);
+}
+
+/* 강조된 부제목 */
+.subtitle--emphasized {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+}
+
+
+/* ============================================
+   본문 텍스트 (Body Text)
+   ============================================ */
+
+p,
+.text-body {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+/* 큰 본문 텍스트 */
+.text-large {
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-normal);
+}
+
+/* 작은 텍스트 */
+.text-small {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+/* 매우 작은 텍스트 (법적 고지, 타임스탬프 등) */
+.text-tiny {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+}
+
+
+/* ============================================
+   텍스트 스타일 유틸리티 (Text Style Utilities)
+   ============================================ */
+
+/* 폰트 굵기 */
+.text-light { font-weight: var(--font-weight-light); }
+.text-normal { font-weight: var(--font-weight-normal); }
+.text-medium { font-weight: var(--font-weight-medium); }
+.text-semibold { font-weight: var(--font-weight-semibold); }
+.text-bold { font-weight: var(--font-weight-bold); }
+
+/* 텍스트 색상 */
+.text-primary { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-muted { color: var(--color-text-muted); }
+.text-disabled { color: var(--color-text-disabled); }
+
+.text-success { color: var(--color-success); }
+.text-danger { color: var(--color-danger); }
+.text-warning { color: var(--color-warning-dark); }
+.text-info { color: var(--color-info); }
+
+.text-brand { color: var(--color-primary); }
+
+/* 텍스트 정렬 */
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-justify { text-align: justify; }
+
+/* 텍스트 변환 */
+.text-uppercase { text-transform: uppercase; letter-spacing: 0.5px; }
+.text-lowercase { text-transform: lowercase; }
+.text-capitalize { text-transform: capitalize; }
+
+/* 줄 높이 */
+.line-height-tight { line-height: var(--line-height-tight); }
+.line-height-normal { line-height: var(--line-height-normal); }
+.line-height-loose { line-height: var(--line-height-loose); }
+
+
+/* ============================================
+   특수 텍스트 스타일 (Special Text Styles)
+   ============================================ */
+
+/* 강조 텍스트 */
+strong,
+b,
+.text-strong {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+/* 기울임 텍스트 */
+em,
+i,
+.text-italic {
+  font-style: italic;
+}
+
+/* 하이라이트 텍스트 */
+mark,
+.text-highlight {
+  background-color: var(--color-warning-light);
+  color: var(--color-warning-dark);
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+}
+
+/* 코드 텍스트 */
+code,
+.text-code {
+  font-family: var(--font-family-monospace);
+  font-size: 0.9em;
+  background-color: var(--color-gray-100);
+  color: var(--color-primary-dark);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+/* 링크 텍스트 */
+a,
+.text-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  
+  transition: all var(--transition-fast) var(--ease-out);
+  
+  /* 하단 언더라인 효과 */
+  background: linear-gradient(
+    to right,
+    var(--color-primary) 0%,
+    var(--color-primary) 100%
+  );
+  background-size: 0 2px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+}
+
+a:hover,
+.text-link:hover {
+  color: var(--color-primary-hover);
+  background-size: 100% 2px;
+}
+
+/* 삭제선 텍스트 */
+del,
+s,
+.text-strikethrough {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* 밑줄 텍스트 */
+u,
+.text-underline {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+
+/* ============================================
+   숫자 전용 스타일 (Number Styles)
+   ============================================ */
+
+/* 통계 숫자 (큰 강조 숫자) */
+.text-stat {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--color-primary);
+  
+  /* 숫자 정렬 */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* 퍼센티지 숫자 */
+.text-percentage {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  
+  /* 숫자 정렬 */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* 모노스페이스 숫자 (표, 차트 등) */
+.text-monospace {
+  font-family: var(--font-family-monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ============================================
+   아이콘과 텍스트 조합 (Icon + Text)
+   ============================================ */
+
+.text-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.text-with-icon i,
+.text-with-icon svg {
+  font-size: 1.1em;
+  color: var(--color-primary);
+}
+
+
+/* ============================================
+   타임스탬프 스타일 (Timestamp)
+   ============================================ */
+
+.timestamp,
+.text-timestamp {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-secondary);
+  
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  
+  /* 시간 아이콘 */
+}
+
+.timestamp i,
+.text-timestamp i {
+  font-size: 1em;
+  opacity: 0.8;
+}
+
+
+/* ============================================
+   반응형 타이포그래피 (Responsive Typography)
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* 제목 크기 축소 */
+  h1,
+  .heading-1 {
+    font-size: var(--font-size-xl);
+  }
+  
+  h2,
+  .heading-2 {
+    font-size: var(--font-size-lg);
+  }
+  
+  .subtitle,
+  .text-subtitle {
+    font-size: var(--font-size-base);
+  }
+  
+  /* 통계 숫자 크기 조정 */
+  .text-stat {
+    font-size: var(--font-size-2xl);
+  }
+}
+
+@media (max-width: 480px) {
+  /* 본문 텍스트 최적화 */
+  body {
+    font-size: var(--font-size-sm);
+  }
+  
+  h1,
+  .heading-1 {
+    font-size: var(--font-size-lg);
+    gap: var(--spacing-sm);
+  }
+}
+
+
+/* ============================================
+   레거시 클래스 지원 (Legacy Support)
+   ============================================ */
+
+/* 기존 프로젝트의 클래스들 */
+.report-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  text-align: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.report-timestamp {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+}
+
+.upload-text {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.upload-subtext {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.result-percentage {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ============================================
+   접근성 개선 (Accessibility)
+   ============================================ */
+
+/* 스크린 리더 전용 텍스트 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* 포커스 가능한 텍스트 */
+.text-focusable:focus {
+  outline: 3px solid var(--color-primary-light);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+
+/* ============================================
+   프린트 최적화 (Print Styles)
+   ============================================ */
+
+@media print {
+  body {
+    font-size: 12pt;
+    color: #000;
+  }
+  
+  h1 {
+    font-size: 24pt;
+    -webkit-text-fill-color: #000;
+  }
+  
+  h2 { font-size: 20pt; }
+  h3 { font-size: 18pt; }
+  h4 { font-size: 16pt; }
+  
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+}
