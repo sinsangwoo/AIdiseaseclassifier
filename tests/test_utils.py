@@ -17,7 +17,7 @@ class TestValidators:
     @pytest.mark.validation
     def test_allowed_file_with_valid_extensions(self):
         """allowed_file - 유효한 확장자"""
-        from backend.utils.validators import allowed_file
+        from utils.validators import allowed_file
         
         assert allowed_file('image.jpg', {'jpg', 'png'}) is True
         assert allowed_file('photo.jpeg', {'jpg', 'jpeg', 'png'}) is True
@@ -27,7 +27,7 @@ class TestValidators:
     @pytest.mark.validation
     def test_allowed_file_with_invalid_extensions(self):
         """allowed_file - 유효하지 않은 확장자"""
-        from backend.utils.validators import allowed_file
+        from utils.validators import allowed_file
         
         assert allowed_file('document.txt', {'jpg', 'png'}) is False
         assert allowed_file('script.py', {'jpg', 'png'}) is False
@@ -37,7 +37,7 @@ class TestValidators:
     @pytest.mark.validation
     def test_allowed_file_case_insensitive(self):
         """allowed_file - 대소문자 구분 없음"""
-        from backend.utils.validators import allowed_file
+        from utils.validators import allowed_file
         
         assert allowed_file('IMAGE.JPG', {'jpg', 'png'}) is True
         assert allowed_file('Photo.PNG', {'jpg', 'png'}) is True
@@ -47,7 +47,7 @@ class TestValidators:
     @pytest.mark.validation
     def test_validate_file_success(self):
         """validate_file - 유효한 파일"""
-        from backend.utils.validators import validate_file
+        from utils.validators import validate_file
         
         # 작은 JPEG 이미지 생성
         img = Image.new('RGB', (100, 100), color='blue')
@@ -74,7 +74,7 @@ class TestValidators:
     @pytest.mark.validation
     def test_validate_file_empty_filename(self):
         """validate_file - 파일명 없음"""
-        from backend.utils.validators import validate_file
+        from utils.validators import validate_file
         
         file = FileStorage(
             stream=io.BytesIO(b"test"),
@@ -91,7 +91,7 @@ class TestValidators:
     @pytest.mark.validation
     def test_validate_file_invalid_extension(self):
         """validate_file - 유효하지 않은 확장자"""
-        from backend.utils.validators import validate_file
+        from utils.validators import validate_file
         
         file = FileStorage(
             stream=io.BytesIO(b"test"),
@@ -111,7 +111,7 @@ class TestResponses:
     @pytest.mark.unit
     def test_success_response(self):
         """success_response - 성공 응답"""
-        from backend.utils.responses import success_response
+        from utils.responses import success_response
         
         response = success_response(data={'key': 'value'}, message='성공')
         
@@ -122,7 +122,7 @@ class TestResponses:
     @pytest.mark.unit
     def test_error_response(self):
         """error_response - 에러 응답"""
-        from backend.utils.responses import error_response
+        from utils.responses import error_response
         
         response, status_code = error_response(
             message='에러 발생',
@@ -138,7 +138,7 @@ class TestResponses:
     @pytest.mark.unit
     def test_prediction_response(self):
         """prediction_response - 예측 응답"""
-        from backend.utils.responses import prediction_response
+        from utils.responses import prediction_response
         
         predictions = [
             {'className': '정상', 'probability': 0.8},
@@ -163,7 +163,7 @@ class TestExceptions:
     @pytest.mark.unit
     def test_ai_classifier_exception(self):
         """AIClassifierException - 기본 예외"""
-        from backend.utils.exceptions import AIClassifierException
+        from utils.exceptions import AIClassifierException
         
         exc = AIClassifierException("테스트 에러", error_code="TEST_ERROR")
         
@@ -174,7 +174,7 @@ class TestExceptions:
     @pytest.mark.unit
     def test_model_not_loaded_error(self):
         """ModelNotLoadedError"""
-        from backend.utils.exceptions import ModelNotLoadedError
+        from utils.exceptions import ModelNotLoadedError
         
         exc = ModelNotLoadedError()
         
@@ -184,7 +184,7 @@ class TestExceptions:
     @pytest.mark.unit
     def test_invalid_image_error(self):
         """InvalidImageError"""
-        from backend.utils.exceptions import InvalidImageError
+        from utils.exceptions import InvalidImageError
         
         exc = InvalidImageError("잘못된 이미지")
         
@@ -194,7 +194,7 @@ class TestExceptions:
     @pytest.mark.unit
     def test_file_validation_error(self):
         """FileValidationError"""
-        from backend.utils.exceptions import FileValidationError
+        from utils.exceptions import FileValidationError
         
         exc = FileValidationError("파일 검증 실패")
         
@@ -210,7 +210,7 @@ class TestImageValidator:
     @pytest.mark.security
     def test_validate_magic_bytes_jpeg(self):
         """매직 바이트 검증 - JPEG"""
-        from backend.utils.advanced_validators import ImageValidator
+        from utils.advanced_validators import ImageValidator
         
         validator = ImageValidator()
         
@@ -230,7 +230,7 @@ class TestImageValidator:
     @pytest.mark.security
     def test_validate_magic_bytes_text_file(self):
         """매직 바이트 검증 - 텍스트 파일 (실패)"""
-        from backend.utils.advanced_validators import ImageValidator
+        from utils.advanced_validators import ImageValidator
         
         validator = ImageValidator()
         
@@ -245,7 +245,7 @@ class TestImageValidator:
     @pytest.mark.validation
     def test_validate_image_dimensions_valid(self):
         """이미지 크기 검증 - 유효"""
-        from backend.utils.advanced_validators import ImageValidator
+        from utils.advanced_validators import ImageValidator
         
         validator = ImageValidator(
             min_width=32,
@@ -269,7 +269,7 @@ class TestImageValidator:
     @pytest.mark.validation
     def test_validate_image_dimensions_too_small(self):
         """이미지 크기 검증 - 너무 작음"""
-        from backend.utils.advanced_validators import ImageValidator
+        from utils.advanced_validators import ImageValidator
         
         validator = ImageValidator(min_width=32, min_height=32)
         
@@ -288,7 +288,7 @@ class TestImageValidator:
     @pytest.mark.validation
     def test_validate_image_dimensions_wrong_aspect_ratio(self):
         """이미지 크기 검증 - 비정상 비율"""
-        from backend.utils.advanced_validators import ImageValidator
+        from utils.advanced_validators import ImageValidator
         
         validator = ImageValidator(max_aspect_ratio=10.0)
         
