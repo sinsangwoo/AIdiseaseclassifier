@@ -1,30 +1,46 @@
 """
-AI 질병 진단 Flask 애플리케이션
+AI 질병 진단 Flask 애플리케이션 (Production-Ready)
 
 ONNX 모델을 사용하여 의료 이미지를 분석하고 질병을 예측합니다.
+Phase 3: 보안, 성능, 모니터링 최적화
 """
 
-import logging
-from flask import Flask, request
+import io
+from flask import Flask, request, g
 from flask_cors import CORS
 
 from config import get_config
 from models import ModelPredictor
 from services import ImageProcessor
-from utils import validate_file, error_response, prediction_response
-
-
-# 로깅 설정
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+from utils import (
+    # 검증
+    validate_file,
+    # 응답
+    error_response,
+    prediction_response,
+    # 예외
+    ModelNotLoadedError,
+    ModelLoadError,
+    InvalidImageError,
+    ImageProcessingError,
+    PredictionError,
+    FileValidationError,
+    # 로깅
+    setup_logger,
+    get_logger,
+    log_exception,
+    # 헬스체크
+    init_health_checker,
+    get_health_checker,
+    # 고급 검증
+    init_image_validator,
+    get_image_validator
 )
-logger = logging.getLogger(__name__)
 
 
 def create_app(config_name=None):
     """
-    Flask 애플리케이션 팩토리 함수
+    Flask 애플리케이션 팩토리 함수 (Production-Ready)
     
     Args:
         config_name (str): 환경 설정 이름 ('development', 'production', 'testing')
@@ -34,14 +50,41 @@ def create_app(config_name=None):
     """
     app = Flask(__name__)
     
-    # 설정 로드
+    # ===== 설정 로드 =====
     config = get_config(config_name)
     app.config.from_object(config)
     
-    # CORS 설정
-    CORS(app, origins=config.CORS_ORIGINS)
+    # ===== 로깅 설정 =====
+    logger = setup_logger(
+        name='aiclassifier',
+        log_level=config.LOG_LEVEL,
+        log_dir=config.LOG_DIR if hasattr(config, 'LOG_DIR') else None
+    )
     
-    # 모델 초기화
+    logger.info("="*70)
+    logger.info("🚀 AI 질병 진단 서버 시작 (Phase 3: Advanced)")
+    logger.info(f"환경: {config_name or 'default'}")
+    logger.info(f"디버그 모드: {config.DEBUG}")
+    logger.info("="*70)
+    
+    # ===== CORS 설정 =====
+    CORS(app, origins=config.CORS_ORIGINS)
+    logger.info(f"✓ CORS 설정: {config.CORS_ORIGINS}")
+    
+    # ===== 헬스체커 초기화 =====
+    health_checker = init_health_checker(app)
+    
+    # ===== 이미지 검증기 초기화 =====
+    image_validator = init_image_validator(
+        min_width=32,
+        min_height=32,
+        max_width=4096,
+        max_height=4096,
+        max_aspect_ratio=10.0
+    )
+    logger.info("✓ 이미지 검증기 초기화")
+    
+    # ===== 모델 초기화 =====
     predictor = ModelPredictor(
         model_path=config.MODEL_PATH,
         labels_path=config.LABELS_PATH
@@ -49,35 +92,61 @@ def create_app(config_name=None):
     
     try:
         predictor.load_model()
-        logger.info("모델 로드 완료")
-    except Exception as e:
-        logger.error(f"모델 로드 실패: {e}")
-        logger.warning("서버는 시작되지만 예측 기능이 작동하지 않을 수 있습니다")
+        logger.info("✓ 모델 로드 완료")
+    except ModelLoadError as e:
+        logger.error(f"✗ 모델 로드 실패: {e.message}")
+        logger.warning("⚠  서버는 시작되지만 예측 기능이 작동하지 않습니다")
     
-    # 이미지 프로세서 초기화
+    # ===== 이미지 프로세서 초기화 =====
     image_processor = ImageProcessor(target_size=config.TARGET_IMAGE_SIZE)
+    logger.info("✓ 이미지 프로세서 초기화")
     
-    # === 라우트 정의 ===
+    # ===== 라우트 정의 =====
     
     @app.route("/")
-    def health_check():
-        """서버 상태 확인 엔드포인트"""
-        model_status = "ready" if predictor.is_ready() else "not_loaded"
+    def index():
+        """메인 엔드포인트"""
         return {
+            "service": "AI Disease Classifier API",
+            "version": "3.0.0",
             "status": "running",
-            "message": "AI 질병 진단 서버가 작동 중입니다",
-            "model_status": model_status
+            "endpoints": {
+                "health": "/health",
+                "health_detailed": "/health/detailed",
+                "model_info": "/model/info",
+                "predict": "/predict"
+            }
         }
+    
+    @app.route("/health")
+    def health_check():
+        """간단한 헬스체크"""
+        model_status = "ready" if predictor.is_ready() else "not_loaded"
+        
+        return {
+            "status": "healthy" if predictor.is_ready() else "degraded",
+            "model": model_status,
+            "timestamp": health_checker.get_uptime()['start_time']
+        }
+    
+    @app.route("/health/detailed")
+    def detailed_health_check():
+        """상세 헬스체크 (모니터링용)"""
+        return health_checker.comprehensive_health_check(
+            predictor=predictor,
+            cache=None,  # Phase 3에서 추가 가능
+            metrics=None  # Phase 3에서 추가 가능
+        )
     
     @app.route("/model/info")
     def model_info():
-        """모델 정보 조회 엔드포인트"""
+        """모델 정보 조회"""
         return predictor.get_model_info()
     
     @app.route("/predict", methods=['POST'])
     def predict():
         """
-        이미지 질병 예측 엔드포인트
+        이미지 질병 예측 엔드포인트 (Production-Grade)
         
         Request:
             - Method: POST
@@ -90,86 +159,144 @@ def create_app(config_name=None):
                 "predictions": [
                     {"className": "질병명", "probability": 0.85},
                     ...
-                ]
+                ],
+                "metadata": {
+                    "processing_time_ms": 123.45,
+                    "image_size": [224, 224]
+                }
             }
         """
-        logger.info("예측 요청 수신")
+        import time
+        start_time = time.time()
         
-        # 1. 모델 준비 상태 확인
-        if not predictor.is_ready():
-            logger.error("모델이 준비되지 않음")
-            return error_response(
-                "서버에 모델이 아직 준비되지 않았습니다",
-                status_code=500,
-                error_type="ModelNotReadyError"
-            )
-        
-        # 2. 파일 존재 확인
-        if 'file' not in request.files:
-            logger.warning("파일 누락")
-            return error_response("요청에 파일이 없습니다")
-        
-        file = request.files['file']
-        
-        # 3. 파일 검증
-        is_valid, error_msg = validate_file(
-            file,
-            allowed_extensions=app.config['ALLOWED_EXTENSIONS'],
-            max_size=app.config['MAX_CONTENT_LENGTH']
-        )
-        
-        if not is_valid:
-            logger.warning(f"파일 검증 실패: {error_msg}")
-            return error_response(error_msg)
-        
-        logger.info(f"파일 수신: {file.filename}")
+        request_logger = get_logger('aiclassifier.api')
+        request_logger.info("📥 예측 요청 수신")
         
         try:
-            # 4. 이미지 전처리
-            processed_image = image_processor.preprocess_from_file(file)
+            # 1. 모델 준비 상태 확인
+            if not predictor.is_ready():
+                raise ModelNotLoadedError()
             
-            # 5. 예측 수행
+            # 2. 파일 존재 확인
+            if 'file' not in request.files:
+                raise FileValidationError("요청에 파일이 없습니다")
+            
+            file = request.files['file']
+            
+            # 3. 기본 파일 검증
+            is_valid, error_msg = validate_file(
+                file,
+                allowed_extensions=app.config['ALLOWED_EXTENSIONS'],
+                max_size=app.config['MAX_CONTENT_LENGTH']
+            )
+            
+            if not is_valid:
+                raise FileValidationError(error_msg)
+            
+            request_logger.info(f"📄 파일 수신: {file.filename}")
+            
+            # 4. 파일 읽기
+            in_memory_file = io.BytesIO()
+            file.save(in_memory_file)
+            in_memory_file.seek(0)
+            image_bytes = in_memory_file.read()
+            
+            # 5. 고급 이미지 검증
+            if image_validator:
+                image_validator.comprehensive_validation(image_bytes)
+                request_logger.debug("✓ 고급 이미지 검증 통과")
+            
+            # 6. 이미지 전처리
+            in_memory_file.seek(0)
+            processed_image = image_processor.preprocess(image_bytes)
+            
+            # 7. 예측 수행
             predictions = predictor.predict(processed_image)
             
-            logger.info(f"예측 성공: {predictions[0]['className']} ({predictions[0]['probability']:.4f})")
+            # 8. 처리 시간 계산
+            processing_time_ms = (time.time() - start_time) * 1000
             
-            # 6. 응답 반환
-            return prediction_response(predictions)
+            top_result = predictions[0]
+            request_logger.info(
+                f"✅ 예측 완료 - {file.filename}: "
+                f"{top_result['className']} ({top_result['probability']:.4f}) "
+                f"[{processing_time_ms:.0f}ms]"
+            )
+            
+            # 9. 응답 반환 (메타데이터 포함)
+            response = {
+                'success': True,
+                'predictions': predictions,
+                'metadata': {
+                    'processing_time_ms': round(processing_time_ms, 2),
+                    'image_size': list(config.TARGET_IMAGE_SIZE),
+                    'filename': file.filename
+                }
+            }
+            
+            return response, 200
         
-        except ValueError as e:
-            # 이미지 처리 오류
-            logger.error(f"이미지 처리 오류: {e}")
+        # ===== 커스텀 예외 처리 =====
+        
+        except ModelNotLoadedError as e:
+            log_exception(request_logger, e, "모델 미준비")
             return error_response(
-                str(e),
-                status_code=400,
-                error_type="ImageProcessingError"
+                e.message,
+                status_code=503,
+                error_type=e.error_code
             )
         
-        except RuntimeError as e:
-            # 예측 오류
-            logger.error(f"예측 오류: {e}")
+        except FileValidationError as e:
+            request_logger.warning(f"파일 검증 실패: {e.message}")
+            return error_response(
+                e.message,
+                status_code=400,
+                error_type=e.error_code
+            )
+        
+        except InvalidImageError as e:
+            request_logger.warning(f"유효하지 않은 이미지: {e.message}")
+            return error_response(
+                e.message,
+                status_code=400,
+                error_type=e.error_code
+            )
+        
+        except ImageProcessingError as e:
+            log_exception(request_logger, e, "이미지 처리 오류")
+            return error_response(
+                e.message,
+                status_code=422,
+                error_type=e.error_code,
+                details={"original_error": str(e.original_error)} if hasattr(e, 'original_error') and e.original_error else None
+            )
+        
+        except PredictionError as e:
+            log_exception(request_logger, e, "예측 오류")
             return error_response(
                 "예측 중 오류가 발생했습니다",
                 status_code=500,
-                error_type="PredictionError",
-                details={"original_error": str(e)}
+                error_type=e.error_code,
+                details={"original_error": str(e.original_error)} if hasattr(e, 'original_error') and e.original_error else None
             )
         
+        # ===== 일반 예외 처리 =====
+        
         except Exception as e:
-            # 예상치 못한 오류
-            logger.exception(f"예상치 못한 오류: {e}")
+            log_exception(request_logger, e, "예상치 못한 오류")
             return error_response(
                 "서버 내부 오류가 발생했습니다",
                 status_code=500,
                 error_type="InternalServerError"
             )
     
-    # === 에러 핸들러 ===
+    # ===== 전역 에러 핸들러 =====
     
     @app.errorhandler(413)
     def request_entity_too_large(error):
-        """파일 크기 초과 에러 핸들러"""
+        """파일 크기 초과 에러"""
         max_mb = app.config['MAX_CONTENT_LENGTH'] / (1024 * 1024)
+        logger.warning(f"파일 크기 초과: {max_mb}MB 제한")
         return error_response(
             f"파일 크기가 너무 큽니다. 최대 {max_mb:.0f}MB까지 허용됩니다",
             status_code=413,
@@ -178,22 +305,38 @@ def create_app(config_name=None):
     
     @app.errorhandler(404)
     def not_found(error):
-        """404 에러 핸들러"""
+        """404 에러"""
+        logger.warning(f"404: {request.path}")
         return error_response(
             "요청한 경로를 찾을 수 없습니다",
             status_code=404,
             error_type="NotFoundError"
         )
     
+    @app.errorhandler(405)
+    def method_not_allowed(error):
+        """405 에러"""
+        logger.warning(f"405: {request.method} {request.path}")
+        return error_response(
+            f"허용되지 않는 메소드입니다. {request.method}는 이 엔드포인트에서 지원되지 않습니다",
+            status_code=405,
+            error_type="MethodNotAllowedError"
+        )
+    
     @app.errorhandler(500)
     def internal_server_error(error):
-        """500 에러 핸들러"""
+        """500 에러"""
         logger.exception("서버 내부 오류")
         return error_response(
             "서버 내부 오류가 발생했습니다",
             status_code=500,
             error_type="InternalServerError"
         )
+    
+    logger.info("✓ 라우트 및 에러 핸들러 등록 완료")
+    logger.info("="*70)
+    logger.info("🎉 서버 준비 완료! Phase 3 모든 기능 활성화")
+    logger.info("="*70)
     
     return app
 
@@ -204,6 +347,9 @@ app = create_app()
 
 if __name__ == "__main__":
     # 개발 서버 실행
+    logger = get_logger('aiclassifier')
+    logger.info("🔧 개발 서버 시작 중...")
+    
     app.run(
         host='0.0.0.0',
         port=5000,
