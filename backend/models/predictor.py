@@ -4,18 +4,22 @@ ONNX 모델 예측 모듈
 싱글톤 패턴을 사용하여 모델을 한 번만 로드하고 재사용합니다.
 """
 
-import logging
 from pathlib import Path
 from typing import List, Dict, Any
 
 import numpy as np
 import onnxruntime as rt
 
+from utils import (
+    LoggerMixin,
+    ModelNotLoadedError,
+    ModelLoadError,
+    PredictionError,
+    log_exception
+)
 
-logger = logging.getLogger(__name__)
 
-
-class ModelPredictor:
+class ModelPredictor(LoggerMixin):
     """
     ONNX 모델 예측 클래스 (싱글톤)
     
@@ -59,8 +63,7 @@ class ModelPredictor:
         ONNX 모델과 레이블 파일 로드
         
         Raises:
-            FileNotFoundError: 모델 또는 레이블 파일이 존재하지 않을 때
-            RuntimeError: 모델 로딩 중 오류 발생 시
+            ModelLoadError: 모델 또는 레이블 파일 로딩 실패 시
         """
         try:
             # 파일 존재 확인
@@ -71,30 +74,32 @@ class ModelPredictor:
                 raise FileNotFoundError(f"레이블 파일을 찾을 수 없습니다: {self.labels_path}")
             
             # ONNX 모델 로드
-            logger.info(f"ONNX 모델 로드 중: {self.model_path}")
+            self.logger.info(f"ONNX 모델 로드 시작: {self.model_path}")
             self.session = rt.InferenceSession(self.model_path)
             self.input_name = self.session.get_inputs()[0].name
             self.output_name = self.session.get_outputs()[0].name
-            logger.info("모델 로드 성공")
+            self.logger.info(f"모델 로드 성공 (입력: {self.input_name}, 출력: {self.output_name})")
             
             # 레이블 파일 로드
-            logger.info(f"레이블 파일 로드 중: {self.labels_path}")
+            self.logger.info(f"레이블 파일 로드 시작: {self.labels_path}")
             with open(self.labels_path, 'r', encoding='utf-8') as f:
                 self.class_names = [
                     line.strip().split(' ', 1)[1] 
                     for line in f.readlines() 
                     if line.strip()
                 ]
-            logger.info(f"레이블 로드 성공: {len(self.class_names)}개 클래스")
+            self.logger.info(f"레이블 로드 성공: {len(self.class_names)}개 클래스 - {self.class_names}")
             
             self._is_initialized = True
+            self.logger.info("모델 초기화 완료")
             
         except FileNotFoundError as e:
-            logger.error(f"파일을 찾을 수 없습니다: {e}")
-            raise
+            log_exception(self.logger, e, "파일을 찾을 수 없음")
+            raise ModelLoadError(str(e), original_error=e)
+        
         except Exception as e:
-            logger.error(f"모델 로딩 중 오류 발생: {e}")
-            raise RuntimeError(f"모델 로딩 실패: {e}")
+            log_exception(self.logger, e, "모델 로딩 중 오류")
+            raise ModelLoadError(f"모델 로딩 실패: {str(e)}", original_error=e)
     
     def predict(self, image_array: np.ndarray) -> List[Dict[str, Any]]:
         """
@@ -108,12 +113,16 @@ class ModelPredictor:
                 [{'className': str, 'probability': float}, ...]
         
         Raises:
-            RuntimeError: 모델이 로드되지 않았거나 예측 중 오류 발생 시
+            ModelNotLoadedError: 모델이 로드되지 않았을 때
+            PredictionError: 예측 중 오류 발생 시
         """
         if not self.is_ready():
-            raise RuntimeError("모델이 아직 로드되지 않았습니다. load_model()을 먼저 호출하세요.")
+            self.logger.error("예측 시도했으나 모델이 준비되지 않음")
+            raise ModelNotLoadedError("모델이 아직 로드되지 않았습니다")
         
         try:
+            self.logger.debug(f"예측 시작 (입력 shape: {image_array.shape})")
+            
             # ONNX 모델 예측
             predictions = self.session.run(
                 [self.output_name], 
@@ -131,13 +140,17 @@ class ModelPredictor:
             # 확률 높은 순으로 정렬
             results.sort(key=lambda x: x['probability'], reverse=True)
             
-            logger.info(f"예측 완료: 상위 클래스 = {results[0]['className']} ({results[0]['probability']:.4f})")
+            top_result = results[0]
+            self.logger.info(
+                f"예측 완료 - 최고 확률: {top_result['className']} "
+                f"({top_result['probability']:.4f})"
+            )
             
             return results
             
         except Exception as e:
-            logger.error(f"예측 중 오류 발생: {e}")
-            raise RuntimeError(f"예측 실패: {e}")
+            log_exception(self.logger, e, "예측 수행 중 오류")
+            raise PredictionError(f"예측 실패: {str(e)}", original_error=e)
     
     def is_ready(self) -> bool:
         """

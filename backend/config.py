@@ -6,6 +6,13 @@
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+
+# .env 파일 로드 (있는 경우)
+env_path = Path(__file__).parent / '.env'
+if env_path.exists():
+    load_dotenv(env_path)
 
 
 class Config:
@@ -26,7 +33,7 @@ class Config:
     # 이미지 처리 설정
     TARGET_IMAGE_SIZE = (224, 224)
     ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}
-    MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10MB
+    MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 10 * 1024 * 1024))  # 10MB
     
     # CORS 설정 (프로덕션에서는 특정 도메인으로 제한해야 함)
     CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*').split(',')
@@ -39,7 +46,10 @@ class Config:
 class DevelopmentConfig(Config):
     """개발 환경 설정"""
     DEBUG = True
-    CORS_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000']
+    CORS_ORIGINS = os.environ.get(
+        'CORS_ORIGINS', 
+        'http://localhost:3000,http://127.0.0.1:3000'
+    ).split(',')
 
 
 class ProductionConfig(Config):
