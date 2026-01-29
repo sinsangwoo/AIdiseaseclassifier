@@ -6,17 +6,22 @@ Pytest 설정 파일
 
 import pytest
 import sys
+import os
 from pathlib import Path
 
 # 프로젝트 루트를 Python 경로에 추가
 project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root / 'backend'))
+backend_path = project_root / 'backend'
+sys.path.insert(0, str(backend_path))
+
+# 환경변수 설정 (테스트 모드)
+os.environ['FLASK_ENV'] = 'testing'
 
 
 @pytest.fixture(scope='session')
 def app():
     """Flask 애플리케이션 fixture (전체 세션)"""
-    from backend.app import create_app
+    from app import create_app
     
     app = create_app('testing')
     app.config['TESTING'] = True
@@ -117,7 +122,7 @@ def sample_text_file():
 @pytest.fixture(scope='session')
 def mock_model_predictor():
     """모의 모델 Predictor"""
-    from backend.models import ModelPredictor
+    from models import ModelPredictor
     from unittest.mock import Mock
     
     predictor = Mock(spec=ModelPredictor)
