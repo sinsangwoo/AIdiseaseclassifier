@@ -6,7 +6,7 @@ Phase 3: 보안, 성능, 모니터링 최적화
 """
 
 import io
-from flask import Flask, request, g
+from flask import Flask, request
 from flask_cors import CORS
 
 from config import get_config
