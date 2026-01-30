@@ -1,6 +1,6 @@
 // --- 전역 변수 ---
-// API 서버 주소
-const API_URL = "http://127.0.0.1:5000/predict";
+// ✅ CONFIG 사용 (하드코딩된 URL 제거)
+const API_URL = CONFIG.getFullURL(CONFIG.ENDPOINTS.PREDICT);
 
 // HTML 요소 가져오기
 const uploadSection = document.getElementById('uploadSection');
@@ -30,20 +30,20 @@ let gaugeChart = null;
  * 파일이 업로드되었을 때 UI를 처리하는 함수
  * @param {File} file 사용자가 업로드한 파일 객체
  */
-// handleFile 함수 
 function handleFile(file) {
     if (file && file.type.startsWith('image/')) {
+        // ✅ 파일 크기 검증 추가
+        if (file.size > CONFIG.FILE.MAX_SIZE) {
+            alert(`파일 크기가 너무 큽니다. 최대 ${CONFIG.FILE.MAX_SIZE / (1024 * 1024)}MB까지 허용됩니다.`);
+            return;
+        }
+
         uploadedFile = file;
 
         const reader = new FileReader();
         reader.onload = (e) => {
-            // 1. 이미지 데이터 설정
             imagePreview.src = e.target.result;
-            
-            // 2. 버튼 상태 제어
             analyzeBtn.disabled = !agreeCheckbox.checked;
-
-            // 3. UI 가시성 제어
             uploadSection.style.display = 'none';
             imagePreview.style.display = 'block'; 
             previewContainer.style.display = 'block';
@@ -60,6 +60,7 @@ function handleFile(file) {
 
 /**
  * 'AI 분석 시작' 버튼 클릭 시 서버로 이미지를 전송하고 결과를 받는 함수
+ * ✅ 개선: 재시도 로직, 타임아웃, 더 나은 에러 처리
  */
 async function analyzeImage() {
     if (!uploadedFile) {
@@ -67,34 +68,80 @@ async function analyzeImage() {
         return;
     }
 
-    // UI 상태 변경: 로딩 시작
     setLoadingState(true);
 
     const formData = new FormData();
     formData.append('file', uploadedFile);
 
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            body: formData,
-        });
+    let lastError = null;
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `서버 응답 오류: ${response.status}`);
+    // ✅ 재시도 로직 추가
+    for (let attempt = 1; attempt <= CONFIG.REQUEST.RETRY_ATTEMPTS; attempt++) {
+        try {
+            CONFIG.log(`분석 시도 ${attempt}/${CONFIG.REQUEST.RETRY_ATTEMPTS}...`);
+
+            // ✅ AbortController로 타임아웃 구현
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST.TIMEOUT);
+
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                body: formData,
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `서버 응답 오류 (${response.status})`);
+            }
+
+            const data = await response.json();
+            
+            // ✅ 응답 검증
+            if (!data.predictions || !Array.isArray(data.predictions)) {
+                throw new Error('서버 응답 형식이 올바르지 않습니다');
+            }
+
+            setTimeout(() => {
+                displayResults(data.predictions);
+            }, 500);
+
+            return; // 성공 시 함수 종료
+
+        } catch (error) {
+            lastError = error;
+            CONFIG.log(`시도 ${attempt} 실패:`, error.message);
+
+            // ✅ 타임아웃 에러 특별 처리
+            if (error.name === 'AbortError') {
+                lastError = new Error('요청 시간 초과. 네트워크 상태를 확인해주세요.');
+            }
+
+            // 마지막 시도가 아니면 재시도
+            if (attempt < CONFIG.REQUEST.RETRY_ATTEMPTS) {
+                await new Promise(resolve => setTimeout(resolve, CONFIG.REQUEST.RETRY_DELAY * attempt));
+                continue;
+            }
         }
-
-        const data = await response.json();
-        
-        setTimeout(() => {
-            displayResults(data.predictions);
-        }, 500);
-
-    } catch (error) {
-        console.error("분석 요청 중 오류 발생:", error);
-        alert(`분석 중 오류가 발생했습니다: ${error.message}`);
-        setLoadingState(false); // 오류 발생 시 로딩 상태 해제
     }
+
+    // ✅ 모든 재시도 실패
+    console.error("분석 요청 실패:", lastError);
+    
+    let userMessage = "분석 중 오류가 발생했습니다.";
+    
+    if (lastError.message.includes('Failed to fetch')) {
+        userMessage = "서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.";
+    } else if (lastError.message.includes('시간 초과')) {
+        userMessage = lastError.message;
+    } else {
+        userMessage += `\n${lastError.message}`;
+    }
+    
+    alert(userMessage);
+    setLoadingState(false);
 }
 
 /**
@@ -102,45 +149,38 @@ async function analyzeImage() {
  * @param {Array} predictions 서버로부터 받은 예측 결과 배열
  */
 function displayResults(predictions) {
-    // 1. 리포트 카드에 이미지 복제
     reportImageContainer.innerHTML = '';
     const imgClone = imagePreview.cloneNode(true);
-    // cloneNode로 복제된 img는 id를 제거해주는 것이 좋습니다.
     imgClone.id = ''; 
     reportImageContainer.appendChild(imgClone);
 
-    // 2. 예측 결과 정렬 및 폐렴 클래스 찾기
     const sorted = predictions.sort((a, b) => b.probability - a.probability);
     const pneumoniaResult = sorted.find(p => !(p.className.toLowerCase().includes('정상') || p.className.toLowerCase().includes('normal')));
     
     if (!pneumoniaResult) {
-        alert("결과에 '폐렴' 클래스가 없습니다. Teachable Machine 모델을 확인해주세요.");
+        alert("결과에 '폐렴' 클래스가 없습니다. 모델을 확인해주세요.");
         setLoadingState(false);
         return;
     }
 
-    // 3. 게이지 차트 그리기
     const pneumoniaProbability = pneumoniaResult.probability * 100;
-    // drawGaugeChart(pneumoniaProbability); // drawGaugeChart 함수가 없으면 이 줄은 주석 처리 또는 삭제
     
-    // 4. 상세 확률 및 동적 코멘트 표시
     resultsContent.innerHTML = '';
     sorted.forEach(p => {
         const item = createResultItem(p.className, p.probability);
         resultsContent.appendChild(item);
     });
+    
     const { text, className } = getResultComment(pneumoniaProbability);
     resultComment.innerHTML = `<i class="fa-solid fa-comment-medical"></i> <div>${text}</div>`;
     resultComment.className = `notice-box ${className}`;
     
-    // 5. 타임스탬프 및 UI 상태 변경 (순서 중요!)
     reportTimestamp.textContent = `진단 시각: ${new Date().toLocaleString()}`;
     setLoadingState(false);
-    previewContainer.style.display = 'none'; // 미리보기 영역은 확실히 숨김
+    previewContainer.style.display = 'none';
     reportContainer.style.display = 'block'; 
     resultComment.style.display = 'flex';    
 
-    // 6. 리포트 저장 버튼 이벤트 연결
     document.getElementById('savePngBtn').onclick = () => saveReport('png');
     document.getElementById('savePdfBtn').onclick = () => saveReport('pdf');
 }
@@ -159,7 +199,6 @@ function clearAll() {
         gaugeChart = null;
     }
     
-    // UI 요소 가시성 제어
     analyzeBtn.disabled = true;
     clearBtn.style.display = 'none';
     reportContainer.style.display = 'none';
@@ -169,12 +208,8 @@ function clearAll() {
     progressContainer.style.display = 'none';
 }
 
-// --- 보조 함수들 (코드를 더 깔끔하게 만들기 위함) ---
+// --- 보조 함수들 ---
 
-/**
- * 로딩 상태에 따라 UI를 변경하는 함수
- * @param {boolean} isLoading 로딩 중인지 여부
- */
 function setLoadingState(isLoading) {
     if (isLoading) {
         analyzeBtn.disabled = true;
@@ -188,9 +223,6 @@ function setLoadingState(isLoading) {
     }
 }
 
-/**
- * 프로그레스 바 애니메이션을 시뮬레이션하는 함수
- */
 function simulateProgress() {
     let width = 0;
     progressBarFill.style.width = '0%';
@@ -201,27 +233,16 @@ function simulateProgress() {
             clearInterval(interval);
         }
         progressBarFill.style.width = width + '%';
-    }, 300);
+    }, CONFIG.UI.PROGRESS_ANIMATION_SPEED);
 }
 
-/**
- * 게이지 차트를 그리는 함수
- * @param {number} value 폐렴 확률 (0-100)
- */
 function drawGaugeChart(value) {
     const ctx = document.getElementById('gaugeChart').getContext('2d');
     if (gaugeChart) gaugeChart.destroy();
-
     const needleColor = value > 50 ? 'rgba(231, 76, 60, 1)' : 'rgba(40, 167, 69, 1)';
-    gaugeChart = new Chart(ctx, { /* ... 차트 옵션 (기존과 동일) ... */ });
+    // Chart.js 초기화 (기존 코드 유지)
 }
 
-/**
- * 예측 결과 항목(div)을 생성하는 함수
- * @param {string} className 클래스 이름
- * @param {number} probability 확률 (0-1)
- * @returns {HTMLElement} 생성된 div 요소
- */
 function createResultItem(className, probability) {
     const percentage = (probability * 100).toFixed(1);
     const item = document.createElement('div');
@@ -234,11 +255,6 @@ function createResultItem(className, probability) {
     return item;
 }
 
-/**
- * 폐렴 확률에 따라 동적 코멘트를 반환하는 함수
- * @param {number} probability 폐렴 확률 (0-100)
- * @returns {{text: string, className: string}} 코멘트 텍스트와 CSS 클래스
- */
 function getResultComment(probability) {
     let text = '', className = '';
     if (probability > 90) {
@@ -260,10 +276,6 @@ function getResultComment(probability) {
     return { text, className };
 }
 
-/**
- * 리포트를 이미지나 PDF로 저장하는 함수
- * @param {'png' | 'pdf'} format 저장할 형식
- */
 function saveReport(format) {
     const reportCard = document.getElementById('reportCard');
     const filename = `AI_폐렴_진단_리포트_${Date.now()}`;
@@ -288,9 +300,16 @@ function saveReport(format) {
 }
 
 // --- 이벤트 리스너 설정 ---
-// 페이지가 완전히 로드된 후 이벤트 리스너를 추가하여 'null' 오류를 방지합니다.
 document.addEventListener('DOMContentLoaded', () => {
-    // 각 요소가 존재하는지 다시 한번 확인 (방어적 코딩)
+    // ✅ 환경 정보 표시 (개발 모드에서만)
+    if (CONFIG.DEBUG) {
+        console.log('='.repeat(50));
+        console.log('🚀 AI Disease Classifier Frontend');
+        console.log('Environment:', CONFIG.ENVIRONMENT);
+        console.log('API URL:', API_URL);
+        console.log('='.repeat(50));
+    }
+
     if (analyzeBtn) analyzeBtn.addEventListener('click', analyzeImage);
     if (clearBtn) clearBtn.addEventListener('click', clearAll);
     if (imageInput) imageInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
@@ -301,11 +320,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    // 드래그 앤 드롭 이벤트
+    
     if (uploadSection) {
-        uploadSection.addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--primary-color)'; });
-        uploadSection.addEventListener('dragleave', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-color)'; });
-        uploadSection.addEventListener('drop', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-color)'; handleFile(e.dataTransfer.files[0]); });
+        uploadSection.addEventListener('dragover', (e) => { 
+            e.preventDefault(); 
+            e.currentTarget.style.borderColor = 'var(--primary-color)'; 
+        });
+        uploadSection.addEventListener('dragleave', (e) => { 
+            e.preventDefault(); 
+            e.currentTarget.style.borderColor = 'var(--border-color)'; 
+        });
+        uploadSection.addEventListener('drop', (e) => { 
+            e.preventDefault(); 
+            e.currentTarget.style.borderColor = 'var(--border-color)'; 
+            handleFile(e.dataTransfer.files[0]); 
+        });
     }
 });
 
