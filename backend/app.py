@@ -2,7 +2,7 @@
 AI 질병 진단 Flask 애플리케이션 (Production-Ready)
 
 ONNX 모델을 사용하여 의료 이미지를 분석하고 질병을 예측합니다.
-Phase 3: 보안, 성능, 모니터링 최적화
+Phase 1 Rework: 배포 이슈 해결 및 CORS 설정 강화
 """
 
 import io
@@ -62,14 +62,26 @@ def create_app(config_name=None):
     )
     
     logger.info("="*70)
-    logger.info("🚀 AI 질병 진단 서버 시작 (Phase 3: Advanced)")
+    logger.info("🚀 AI 질병 진단 서버 시작 (Rework Phase 1)")
     logger.info(f"환경: {config_name or 'default'}")
     logger.info(f"디버그 모드: {config.DEBUG}")
+    logger.info(f"모델 경로: {config.MODEL_PATH}")
     logger.info("="*70)
     
-    # ===== CORS 설정 =====
-    CORS(app, origins=config.CORS_ORIGINS)
-    logger.info(f"✓ CORS 설정: {config.CORS_ORIGINS}")
+    # ===== CORS 설정 (상세) =====
+    cors_config = {
+        'origins': config.CORS_ORIGINS,
+        'methods': config.CORS_METHODS,
+        'allow_headers': config.CORS_ALLOW_HEADERS,
+        'expose_headers': getattr(config, 'CORS_EXPOSE_HEADERS', []),
+        'max_age': getattr(config, 'CORS_MAX_AGE', 3600),
+        'supports_credentials': getattr(config, 'CORS_SUPPORTS_CREDENTIALS', False)
+    }
+    
+    CORS(app, **cors_config)
+    logger.info(f"✓ CORS 설정 완료")
+    logger.info(f"  - 허용된 Origins: {config.CORS_ORIGINS}")
+    logger.info(f"  - 허용된 Methods: {config.CORS_METHODS}")
     
     # ===== 헬스체커 초기화 =====
     health_checker = init_health_checker(app)
@@ -108,11 +120,14 @@ def create_app(config_name=None):
         """메인 엔드포인트"""
         return {
             "service": "AI Disease Classifier API",
-            "version": "3.0.0",
+            "version": "6.0.0",
             "status": "running",
+            "environment": config_name or "default",
             "endpoints": {
                 "health": "/health",
                 "health_detailed": "/health/detailed",
+                "health_ready": "/health/ready",
+                "health_live": "/health/live",
                 "model_info": "/model/info",
                 "predict": "/predict"
             }
@@ -126,7 +141,8 @@ def create_app(config_name=None):
         return {
             "status": "healthy" if predictor.is_ready() else "degraded",
             "model": model_status,
-            "timestamp": health_checker.get_uptime()['start_time']
+            "timestamp": health_checker.get_uptime()['start_time'],
+            "version": "6.0.0"
         }
     
     @app.route("/health/detailed")
@@ -134,9 +150,35 @@ def create_app(config_name=None):
         """상세 헬스체크 (모니터링용)"""
         return health_checker.comprehensive_health_check(
             predictor=predictor,
-            cache=None,  # Phase 3에서 추가 가능
-            metrics=None  # Phase 3에서 추가 가능
+            cache=None,
+            metrics=None
         )
+    
+    @app.route("/health/ready")
+    def readiness_check():
+        """Readiness probe (Render/K8s용)"""
+        import psutil
+        
+        checks = {
+            'model': predictor.is_ready(),
+            'disk': psutil.disk_usage('/').percent < 90,
+            'memory': psutil.virtual_memory().percent < 90
+        }
+        
+        is_ready = all(checks.values())
+        
+        return {
+            'status': 'ready' if is_ready else 'not_ready',
+            'checks': checks
+        }, 200 if is_ready else 503
+    
+    @app.route("/health/live")
+    def liveness_check():
+        """Liveness probe (Render/K8s용)"""
+        return {
+            'status': 'alive',
+            'uptime_seconds': health_checker.get_uptime()['uptime_seconds']
+        }, 200
     
     @app.route("/model/info")
     def model_info():
@@ -147,24 +189,6 @@ def create_app(config_name=None):
     def predict():
         """
         이미지 질병 예측 엔드포인트 (Production-Grade)
-        
-        Request:
-            - Method: POST
-            - Content-Type: multipart/form-data
-            - Body: file (이미지 파일)
-        
-        Response:
-            {
-                "success": true,
-                "predictions": [
-                    {"className": "질병명", "probability": 0.85},
-                    ...
-                ],
-                "metadata": {
-                    "processing_time_ms": 123.45,
-                    "image_size": [224, 224]
-                }
-            }
         """
         import time
         start_time = time.time()
@@ -230,7 +254,8 @@ def create_app(config_name=None):
                 'metadata': {
                     'processing_time_ms': round(processing_time_ms, 2),
                     'image_size': list(config.TARGET_IMAGE_SIZE),
-                    'filename': file.filename
+                    'filename': file.filename,
+                    'model_version': '1.0.0'
                 }
             }
             
@@ -268,7 +293,9 @@ def create_app(config_name=None):
                 e.message,
                 status_code=422,
                 error_type=e.error_code,
-                details={"original_error": str(e.original_error)} if hasattr(e, 'original_error') and e.original_error else None
+                details={
+                    "original_error": str(e.original_error)
+                } if hasattr(e, 'original_error') and e.original_error else None
             )
         
         except PredictionError as e:
@@ -277,7 +304,9 @@ def create_app(config_name=None):
                 "예측 중 오류가 발생했습니다",
                 status_code=500,
                 error_type=e.error_code,
-                details={"original_error": str(e.original_error)} if hasattr(e, 'original_error') and e.original_error else None
+                details={
+                    "original_error": str(e.original_error)
+                } if hasattr(e, 'original_error') and e.original_error else None
             )
         
         # ===== 일반 예외 처리 =====
@@ -333,9 +362,24 @@ def create_app(config_name=None):
             error_type="InternalServerError"
         )
     
+    # ===== 보안 헤더 추가 =====
+    @app.after_request
+    def add_security_headers(response):
+        """보안 헤더 추가"""
+        if getattr(config, 'SECURITY_HEADERS', False):
+            response.headers['X-Content-Type-Options'] = 'nosniff'
+            response.headers['X-Frame-Options'] = 'DENY'
+            response.headers['X-XSS-Protection'] = '1; mode=block'
+            
+            # HTTPS에서만 Strict-Transport-Security
+            if request.is_secure:
+                response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        
+        return response
+    
     logger.info("✓ 라우트 및 에러 핸들러 등록 완료")
     logger.info("="*70)
-    logger.info("🎉 서버 준비 완료! Phase 3 모든 기능 활성화")
+    logger.info("🎉 서버 준비 완료! Rework Phase 1 적용됨")
     logger.info("="*70)
     
     return app

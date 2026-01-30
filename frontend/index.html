@@ -13,6 +13,14 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫁</text></svg>">
     
+    <!-- ✅ 환경변수 주입 포인트 (GitHub Actions에서 치환) -->
+    <script>
+        window.ENV = {
+            API_URL: '${VITE_API_URL}' || '',
+            ENVIRONMENT: '${VITE_ENV}' || 'production'
+        };
+    </script>
+    
     <!-- CSS Modules -->
     <link rel="stylesheet" href="./css/components/variables.css">
     <link rel="stylesheet" href="./css/components/layout.css">
@@ -31,15 +39,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0" defer></script>
+    
+    <!-- ✅ Config 먼저 로드 (script.js 이전) -->
+    <script src="js/config.js"></script>
 </head>
 
 <body>
-    <!-- Background Elements (Layout.css의 body::before/after 활용) -->
-    
     <!-- Main Application Container -->
     <main class="container" role="main">
         
-        <!-- 1. Header Section: 브랜드 아이덴티티 강조 -->
+        <!-- 1. Header Section -->
         <header class="section mb-xl">
             <div class="text-center">
                 <div class="mb-sm">
@@ -54,7 +63,7 @@
                 </p>
                 <div class="flex-center gap-sm mt-md">
                     <span class="text-tiny text-muted bg-gray-100 p-sm" style="border-radius: 20px; padding: 4px 12px;">
-                        <i class="fa-solid fa-code-branch"></i> v2.0.1
+                        <i class="fa-solid fa-code-branch"></i> v6.0.0
                     </span>
                     <span class="text-tiny text-muted bg-gray-100 p-sm" style="border-radius: 20px; padding: 4px 12px;">
                         <i class="fa-solid fa-user-doctor"></i> Dev: 신상우
@@ -65,7 +74,7 @@
 
         <div class="section-divider" aria-hidden="true"></div>
 
-        <!-- 2. Workflow Section: 업로드 -> 분석 -> 결과 -->
+        <!-- 2. Workflow Section -->
         <div class="grid grid--1-col gap-xl">
             
             <!-- Step 1: Image Upload -->
@@ -103,7 +112,7 @@
                 <input type="file" id="imageInput" accept="image/jpeg,image/png,image/jpg" hidden>
             </section>
 
-            <!-- Step 2: Preview & Analysis (Conditions apply via JS) -->
+            <!-- Step 2: Preview & Analysis -->
             <div id="previewContainer" class="preview-container preview hidden">
                 <section aria-labelledby="preview-heading" class="card card--bordered p-lg">
                     <h3 id="preview-heading" class="heading-4 text-center mb-lg">
@@ -111,7 +120,6 @@
                     </h3>
                     
                     <div class="grid grid--2-cols gap-lg" style="align-items: center;">
-                        <!-- Image Preview -->
                         <div class="card__image-container">
                             <img id="imagePreview" class="preview__image" alt="업로드된 X-ray 미리보기">
                             <div class="card__image-label">
@@ -119,7 +127,6 @@
                             </div>
                         </div>
 
-                        <!-- Analysis Controls -->
                         <div class="flex-column gap-md">
                             <div class="notice notice--info notice--small mb-md">
                                 <i class="notice__icon fa-solid fa-circle-info"></i>
@@ -129,7 +136,6 @@
                                 </div>
                             </div>
 
-                            <!-- Agreement -->
                             <div class="agreement-box agreement agreement--visible" id="agreementBox">
                                 <input type="checkbox" id="agreeCheckbox" class="agreement__checkbox">
                                 <label for="agreeCheckbox" class="agreement__label text-small">
@@ -137,7 +143,6 @@
                                 </label>
                             </div>
 
-                            <!-- Action Buttons -->
                             <div class="btn-group btn-group--start mt-md">
                                 <button id="analyzeBtn" class="btn btn--primary btn--large btn--block" type="button" disabled>
                                     <i class="btn__icon fa-solid fa-brain"></i>
@@ -181,52 +186,38 @@
                 </div>
 
                 <article class="card card--report card--elevated" id="reportCard">
-                    <!-- Report Header -->
                     <header class="card__header card__header--accent flex-between">
                         <div class="flex-center gap-sm">
                             <i class="fa-solid fa-file-medical text-primary text-large"></i>
                             <span class="text-bold text-large">AI Diagnosis Result</span>
                         </div>
                         <div class="text-tiny text-muted bg-white p-sm" style="border-radius: 4px; border: 1px solid var(--color-border-light);">
-                            ID: <span id="reportId">REQ-2024-AI</span>
+                            ID: <span id="reportId">REQ-2026-AI</span>
                         </div>
                     </header>
                     
-                    <!-- Report Body -->
                     <div class="card__body card__body--divided">
-                        <!-- Left: Analyzed Image -->
                         <section class="card__section" style="flex: 1;">
                             <h4 class="card__section-title">분석된 영상</h4>
-                            <div id="reportImageContainer" class="card__image-container">
-                                <!-- Image injected by JS -->
-                            </div>
+                            <div id="reportImageContainer" class="card__image-container"></div>
                             <p class="text-tiny text-center text-muted mt-sm">
                                 * AI가 주요 특징을 추출하여 분석한 원본 이미지입니다.
                             </p>
                         </section>
                         
-                        <!-- Right: Analysis Data -->
                         <section class="card__section" style="flex: 1.2;">
                             <h4 class="card__section-title">상세 분석 결과</h4>
                             
-                            <!-- Gauge Chart Area -->
                             <div class="chart-container mb-lg" style="position: relative; height:180px; width:100%; display: flex; justify-content: center;">
                                 <canvas id="gaugeChart"></canvas>
                             </div>
                             
-                            <!-- Detailed Metrics -->
-                            <div id="resultsContent" class="grid gap-sm mb-lg">
-                                <!-- Results injected by JS -->
-                            </div>
+                            <div id="resultsContent" class="grid gap-sm mb-lg"></div>
                             
-                            <!-- AI Comment Box -->
-                            <div id="resultComment" class="notice notice--diagnosis notice--info" role="alert">
-                                <!-- Comment injected by JS -->
-                            </div>
+                            <div id="resultComment" class="notice notice--diagnosis notice--info" role="alert"></div>
                         </section>
                     </div>
 
-                    <!-- Report Footer / Actions -->
                     <footer class="card__footer bg-gray-100 flex-between">
                         <div class="text-tiny text-muted flex-center gap-sm">
                             <i class="fa-solid fa-shield-halved"></i>
@@ -250,7 +241,6 @@
 
         <!-- Footer Section -->
         <footer class="section mt-xl">
-            <!-- Medical Disclaimer -->
             <div class="notice-box notice--warning notice--medical-warning mb-lg">
                 <i class="notice__icon fa-solid fa-triangle-exclamation"></i>
                 <div class="notice__content">
@@ -264,17 +254,16 @@
                     <i class="fa-solid fa-code"></i> Developed by <strong>신상우 (30814)</strong>
                 </p>
                 <p class="text-tiny opacity-75">
-                    © 2024 Smart Medical Diagnosis System. All rights reserved.
+                    © 2026 Smart Medical Diagnosis System. All rights reserved.
                 </p>
             </div>
         </footer>
 
     </main>
 
-    <!-- Scripts -->
+    <!-- ✅ Scripts - config.js가 먼저 로드되었으므로 script.js에서 사용 가능 -->
     <script src="js/script.js" defer></script>
     
-    <!-- Screen Reader Utility -->
     <style>
         .sr-only {
             position: absolute;
