@@ -1,0 +1,71 @@
+# Render.com 배포 설정
+# https://render.com/docs/render-yaml-spec
+
+services:
+  - type: web
+    name: pneumonia-api
+    env: python
+    region: oregon  # 또는 frankfurt (가까운 지역 선택)
+    plan: free  # free/starter/standard
+    
+    # 빌드 설정
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    
+    # 시작 명령어
+    startCommand: |
+      gunicorn --bind 0.0.0.0:$PORT \
+               --workers 2 \
+               --threads 2 \
+               --worker-class gthread \
+               --worker-tmp-dir /dev/shm \
+               --timeout 120 \
+               --access-logfile - \
+               --error-logfile - \
+               --log-level info \
+               backend.app:app
+    
+    # 헬스체크 설정
+    healthCheckPath: /health/ready
+    
+    # 환경변수
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      
+      - key: FLASK_APP
+        value: backend.app
+      
+      - key: PYTHONUNBUFFERED
+        value: 1
+      
+      - key: SECRET_KEY
+        generateValue: true  # 자동 생성
+      
+      - key: CORS_ORIGINS
+        value: https://sinsangwoo.github.io
+        # 주의: 실제 GitHub Pages URL로 변경 필요
+      
+      - key: LOG_LEVEL
+        value: INFO
+      
+      - key: MAX_CONTENT_LENGTH
+        value: 10485760  # 10MB
+      
+      # Render 환경 감지용
+      - key: RENDER
+        value: true
+      
+      # 모델 파일 경로 (Render 파일 시스템)
+      - key: MODEL_PATH
+        value: /opt/render/project/src/backend/models/artifacts/model.onnx
+      
+      - key: LABELS_PATH
+        value: /opt/render/project/src/backend/models/artifacts/labels.txt
+    
+    # 자동 배포 설정
+    autoDeploy: true
+    
+    # 브랜치 설정
+    branch: main
