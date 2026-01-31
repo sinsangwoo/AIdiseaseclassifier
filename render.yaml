@@ -5,28 +5,37 @@ services:
   - type: web
     name: pneumonia-api
     env: python
-    region: oregon  # 또는 frankfurt (가까운 지역 선택)
-    plan: free  # free/starter/standard
+    region: oregon
+    plan: free
     
-    # 빌드 설정
+    # 런타임 명시
+    runtime: python
+    
+    # ✅ 빌드 설정 (ONNX 호환성 개선)
     buildCommand: |
-      pip install --upgrade pip
+      pip install --upgrade pip setuptools wheel
       pip install -r requirements.txt
     
-    # 시작 명령어
+    # ✅ Start Command 수정 (ModuleNotFoundError 해결)
+    # - backend.app:app 명시 (app.py → backend/app.py)
+    # - gthread 사용 (ONNX 메모리 충돌 방지)
+    # - worker 1개로 제한 (Free tier 메모리 최적화)
     startCommand: |
       gunicorn --bind 0.0.0.0:$PORT \
-               --workers 2 \
-               --threads 2 \
+               --workers 1 \
                --worker-class gthread \
+               --threads 4 \
                --worker-tmp-dir /dev/shm \
                --timeout 120 \
+               --max-requests 1000 \
+               --max-requests-jitter 50 \
                --access-logfile - \
                --error-logfile - \
                --log-level info \
+               --preload \
                backend.app:app
     
-    # 헬스체크 설정
+    # 헬스체크
     healthCheckPath: /health/ready
     
     # 환경변수
@@ -41,31 +50,38 @@ services:
         value: 1
       
       - key: SECRET_KEY
-        generateValue: true  # 자동 생성
+        generateValue: true
       
       - key: CORS_ORIGINS
         value: https://sinsangwoo.github.io
-        # 주의: 실제 GitHub Pages URL로 변경 필요
       
       - key: LOG_LEVEL
         value: INFO
       
       - key: MAX_CONTENT_LENGTH
-        value: 10485760  # 10MB
+        value: 10485760
       
-      # Render 환경 감지용
+      # ✅ Render 환경 감지
       - key: RENDER
         value: true
       
-      # 모델 파일 경로 (Render 파일 시스템)
+      # ✅ 모델 경로 (Render 워킹 디렉토리 기준 상대 경로)
       - key: MODEL_PATH
-        value: /opt/render/project/src/backend/models/artifacts/model.onnx
+        value: backend/models/artifacts/model.onnx
       
       - key: LABELS_PATH
-        value: /opt/render/project/src/backend/models/artifacts/labels.txt
+        value: backend/models/artifacts/labels.txt
+      
+      # ✅ ONNX Runtime 최적화 (메모리 충돌 방지)
+      - key: OMP_NUM_THREADS
+        value: 2
+      
+      - key: OMP_WAIT_POLICY
+        value: PASSIVE
+      
+      - key: KMP_AFFINITY
+        value: disabled
     
-    # 자동 배포 설정
+    # 자동 배포
     autoDeploy: true
-    
-    # 브랜치 설정
     branch: main
