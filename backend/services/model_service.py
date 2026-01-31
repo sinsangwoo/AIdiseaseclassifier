@@ -1,19 +1,19 @@
 """
-모델 관리 서비스 (Phase 3 - Backend Refactoring)
+모델 관리 서비스 (Phase 3-4)
 
-이 모듈은 ONNX 모델의 로딩, 캐싱, 예측을 담당하는 서비스 레이어입니다.
-기존 ModelPredictor의 로직을 확장하여 더 나은 관심사 분리와 캐싱을 제공합니다.
+ONNX 모델의 로딩, 캐싱, 예측을 담당하는 서비스 레이어입니다.
+기존 ModelPredictor의 로직을 확장하여 관심사 분리와 캐싱을 제공합니다.
 """
 
-import os
 import time
-from functools import lru_cache
-from typing import Dict, List, Optional, Tuple
 import hashlib
+from functools import lru_cache
+from typing import Dict, List, Optional
+
 import numpy as np
 
-from ..models import ModelPredictor
-from ..utils import get_logger, ModelLoadError, PredictionError
+from backend.models import ModelPredictor
+from backend.utils import get_logger, ModelLoadError, PredictionError
 
 
 class ModelService:
@@ -60,6 +60,8 @@ class ModelService:
             'warmup_completed': False
         }
         
+        # 캐시 크기 설정 (lru_cache는 함수 데코레이터이므로 동적 설정 불가)
+        # 실제 캐싱은 _cached_predict 메서드에서 수행
         self.logger.info(f"✓ ModelService 초기화 (캐싱: {enable_cache}, 캐시 크기: {cache_size})")
     
     def load_model(self) -> None:
@@ -87,7 +89,7 @@ class ModelService:
         try:
             self.logger.info("🔥 모델 워밍업 시작...")
             
-            # 더미 이미지 생성 (224x224 RGB)
+            # 더미 이미지 생성 (1, 3, 224, 224) - NCHW 포맷
             dummy_input = np.random.rand(1, 3, 224, 224).astype(np.float32)
             
             start_time = time.time()
@@ -131,12 +133,15 @@ class ModelService:
         if should_use_cache:
             image_hash = self._compute_image_hash(processed_image)
             
-            # 캐시에서 결과 조회
-            cached_result = self._get_from_cache(image_hash)
-            if cached_result is not None:
-                self.stats['cache_hits'] += 1
-                self.logger.debug(f"✓ 캐시 히트 (해시: {image_hash[:8]}...)")
-                return cached_result
+            # 캐시에서 조회 시도
+            try:
+                cached_result = self._cached_predict(image_hash)
+                if cached_result is not None:
+                    self.stats['cache_hits'] += 1
+                    self.logger.debug(f"✓ 캐시 히트 (해시: {image_hash[:8]}...)")
+                    return cached_result
+            except:
+                pass  # 캐시 미스
             
             self.stats['cache_misses'] += 1
         
@@ -168,41 +173,38 @@ class ModelService:
         return hashlib.sha256(image_bytes).hexdigest()
     
     @lru_cache(maxsize=128)
-    def _get_from_cache(self, image_hash: str) -> Optional[List[Dict[str, any]]]:
+    def _cached_predict(self, image_hash: str) -> Optional[List[Dict]]:
         """
-        캐시에서 예측 결과 조회 (LRU Cache 사용)
+        캐시된 예측 결과 조회 (LRU Cache)
         
-        Note: 실제로는 lru_cache 데코레이터가 캐싱을 담당하므로,
-        이 메서드는 항상 None을 반환하고 실제 캐싱은 _predict_cached에서 수행
+        Note: lru_cache는 동일한 인자에 대해 결과를 캐싱
+        이 메서드는 항상 None을 반환하고, 실제 캐싱은 _save_to_cache에서 수행
         """
         return None
     
-    def _save_to_cache(self, image_hash: str, predictions: List[Dict[str, any]]) -> None:
+    def _save_to_cache(self, image_hash: str, predictions: List[Dict]) -> None:
         """
         예측 결과를 캐시에 저장
         
-        Note: _predict_cached 메서드를 통해 자동으로 캐싱됨
+        functools.lru_cache는 함수의 반환값을 캐싱하므로,
+        여기서는 간단한 dict 기반 캐시 사용
         """
-        # LRU cache를 통한 자동 캐싱
-        self._predict_cached(image_hash, predictions)
+        # 간단한 dict 캐시 (실제 구현)
+        if not hasattr(self, '_cache'):
+            self._cache = {}
+        
+        self._cache[image_hash] = predictions
+        
+        # LRU 정책: 캐시 크기 초과 시 가장 오래된 항목 제거
+        if len(self._cache) > self.cache_size:
+            oldest_key = next(iter(self._cache))
+            del self._cache[oldest_key]
     
-    @lru_cache(maxsize=128)
-    def _predict_cached(
-        self,
-        image_hash: str,
-        predictions: List[Dict[str, any]]
-    ) -> List[Dict[str, any]]:
-        """
-        캐시된 예측 결과 반환 (실제 LRU 캐시 저장소)
-        
-        Args:
-            image_hash: 이미지 해시
-            predictions: 예측 결과
-        
-        Returns:
-            캐시된 예측 결과
-        """
-        return predictions
+    def _get_from_cache(self, image_hash: str) -> Optional[List[Dict]]:
+        """캐시에서 결과 조회"""
+        if not hasattr(self, '_cache'):
+            return None
+        return self._cache.get(image_hash)
     
     def get_model_info(self) -> Dict[str, any]:
         """모델 정보 조회"""
@@ -248,23 +250,26 @@ class ModelService:
     
     def clear_cache(self) -> None:
         """캐시 초기화"""
-        self._predict_cached.cache_clear()
+        if hasattr(self, '_cache'):
+            self._cache.clear()
+        self._cached_predict.cache_clear()
         self.stats['cache_hits'] = 0
         self.stats['cache_misses'] = 0
         self.logger.info("✓ 캐시 초기화 완료")
     
     def get_cache_info(self) -> Dict[str, int]:
         """
-        LRU 캐시 정보 조회
+        캐시 정보 조회
         
         Returns:
             캐시 히트/미스/크기 정보
         """
-        cache_info = self._predict_cached.cache_info()
+        cache_info = self._cached_predict.cache_info()
+        current_size = len(self._cache) if hasattr(self, '_cache') else 0
         
         return {
-            'hits': cache_info.hits,
-            'misses': cache_info.misses,
-            'maxsize': cache_info.maxsize,
-            'currsize': cache_info.currsize
+            'hits': self.stats['cache_hits'],
+            'misses': self.stats['cache_misses'],
+            'maxsize': self.cache_size,
+            'currsize': current_size
         }
