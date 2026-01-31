@@ -30,14 +30,20 @@ jobs:
         pip install pytest pytest-cov
     
     - name: Run unit tests
+      env:
+        PYTHONPATH: ${{ github.workspace }}
       run: |
         pytest tests/ -v -m "unit" --tb=short
     
     - name: Run API tests
+      env:
+        PYTHONPATH: ${{ github.workspace }}
       run: |
         pytest tests/ -v -m "api" --tb=short
     
     - name: Run all tests with coverage
+      env:
+        PYTHONPATH: ${{ github.workspace }}
       run: |
         pytest tests/ -v --cov=backend --cov-report=xml --cov-report=term-missing
     
