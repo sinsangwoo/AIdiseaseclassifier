@@ -12,8 +12,8 @@ from typing import Dict, List, Optional, Tuple
 import hashlib
 import numpy as np
 
-from ..models import ModelPredictor
-from ..utils import get_logger, ModelLoadError, PredictionError
+from backend.models import ModelPredictor
+from backend.utils import get_logger, ModelLoadError, PredictionError
 
 
 class ModelService:
@@ -190,19 +190,22 @@ class ModelService:
     def _predict_cached(
         self,
         image_hash: str,
-        predictions: List[Dict[str, any]]
+        predictions: Tuple[Tuple[str, float], ...]
     ) -> List[Dict[str, any]]:
         """
         캐시된 예측 결과 반환 (실제 LRU 캐시 저장소)
         
+        Note: predictions를 tuple로 변환하여 해시 가능하게 만듦
+        
         Args:
             image_hash: 이미지 해시
-            predictions: 예측 결과
+            predictions: 예측 결과 (tuple 형태)
         
         Returns:
             캐시된 예측 결과
         """
-        return predictions
+        # tuple을 다시 list of dict로 변환
+        return [{'className': cls, 'probability': prob} for cls, prob in predictions]
     
     def get_model_info(self) -> Dict[str, any]:
         """모델 정보 조회"""
