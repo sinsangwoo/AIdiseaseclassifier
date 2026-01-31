@@ -10,12 +10,14 @@ from pathlib import Path
 
 # 프로젝트 루트를 Python 경로에 추가
 project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root / 'backend'))
+sys.path.insert(0, str(project_root))
 
 
 @pytest.fixture(scope='session')
 def app():
-    """Flask 애플리케이션 fixture (전체 세션)"""
+    """
+Flask 애플리케이션 fixture (전체 세션)
+"""
     from backend.app import create_app
     
     app = create_app('testing')
@@ -26,7 +28,9 @@ def app():
 
 @pytest.fixture(scope='function')
 def client(app):
-    """Flask 테스트 클라이언트 fixture (각 테스트마다)"""
+    """
+Flask 테스트 클라이언트 fixture (각 테스트마다)
+"""
     return app.test_client()
 
 
@@ -131,7 +135,7 @@ def mock_model_predictor():
         'model_path': 'test_model.onnx',
         'labels_path': 'test_labels.txt',
         'num_classes': 3,
-        'class_names': ['정상', '폐렴', '결핵']
+        'class_names': ['정상', '폐눴', '결핵']
     }
     
     return predictor
@@ -139,7 +143,9 @@ def mock_model_predictor():
 
 # Pytest 설정
 def pytest_configure(config):
-    """Pytest 전역 설정"""
+    """
+Pytest 전역 설정
+"""
     config.addinivalue_line(
         "markers", "unit: 단위 테스트 (빠름)"
     )
