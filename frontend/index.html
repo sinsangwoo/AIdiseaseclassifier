@@ -34,14 +34,9 @@
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
     
-    <!-- External Libraries -->
+    <!-- External Libraries (for report saving) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0" defer></script>
-    
-    <!-- ✅ Config 먼저 로드 (script.js 이전) -->
-    <script src="js/config.js"></script>
 </head>
 
 <body>
@@ -63,7 +58,7 @@
                 </p>
                 <div class="flex-center gap-sm mt-md">
                     <span class="text-tiny text-muted bg-gray-100 p-sm" style="border-radius: 20px; padding: 4px 12px;">
-                        <i class="fa-solid fa-code-branch"></i> v6.0.0
+                        <i class="fa-solid fa-code-branch"></i> v7.0.0
                     </span>
                     <span class="text-tiny text-muted bg-gray-100 p-sm" style="border-radius: 20px; padding: 4px 12px;">
                         <i class="fa-solid fa-user-doctor"></i> Dev: 신상우
@@ -208,10 +203,6 @@
                         <section class="card__section" style="flex: 1.2;">
                             <h4 class="card__section-title">상세 분석 결과</h4>
                             
-                            <div class="chart-container mb-lg" style="position: relative; height:180px; width:100%; display: flex; justify-content: center;">
-                                <canvas id="gaugeChart"></canvas>
-                            </div>
-                            
                             <div id="resultsContent" class="grid gap-sm mb-lg"></div>
                             
                             <div id="resultComment" class="notice notice--diagnosis notice--info" role="alert"></div>
@@ -261,21 +252,7 @@
 
     </main>
 
-    <!-- ✅ Scripts - config.js가 먼저 로드되었으므로 script.js에서 사용 가능 -->
-    <script src="js/script.js" defer></script>
-    
-    <style>
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border-width: 0;
-        }
-    </style>
+    <!-- ✅ ES6 Module 방식으로 앱 로드 -->
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
