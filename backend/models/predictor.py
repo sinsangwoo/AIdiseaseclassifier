@@ -10,7 +10,7 @@ from typing import List, Dict, Any
 import numpy as np
 import onnxruntime as rt
 
-from utils import (
+from backend.utils import (
     LoggerMixin,
     ModelNotLoadedError,
     ModelLoadError,
