@@ -1,4 +1,4 @@
-# Phase 3: 백엔드 구조 개선 및 캐싱 도입
+# Phase 3: 백엔드 구조 개선 및 캐싱 도입 (완료)
 
 ## 🎯 Phase 3 목표
 
@@ -10,12 +10,17 @@ Phase 1, 2에서 해결한 배포 및 프론트엔드 이슈에 이어, Phase 3�
    - CI/CD Python 버전 이슈 수정 (3.9 제거)
    - Render 배포 워커 변경 (gevent → gthread)
 
-2. **백엔드 아키텍처 개선** ✅
+2. **임포트 시스템 전면 개선** ✅
+   - **상대 임포트 → 절대 임포트 변환**
+   - CI/CD PYTHONPATH 설정
+   - 현업 표준 패키지 구조 적용
+
+3. **백엔드 아키텍처 개선** ✅
    - 모델 관리 로직을 별도 서비스 레이어로 분리
    - 관심사 분리 (Separation of Concerns)
    - 단일 책임 원칙 (Single Responsibility Principle) 적용
 
-3. **성능 최적화** ✅
+4. **성능 최적화** ✅
    - LRU 캐시 기반 예측 결과 캐싱
    - 모델 워밍업 (첫 예측 지연 제거)
    - 캐시 히트율 추적 및 통계
@@ -65,6 +70,91 @@ strategy:
   matrix:
     python-version: ['3.10', '3.11', '3.12']
 ```
+
+---
+
+## 🚀 임포트 시스템 개선 (핵심 수정)
+
+### 문제점
+```python
+# ❌ 상대 임포트 (실행 위치에 따라 실패)
+from ..models import ModelPredictor
+from .utils import get_logger
+```
+
+**발생한 오류:**
+```
+ImportError: attempted relative import beyond top-level package
+ModuleNotFoundError: No module named '__main__.models'
+```
+
+### 해결책: 절대 임포트 전면 적용
+
+```python
+# ✅ 절대 임포트 (어디서든 작동)
+from backend.models import ModelPredictor
+from backend.utils import get_logger
+```
+
+### 수정된 파일 목록
+
+#### 1. `backend/models/predictor.py`
+```python
+# Before
+from utils import (LoggerMixin, ...)
+
+# After
+from backend.utils import (LoggerMixin, ...)
+```
+
+#### 2. `backend/services/model_service.py`
+```python
+# Before
+from ..models import ModelPredictor
+from ..utils import get_logger
+
+# After
+from backend.models import ModelPredictor
+from backend.utils import get_logger
+```
+
+#### 3. `backend/app.py`
+```python
+# Before
+from config import get_config
+from services import ImageProcessor, ModelService
+
+# After
+from backend.config import get_config
+from backend.services import ImageProcessor, ModelService
+```
+
+#### 4. `conftest.py`
+```python
+# Before
+sys.path.insert(0, str(project_root / 'backend'))
+
+# After
+sys.path.insert(0, str(project_root))
+# 이제 backend.* 형태로 임포트
+```
+
+### CI/CD PYTHONPATH 설정
+
+```yaml
+# .github/workflows/test.yml
+steps:
+  - name: Run unit tests
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+    run: |
+      pytest tests/ -v -m "unit" --tb=short
+```
+
+**효과:**
+- 프로젝트 루트가 PYTHONPATH에 추가됨
+- `from backend.xxx` 임포트가 어디서든 작동
+- CI/CD와 로컬 환경의 일관성 확보
 
 ---
 
@@ -131,8 +221,8 @@ model_service.load_model()
 
 ```python
 @lru_cache(maxsize=128)
-def _predict_cached(self, image_hash: str, predictions: List[Dict]) -> List[Dict]:
-    return predictions
+def _predict_cached(self, image_hash: str, predictions: Tuple) -> List[Dict]:
+    return [{'className': cls, 'probability': prob} for cls, prob in predictions]
 ```
 
 **작동 방식:**
@@ -317,7 +407,21 @@ curl -X DELETE http://localhost:5000/model/cache
 
 ### Phase 2 → Phase 3 변경사항
 
-#### 1. `app.py` 임포트 변경
+#### 1. 임포트 방식 변경 (필수)
+
+**Before:**
+```python
+from models import ModelPredictor
+from ..utils import get_logger
+```
+
+**After:**
+```python
+from backend.models import ModelPredictor
+from backend.utils import get_logger
+```
+
+#### 2. `app.py` 임포트 변경
 
 **Before:**
 ```python
@@ -330,14 +434,14 @@ predictions = predictor.predict(image)
 
 **After:**
 ```python
-from services import ModelService
+from backend.services import ModelService
 
 model_service = ModelService(...)
 model_service.load_model()
 predictions = model_service.predict(image)
 ```
 
-#### 2. 환경변수 추가 (선택사항)
+#### 3. 환경변수 추가 (선택사항)
 
 ```bash
 # .env
@@ -345,7 +449,7 @@ ENABLE_MODEL_CACHE=true
 MODEL_CACHE_SIZE=128
 ```
 
-#### 3. 새 엔드포인트 활용
+#### 4. 새 엔드포인트 활용
 
 ```python
 # 모니터링 대시보드에서 활용
@@ -362,6 +466,8 @@ if cache_hit_rate < 20:
 
 - [x] Python 3.9 제거 (CI/CD 수정)
 - [x] `gthread` 워커 적용 (Render 설정)
+- [x] 절대 임포트 전환 (전체 코드베이스)
+- [x] PYTHONPATH 설정 (CI/CD)
 - [x] `ModelService` 구현
 - [x] 캐싱 로직 추가
 - [x] 새 엔드포인트 추가
@@ -369,6 +475,52 @@ if cache_hit_rate < 20:
 - [ ] 단위 테스트 작성 (Phase 4)
 - [ ] 통합 테스트 작성 (Phase 4)
 - [ ] 문서 업데이트 (README.md)
+
+---
+
+## 📚 패키지 구조 요약
+
+### 최종 패키지 구조
+
+```
+AIdiseaseclassifier/
+├── backend/                    # 백엔드 패키지 (절대 임포트 기준)
+│   ├── __init__.py
+│   ├── app.py                  # ✅ from backend.services import ModelService
+│   ├── config.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   └── predictor.py        # ✅ from backend.utils import ...
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── image_processor.py
+│   │   └── model_service.py    # ✅ from backend.models import ...
+│   └── utils/
+│       ├── __init__.py
+│       └── ...
+├── tests/
+│   └── ...
+├── conftest.py                 # ✅ sys.path.insert(0, project_root)
+└── .github/workflows/
+    └── test.yml                # ✅ PYTHONPATH: ${{ github.workspace }}
+```
+
+### 임포트 규칙
+
+**절대 임포트 (Always):**
+```python
+from backend.models import ModelPredictor
+from backend.services import ModelService
+from backend.utils import get_logger
+from backend.config import get_config
+```
+
+**상대 임포트 (Never):**
+```python
+# ❌ 사용 금지
+from ..models import ModelPredictor
+from .utils import get_logger
+```
 
 ---
 
@@ -397,6 +549,8 @@ Phase 4에서는 다음 기능을 구현할 예정입니다:
 
 ## 📚 참고 자료
 
+- [Python Import System](https://docs.python.org/3/reference/import.html)
+- [Absolute vs Relative Imports](https://realpython.com/absolute-vs-relative-python-imports/)
 - [Python LRU Cache](https://docs.python.org/3/library/functools.html#functools.lru_cache)
 - [Gunicorn Worker Classes](https://docs.gunicorn.org/en/stable/design.html#async-workers)
 - [Flask Application Factory](https://flask.palletsprojects.com/en/2.3.x/patterns/appfactories/)
