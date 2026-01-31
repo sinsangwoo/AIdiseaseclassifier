@@ -16,10 +16,10 @@ services:
       pip install --upgrade pip setuptools wheel
       pip install -r requirements.txt
     
-    # ✅ Start Command 수정 (ModuleNotFoundError 해결)
-    # - backend.app:app 명시 (app.py → backend/app.py)
-    # - gthread 사용 (ONNX 메모리 충돌 방지)
-    # - worker 1개로 제한 (Free tier 메모리 최적화)
+    # ✅ Start Command 수정 (gevent → gthread)
+    # - ONNX 모델 로딩 시 Segmentation Fault 및 gevent 호환성 이슈 해결
+    # - gthread: 스레드 기반 워커로 안정성 향상
+    # - backend.app:app 경로 명시 (ModuleNotFoundError 해결)
     startCommand: |
       gunicorn --bind 0.0.0.0:$PORT \
                --workers 1 \

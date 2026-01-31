@@ -1,9 +1,13 @@
 """
-이미지 처리 서비스 모듈
+서비스 계층 (Services Layer)
 
-업로드된 이미지의 전처리 및 검증 기능을 제공합니다.
+비즈니스 로직과 도메인 서비스를 제공합니다.
 """
 
 from .image_processor import ImageProcessor
+from .model_service import ModelService
 
-__all__ = ['ImageProcessor']
+__all__ = [
+    'ImageProcessor',
+    'ModelService'
+]
