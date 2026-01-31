@@ -9,9 +9,9 @@ import io
 from flask import Flask, request
 from flask_cors import CORS
 
-from config import get_config
-from services import ImageProcessor, ModelService
-from utils import (
+from backend.config import get_config
+from backend.services import ImageProcessor, ModelService
+from backend.utils import (
     # 검증
     validate_file,
     # 응답
