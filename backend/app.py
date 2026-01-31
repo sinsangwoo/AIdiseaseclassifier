@@ -2,7 +2,7 @@
 AI 질병 진단 Flask 애플리케이션 (Production-Ready)
 
 ONNX 모델을 사용하여 의료 이미지를 분석하고 질병을 예측합니다.
-Phase 1 Rework: 배포 이슈 해결 및 CORS 설정 강화
+Phase 3 Rework: 백엔드 구조 개선, 모델 서비스 레이어 분리, 캐싱 도입
 """
 
 import io
@@ -10,8 +10,7 @@ from flask import Flask, request
 from flask_cors import CORS
 
 from config import get_config
-from models import ModelPredictor
-from services import ImageProcessor
+from services import ImageProcessor, ModelService
 from utils import (
     # 검증
     validate_file,
@@ -40,7 +39,7 @@ from utils import (
 
 def create_app(config_name=None):
     """
-    Flask 애플리케이션 팩토리 함수 (Production-Ready)
+    Flask 애플리케이션 팩토리 함수 (Production-Ready, Phase 3)
     
     Args:
         config_name (str): 환경 설정 이름 ('development', 'production', 'testing')
@@ -62,7 +61,7 @@ def create_app(config_name=None):
     )
     
     logger.info("="*70)
-    logger.info("🚀 AI 질병 진단 서버 시작 (Rework Phase 1)")
+    logger.info("🚀 AI 질병 진단 서버 시작 (Rework Phase 3)")
     logger.info(f"환경: {config_name or 'default'}")
     logger.info(f"디버그 모드: {config.DEBUG}")
     logger.info(f"모델 경로: {config.MODEL_PATH}")
@@ -96,15 +95,17 @@ def create_app(config_name=None):
     )
     logger.info("✓ 이미지 검증기 초기화")
     
-    # ===== 모델 초기화 =====
-    predictor = ModelPredictor(
+    # ===== 모델 서비스 초기화 (Phase 3 - 새로운 서비스 레이어) =====
+    model_service = ModelService(
         model_path=config.MODEL_PATH,
-        labels_path=config.LABELS_PATH
+        labels_path=config.LABELS_PATH,
+        enable_cache=getattr(config, 'ENABLE_MODEL_CACHE', True),
+        cache_size=getattr(config, 'MODEL_CACHE_SIZE', 128)
     )
     
     try:
-        predictor.load_model()
-        logger.info("✓ 모델 로드 완료")
+        model_service.load_model()
+        logger.info("✓ 모델 서비스 로드 완료")
     except ModelLoadError as e:
         logger.error(f"✗ 모델 로드 실패: {e.message}")
         logger.warning("⚠  서버는 시작되지만 예측 기능이 작동하지 않습니다")
@@ -120,15 +121,22 @@ def create_app(config_name=None):
         """메인 엔드포인트"""
         return {
             "service": "AI Disease Classifier API",
-            "version": "6.0.0",
+            "version": "7.0.0-phase3",
             "status": "running",
             "environment": config_name or "default",
+            "features": {
+                "model_caching": model_service.enable_cache,
+                "cache_size": model_service.cache_size,
+                "warmup": model_service.stats['warmup_completed']
+            },
             "endpoints": {
                 "health": "/health",
                 "health_detailed": "/health/detailed",
                 "health_ready": "/health/ready",
                 "health_live": "/health/live",
                 "model_info": "/model/info",
+                "model_stats": "/model/stats",
+                "model_cache": "/model/cache",
                 "predict": "/predict"
             }
         }
@@ -136,22 +144,22 @@ def create_app(config_name=None):
     @app.route("/health")
     def health_check():
         """간단한 헬스체크"""
-        model_status = "ready" if predictor.is_ready() else "not_loaded"
+        model_status = "ready" if model_service.is_ready() else "not_loaded"
         
         return {
-            "status": "healthy" if predictor.is_ready() else "degraded",
+            "status": "healthy" if model_service.is_ready() else "degraded",
             "model": model_status,
             "timestamp": health_checker.get_uptime()['start_time'],
-            "version": "6.0.0"
+            "version": "7.0.0-phase3"
         }
     
     @app.route("/health/detailed")
     def detailed_health_check():
         """상세 헬스체크 (모니터링용)"""
         return health_checker.comprehensive_health_check(
-            predictor=predictor,
+            predictor=model_service._predictor if model_service._predictor else None,
             cache=None,
-            metrics=None
+            metrics=model_service.get_statistics()
         )
     
     @app.route("/health/ready")
@@ -160,7 +168,7 @@ def create_app(config_name=None):
         import psutil
         
         checks = {
-            'model': predictor.is_ready(),
+            'model': model_service.is_ready(),
             'disk': psutil.disk_usage('/').percent < 90,
             'memory': psutil.virtual_memory().percent < 90
         }
@@ -183,12 +191,67 @@ def create_app(config_name=None):
     @app.route("/model/info")
     def model_info():
         """모델 정보 조회"""
-        return predictor.get_model_info()
+        return model_service.get_model_info()
+    
+    @app.route("/model/stats")
+    def model_stats():
+        """
+        모델 서비스 통계 조회 (Phase 3 신규 엔드포인트)
+        
+        캐시 히트율, 평균 추론 시간 등의 통계 제공
+        """
+        return {
+            "success": True,
+            "statistics": model_service.get_statistics(),
+            "cache_info": model_service.get_cache_info() if model_service.enable_cache else None
+        }
+    
+    @app.route("/model/cache", methods=['GET', 'DELETE'])
+    def model_cache():
+        """
+        모델 캐시 관리 (Phase 3 신규 엔드포인트)
+        
+        GET: 캐시 정보 조회
+        DELETE: 캐시 초기화
+        """
+        if request.method == 'GET':
+            if not model_service.enable_cache:
+                return {
+                    "success": False,
+                    "message": "캐싱이 비활성화되어 있습니다"
+                }, 400
+            
+            return {
+                "success": True,
+                "cache_info": model_service.get_cache_info(),
+                "statistics": {
+                    "cache_hits": model_service.stats['cache_hits'],
+                    "cache_misses": model_service.stats['cache_misses']
+                }
+            }
+        
+        elif request.method == 'DELETE':
+            if not model_service.enable_cache:
+                return {
+                    "success": False,
+                    "message": "캐싱이 비활성화되어 있습니다"
+                }, 400
+            
+            model_service.clear_cache()
+            
+            return {
+                "success": True,
+                "message": "캐시가 초기화되었습니다"
+            }
     
     @app.route("/predict", methods=['POST'])
     def predict():
         """
-        이미지 질병 예측 엔드포인트 (Production-Grade)
+        이미지 질병 예측 엔드포인트 (Production-Grade, Phase 3)
+        
+        Phase 3 개선사항:
+        - ModelService를 통한 캐싱 지원
+        - 상세한 성능 메트릭 제공
         """
         import time
         start_time = time.time()
@@ -198,7 +261,7 @@ def create_app(config_name=None):
         
         try:
             # 1. 모델 준비 상태 확인
-            if not predictor.is_ready():
+            if not model_service.is_ready():
                 raise ModelNotLoadedError()
             
             # 2. 파일 존재 확인
@@ -234,8 +297,8 @@ def create_app(config_name=None):
             in_memory_file.seek(0)
             processed_image = image_processor.preprocess(image_bytes)
             
-            # 7. 예측 수행
-            predictions = predictor.predict(processed_image)
+            # 7. 예측 수행 (캐싱 지원)
+            predictions = model_service.predict(processed_image)
             
             # 8. 처리 시간 계산
             processing_time_ms = (time.time() - start_time) * 1000
@@ -255,7 +318,9 @@ def create_app(config_name=None):
                     'processing_time_ms': round(processing_time_ms, 2),
                     'image_size': list(config.TARGET_IMAGE_SIZE),
                     'filename': file.filename,
-                    'model_version': '1.0.0'
+                    'model_version': '1.0.0-phase3',
+                    'cache_enabled': model_service.enable_cache,
+                    'from_cache': model_service.stats['cache_hits'] > 0
                 }
             }
             
@@ -379,7 +444,9 @@ def create_app(config_name=None):
     
     logger.info("✓ 라우트 및 에러 핸들러 등록 완료")
     logger.info("="*70)
-    logger.info("🎉 서버 준비 완료! Rework Phase 1 적용됨")
+    logger.info("🎉 서버 준비 완료! Rework Phase 3 적용됨")
+    logger.info(f"   - 모델 캐싱: {'활성화' if model_service.enable_cache else '비활성화'}")
+    logger.info(f"   - 캐시 크기: {model_service.cache_size}")
     logger.info("="*70)
     
     return app
