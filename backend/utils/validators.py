@@ -57,13 +57,13 @@ def validate_file(
         logger.warning(error_msg)
         return False, error_msg
     
-    # 파일명 확인 - 테스트에서 기대하는 메시지로 수정
+    # 파일명 확인
     if not file.filename:
         error_msg = "파일명이 없습니다"
         logger.warning(error_msg)
         return False, error_msg
     
-    # 확장자 확인 - 테스트에서 기대하는 메시지로 수정
+    # 확장자 확인
     if not allowed_file(file.filename, allowed_extensions):
         error_msg = "허용되지 않는 파일 형식"
         logger.warning(f"{error_msg} (업로드된 파일: {file.filename})")

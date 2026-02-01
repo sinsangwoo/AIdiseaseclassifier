@@ -85,7 +85,7 @@ class TestValidators:
         is_valid, error_msg = validate_file(file, {'jpg', 'png'})
         
         assert is_valid is False
-        assert '파일명이 없습니다' in error_msg
+        assert error_msg == '파일명이 없습니다'
     
     @pytest.mark.unit
     @pytest.mark.validation
@@ -102,59 +102,70 @@ class TestValidators:
         is_valid, error_msg = validate_file(file, {'jpg', 'png'})
         
         assert is_valid is False
-        assert '허용되지 않는 파일 형식' in error_msg
+        assert error_msg == '허용되지 않는 파일 형식'
 
 
 class TestResponses:
     """응답 헬퍼 함수 테스트"""
     
     @pytest.mark.unit
-    def test_success_response(self):
+    def test_success_response(self, app):
         """success_response - 성공 응답"""
         from backend.utils.responses import success_response
         
-        response = success_response(data={'key': 'value'}, message='성공')
-        
-        assert response['success'] is True
-        assert response['data'] == {'key': 'value'}
-        assert response['message'] == '성공'
+        with app.app_context():
+            response, status_code = success_response(
+                data={'key': 'value'},
+                message='성공'
+            )
+            
+            response_data = response.get_json()
+            assert response_data['success'] is True
+            assert response_data['data'] == {'key': 'value'}
+            assert response_data['message'] == '성공'
+            assert status_code == 200
     
     @pytest.mark.unit
-    def test_error_response(self):
+    def test_error_response(self, app):
         """error_response - 에러 응답"""
         from backend.utils.responses import error_response
         
-        response, status_code = error_response(
-            message='에러 발생',
-            status_code=400,
-            error_type='TestError'
-        )
-        
-        assert response['success'] is False
-        assert response['error'] == '에러 발생'
-        assert response['error_type'] == 'TestError'
-        assert status_code == 400
+        with app.app_context():
+            response, status_code = error_response(
+                message='에러 발생',
+                status_code=400,
+                error_type='TestError'
+            )
+            
+            response_data = response.get_json()
+            assert response_data['success'] is False
+            assert response_data['error']['message'] == '에러 발생'
+            assert response_data['error']['type'] == 'TestError'
+            assert status_code == 400
     
     @pytest.mark.unit
-    def test_prediction_response(self):
+    def test_prediction_response(self, app):
         """prediction_response - 예측 응답"""
         from backend.utils.responses import prediction_response
         
-        predictions = [
-            {'className': '정상', 'probability': 0.8},
-            {'className': '폐렴', 'probability': 0.2}
-        ]
-        
-        response = prediction_response(
-            predictions=predictions,
-            processing_time=123.45,
-            image_size=(224, 224)
-        )
-        
-        assert response['success'] is True
-        assert response['predictions'] == predictions
-        assert 'metadata' in response
-        assert response['metadata']['processing_time_ms'] == 123.45
+        with app.app_context():
+            predictions = [
+                {'className': '정상', 'probability': 0.8},
+                {'className': '폐렴', 'probability': 0.2}
+            ]
+            
+            response, status_code = prediction_response(
+                predictions=predictions,
+                processing_time=123.45,
+                image_size=(224, 224)
+            )
+            
+            response_data = response.get_json()
+            assert response_data['success'] is True
+            assert response_data['predictions'] == predictions
+            assert 'metadata' in response_data
+            assert response_data['metadata']['processing_time_ms'] == 123.45
+            assert status_code == 200
 
 
 class TestExceptions:
@@ -301,4 +312,4 @@ class TestImageValidator:
         is_valid, error_msg = validator.validate_image_dimensions(img_bytes.read())
         
         assert is_valid is False
-        assert '가로세로 비율' in error_msg
+        assert '가로세로 비율이 올바르지 않습니다' in error_msg

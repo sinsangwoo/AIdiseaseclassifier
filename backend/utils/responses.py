@@ -63,18 +63,38 @@ def error_response(
     return jsonify(response), status_code
 
 
-def prediction_response(predictions: list, status_code: int = 200):
+def prediction_response(
+    predictions: list,
+    processing_time: float = None,
+    image_size: tuple = None,
+    status_code: int = 200
+):
     """
-    예측 결과 응답 생성 (하위 호환성 유지)
+    예측 결과 응답 생성
     
     Args:
         predictions (list): 예측 결과 리스트
+        processing_time (float, optional): 처리 시간 (밀리초)
+        image_size (tuple, optional): 이미지 크기 (width, height)
         status_code (int): HTTP 상태 코드
     
     Returns:
         tuple: (response, status_code)
     """
-    return jsonify({
+    response = {
         'success': True,
         'predictions': predictions
-    }), status_code
+    }
+    
+    # 메타데이터 추가
+    if processing_time is not None or image_size is not None:
+        response['metadata'] = {}
+        if processing_time is not None:
+            response['metadata']['processing_time_ms'] = processing_time
+        if image_size is not None:
+            response['metadata']['image_size'] = {
+                'width': image_size[0],
+                'height': image_size[1]
+            }
+    
+    return jsonify(response), status_code
