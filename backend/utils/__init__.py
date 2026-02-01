@@ -21,7 +21,7 @@ from .exceptions import (
 )
 
 # 로깅 관련
-from .logger import setup_logger, get_logger, log_exception
+from .logger import setup_logger, get_logger, log_exception, LoggerMixin
 
 # 헬스체크 관련
 from .health import init_health_checker, get_health_checker
@@ -44,6 +44,7 @@ __all__ = [
     'setup_logger',
     'get_logger',
     'log_exception',
+    'LoggerMixin',
     # 헬스체크
     'init_health_checker',
     'get_health_checker'
