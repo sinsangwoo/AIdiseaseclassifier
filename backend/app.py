@@ -2,21 +2,20 @@
 AI 질병 진단 Flask 애플리케이션 (Production-Ready)
 
 ONNX 모델을 사용하여 의료 이미지를 분석하고 질병을 예측합니다.
-Phase 3 Rework: 백엔드 구조 개선, 모델 서비스 레이어 분리, 캐싱 도입
+Phase 3-4 Rework: 백엔드 구조 개선, 모델 서비스 레이어 분리, 캐싱 도입, HTTP 캐싱
 """
 
 import io
-from flask import Flask, request
+from flask import Flask, request, send_from_directory
 from flask_cors import CORS
 
-from config import get_config
-from services import ImageProcessor, ModelService
-from utils import (
+from backend.config import get_config
+from backend.services import ImageProcessor, ModelService
+from backend.utils import (
     # 검증
     validate_file,
     # 응답
     error_response,
-    prediction_response,
     # 예외
     ModelNotLoadedError,
     ModelLoadError,
@@ -24,7 +23,7 @@ from utils import (
     ImageProcessingError,
     PredictionError,
     FileValidationError,
-    # 로깅
+    # 로그
     setup_logger,
     get_logger,
     log_exception,
@@ -39,7 +38,7 @@ from utils import (
 
 def create_app(config_name=None):
     """
-    Flask 애플리케이션 팩토리 함수 (Production-Ready, Phase 3)
+    Flask 애플리케이션 팩토리 함수 (Production-Ready, Phase 3-4)
     
     Args:
         config_name (str): 환경 설정 이름 ('development', 'production', 'testing')
@@ -47,7 +46,7 @@ def create_app(config_name=None):
     Returns:
         Flask: 설정된 Flask 애플리케이션
     """
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='../frontend')
     
     # ===== 설정 로드 =====
     config = get_config(config_name)
@@ -61,7 +60,7 @@ def create_app(config_name=None):
     )
     
     logger.info("="*70)
-    logger.info("🚀 AI 질병 진단 서버 시작 (Rework Phase 3)")
+    logger.info("🚀 AI 질병 진단 서버 시작 (Rework Phase 3-4)")
     logger.info(f"환경: {config_name or 'default'}")
     logger.info(f"디버그 모드: {config.DEBUG}")
     logger.info(f"모델 경로: {config.MODEL_PATH}")
@@ -79,8 +78,6 @@ def create_app(config_name=None):
     
     CORS(app, **cors_config)
     logger.info(f"✓ CORS 설정 완료")
-    logger.info(f"  - 허용된 Origins: {config.CORS_ORIGINS}")
-    logger.info(f"  - 허용된 Methods: {config.CORS_METHODS}")
     
     # ===== 헬스체커 초기화 =====
     health_checker = init_health_checker(app)
@@ -121,13 +118,14 @@ def create_app(config_name=None):
         """메인 엔드포인트"""
         return {
             "service": "AI Disease Classifier API",
-            "version": "7.0.0-phase3",
+            "version": "8.0.0-phase3-4",
             "status": "running",
             "environment": config_name or "default",
             "features": {
                 "model_caching": model_service.enable_cache,
                 "cache_size": model_service.cache_size,
-                "warmup": model_service.stats['warmup_completed']
+                "warmup": model_service.stats['warmup_completed'],
+                "http_caching": True
             },
             "endpoints": {
                 "health": "/health",
@@ -150,7 +148,7 @@ def create_app(config_name=None):
             "status": "healthy" if model_service.is_ready() else "degraded",
             "model": model_status,
             "timestamp": health_checker.get_uptime()['start_time'],
-            "version": "7.0.0-phase3"
+            "version": "8.0.0-phase3-4"
         }
     
     @app.route("/health/detailed")
@@ -247,9 +245,9 @@ def create_app(config_name=None):
     @app.route("/predict", methods=['POST'])
     def predict():
         """
-        이미지 질병 예측 엔드포인트 (Production-Grade, Phase 3)
+        이미지 질병 예측 엔드포인트 (Production-Grade, Phase 3-4)
         
-        Phase 3 개선사항:
+        Phase 3-4 개선사항:
         - ModelService를 통한 캐싱 지원
         - 상세한 성능 메트릭 제공
         """
@@ -318,7 +316,7 @@ def create_app(config_name=None):
                     'processing_time_ms': round(processing_time_ms, 2),
                     'image_size': list(config.TARGET_IMAGE_SIZE),
                     'filename': file.filename,
-                    'model_version': '1.0.0-phase3',
+                    'model_version': '1.0.0-phase3-4',
                     'cache_enabled': model_service.enable_cache,
                     'from_cache': model_service.stats['cache_hits'] > 0
                 }
@@ -427,11 +425,25 @@ def create_app(config_name=None):
             error_type="InternalServerError"
         )
     
-    # ===== 보안 헤더 추가 =====
+    # ===== Phase 4: HTTP 캐싱 및 보안 헤더 =====
     @app.after_request
-    def add_security_headers(response):
-        """보안 헤더 추가"""
-        if getattr(config, 'SECURITY_HEADERS', False):
+    def add_cache_and_security_headers(response):
+        """고급 HTTP 캐싱 및 보안 헤더 추가 (Phase 4)"""
+        
+        # HTTP 캐싱 (정적 자원)
+        if request.path.startswith('/static/') or \
+           request.path.endswith(('.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico')):
+            # 1년 캐싱 (버전 관리 시 변경)
+            response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        elif request.path in ['/', '/health', '/health/ready', '/health/live']:
+            # 헬스체크는 60초 캐싱
+            response.headers['Cache-Control'] = 'public, max-age=60'
+        else:
+            # API 엔드포인트는 캐싱 안함
+            response.headers['Cache-Control'] = 'no-store'
+        
+        # 보안 헤더
+        if getattr(config, 'SECURITY_HEADERS', True):
             response.headers['X-Content-Type-Options'] = 'nosniff'
             response.headers['X-Frame-Options'] = 'DENY'
             response.headers['X-XSS-Protection'] = '1; mode=block'
@@ -444,9 +456,10 @@ def create_app(config_name=None):
     
     logger.info("✓ 라우트 및 에러 핸들러 등록 완료")
     logger.info("="*70)
-    logger.info("🎉 서버 준비 완료! Rework Phase 3 적용됨")
+    logger.info("🎉 서버 준비 완료! Rework Phase 3-4 적용됨")
     logger.info(f"   - 모델 캐싱: {'활성화' if model_service.enable_cache else '비활성화'}")
     logger.info(f"   - 캐시 크기: {model_service.cache_size}")
+    logger.info(f"   - HTTP 캐싱: 활성화")
     logger.info("="*70)
     
     return app
