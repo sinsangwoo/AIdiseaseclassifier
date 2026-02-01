@@ -17,6 +17,7 @@ MarkupSafe==3.0.2
 
 # ===== WSGI Server =====
 gunicorn==23.0.0
+gevent==24.2.1  # ✅ Required for gunicorn --worker-class gevent
 
 # ✅ ONNX Runtime - 안정 버전으로 고정 (Render Free tier 호환)
 # 1.22.x에서 segfault 발생 → 1.19.2로 다운그레이드
@@ -57,7 +58,3 @@ flatbuffers==25.2.10
 pytest==7.4.3
 pytest-cov==4.1.0
 pytest-mock==3.12.0
-
-# ===== 제거된 의존성 =====
-# gevent → gthread 사용으로 제거
-# tf2onnx → 프로덕션 환경에서 불필요
