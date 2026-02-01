@@ -57,15 +57,15 @@ def validate_file(
         logger.warning(error_msg)
         return False, error_msg
     
-    # 파일명 확인 - 테스트에서 기대하는 메시지로 수정
-    if not file.filename:
+    # 파일명 확인
+    if not file.filename or file.filename.strip() == '':
         error_msg = "파일명이 없습니다"
         logger.warning(error_msg)
         return False, error_msg
     
-    # 확장자 확인 - 테스트에서 기대하는 메시지로 수정
+    # 확장자 확인
     if not allowed_file(file.filename, allowed_extensions):
-        error_msg = "허용되지 않는 파일 형식"
+        error_msg = "허용되지 않는 파일 형식입니다"
         logger.warning(f"{error_msg} (업로드된 파일: {file.filename})")
         return False, error_msg
     
@@ -76,7 +76,7 @@ def validate_file(
         'image/jpg'
     }
     
-    if file.content_type not in allowed_mime_types:
+    if file.content_type and file.content_type not in allowed_mime_types:
         error_msg = "잘못된 파일 형식입니다"
         logger.warning(
             f"의심스러운 MIME 타입: {file.content_type} "
@@ -103,10 +103,13 @@ def validate_file(
             logger.warning(f"{error_msg} (파일명: {file.filename})")
             return False, error_msg
     
-    logger.info(
-        f"파일 검증 통과: {file.filename} "
-        f"({file.content_type}, {file_size if max_size else 'N/A'} bytes)"
-    )
+        logger.info(
+            f"파일 검증 통과: {file.filename} "
+            f"({file.content_type}, {file_size} bytes)"
+        )
+    else:
+        logger.info(f"파일 검증 통과: {file.filename} ({file.content_type})")
+    
     return True, None
 
 
