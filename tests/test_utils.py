@@ -292,8 +292,8 @@ class TestImageValidator:
         
         validator = ImageValidator(max_aspect_ratio=10.0)
         
-        # 500x25 이미지 (비율 20:1)
-        img = Image.new('RGB', (500, 25), color='green')
+        # 1000x50 이미지 (비율 20:1, 최소 크기는 만족)
+        img = Image.new('RGB', (1000, 50), color='green')
         img_bytes = io.BytesIO()
         img.save(img_bytes, format='PNG')
         img_bytes.seek(0)
