@@ -26,22 +26,41 @@ class Config:
     DEBUG = False
     TESTING = False
     
-    # ✅ 모델 설정 - Render 환경 우선 처리
-    if os.environ.get('RENDER'):
-        # Render 환경: 상대 경로 사용 (워킹 디렉토리 = 프로젝트 루트)
-        MODEL_PATH = os.environ.get('MODEL_PATH', 'backend/models/artifacts/model.onnx')
-        LABELS_PATH = os.environ.get('LABELS_PATH', 'backend/models/artifacts/labels.txt')
-    else:
+    # ✅ 모델 설정 - 환경별 경로 처리 개선
+    @staticmethod
+    def _get_model_paths():
+        """환경에 맞는 모델 경로 반환"""
+        # Render 환경: 상대 경로 (워킹 디렉토리 = 프로젝트 루트)
+        if os.environ.get('RENDER'):
+            model_path = os.environ.get(
+                'MODEL_PATH', 
+                'backend/models/artifacts/model.onnx'
+            )
+            labels_path = os.environ.get(
+                'LABELS_PATH', 
+                'backend/models/artifacts/labels.txt'
+            )
+            print(f"📦 Render 환경 감지: MODEL_PATH={model_path}, LABELS_PATH={labels_path}")
+            return model_path, labels_path
+        
         # 로컬 환경: 절대 경로 사용
-        MODEL_DIR = BASE_DIR / 'models' / 'artifacts'
-        MODEL_PATH = os.environ.get(
+        base_dir = Path(__file__).parent
+        model_dir = base_dir / 'models' / 'artifacts'
+        
+        model_path = os.environ.get(
             'MODEL_PATH',
-            str(MODEL_DIR / 'model.onnx')
+            str(model_dir / 'model.onnx')
         )
-        LABELS_PATH = os.environ.get(
-            'LABELS_PATH', 
-            str(MODEL_DIR / 'labels.txt')
+        labels_path = os.environ.get(
+            'LABELS_PATH',
+            str(model_dir / 'labels.txt')
         )
+        
+        print(f"💻 로컬 환경: MODEL_PATH={model_path}, LABELS_PATH={labels_path}")
+        return model_path, labels_path
+    
+    # 모델 경로 설정
+    MODEL_PATH, LABELS_PATH = _get_model_paths.__func__()
     
     # 이미지 처리 설정
     TARGET_IMAGE_SIZE = (224, 224)
@@ -88,6 +107,14 @@ class ProductionConfig(Config):
         
         if missing:
             print(f"⚠️  WARNING: 프로덕션 환경에서 다음 환경변수 설정이 권장됩니다: {', '.join(missing)}")
+        
+        # ✅ 모델 파일 존재 여부 확인
+        if not os.path.exists(cls.MODEL_PATH):
+            print(f"⚠️  WARNING: 모델 파일이 존재하지 않습니다: {cls.MODEL_PATH}")
+            print("    Render 환경에서는 모델 파일을 수동으로 업로드하거나 클라우드 스토리지를 사용해야 합니다.")
+        
+        if not os.path.exists(cls.LABELS_PATH):
+            print(f"⚠️  WARNING: 레이블 파일이 존재하지 않습니다: {cls.LABELS_PATH}")
 
 
 class TestingConfig(Config):

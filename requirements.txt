@@ -17,10 +17,14 @@ MarkupSafe==3.0.2
 
 # ===== WSGI Server =====
 gunicorn==23.0.0
-gevent==24.2.1  # ✅ Required for gunicorn --worker-class gevent
 
-# ✅ ONNX Runtime - 안정 버전으로 고정 (Render Free tier 호환)
-# 1.22.x에서 segfault 발생 → 1.19.2로 다운그레이드
+# ✅ gevent 제거 - gthread 워커 사용으로 불필요
+# gevent는 ONNX Runtime과 호환성 이슈 발생 (segfault)
+# gthread (스레드 기반)가 더 안정적이고 메모리 효율적
+
+# ===== ONNX Runtime =====
+# ✅ 1.19.2 버전 유지 - Render Free tier 안정성 검증됨
+# 1.22.x 이상에서 segfault 및 메모리 이슈 발생
 onnxruntime==1.19.2
 onnx==1.17.0
 protobuf==3.20.3
@@ -46,7 +50,8 @@ six==1.17.0
 mpmath==1.3.0
 sympy==1.14.0
 
-# ✅ 빌드 도구 (Render 배포 안정성 향상)
+# ===== Build Tools =====
+# ✅ Render 배포 안정성 향상을 위한 빌드 도구
 setuptools==75.8.0
 wheel==0.45.1
 packaging==25.0

@@ -16,17 +16,21 @@ services:
       pip install --upgrade pip setuptools wheel
       pip install -r requirements.txt
     
-    # ✅ Start Command 수정 (gevent → gthread)
-    # - ONNX 모델 로딩 시 Segmentation Fault 및 gevent 호환성 이슈 해결
-    # - gthread: 스레드 기반 워커로 안정성 향상
-    # - backend.app:app 경로 명시 (ModuleNotFoundError 해결)
+    # ✅ Start Command 최적화
+    # - PYTHONPATH=. 추가: backend.app 모듈 임포트 문제 완전 해결
+    # - gthread: 스레드 기반 워커로 ONNX 호환성 및 안정성 향상
+    # - --workers 1: Free tier 메모리 제약 고려 (512MB)
+    # - --threads 2: 메모리 사용량 최적화 (기존 4 → 2)
+    # - --timeout 180: ONNX 모델 로딩 시간 고려 (기존 120 → 180)
+    # - --preload: 애플리케이션 사전 로딩으로 첫 요청 속도 개선
     startCommand: |
+      export PYTHONPATH=. && \
       gunicorn --bind 0.0.0.0:$PORT \
                --workers 1 \
                --worker-class gthread \
-               --threads 4 \
+               --threads 2 \
                --worker-tmp-dir /dev/shm \
-               --timeout 120 \
+               --timeout 180 \
                --max-requests 1000 \
                --max-requests-jitter 50 \
                --access-logfile - \
@@ -40,6 +44,7 @@ services:
     
     # 환경변수
     envVars:
+      # Flask 기본 설정
       - key: FLASK_ENV
         value: production
       
@@ -49,15 +54,22 @@ services:
       - key: PYTHONUNBUFFERED
         value: 1
       
+      # ✅ PYTHONPATH 설정 (모듈 임포트 문제 해결)
+      - key: PYTHONPATH
+        value: .
+      
       - key: SECRET_KEY
         generateValue: true
       
+      # CORS 설정
       - key: CORS_ORIGINS
         value: https://sinsangwoo.github.io
       
+      # 로깅 설정
       - key: LOG_LEVEL
         value: INFO
       
+      # 업로드 파일 크기 제한
       - key: MAX_CONTENT_LENGTH
         value: 10485760
       
@@ -72,15 +84,26 @@ services:
       - key: LABELS_PATH
         value: backend/models/artifacts/labels.txt
       
-      # ✅ ONNX Runtime 최적화 (메모리 충돌 방지)
+      # ✅ ONNX Runtime 최적화 (메모리 충돌 및 segfault 방지)
+      # OpenMP 스레드 수 제한 (Free tier 메모리 고려)
       - key: OMP_NUM_THREADS
         value: 2
       
+      # CPU 대기 정책 (PASSIVE: CPU 사용량 감소)
       - key: OMP_WAIT_POLICY
         value: PASSIVE
       
+      # CPU 친화성 비활성화 (컨테이너 환경 최적화)
       - key: KMP_AFFINITY
         value: disabled
+      
+      # ✅ ONNX Runtime 메모리 최적화
+      - key: ORT_DISABLE_MEMORY_ARENA
+        value: 1
+      
+      # ONNX 실행 모드 (순차 실행으로 메모리 사용량 감소)
+      - key: ORT_EXECUTION_MODE
+        value: sequential
     
     # 자동 배포
     autoDeploy: true
