@@ -290,7 +290,12 @@ class TestImageValidator:
         """이미지 크기 검증 - 비정상 비율"""
         from backend.utils.advanced_validators import ImageValidator
         
-        validator = ImageValidator(max_aspect_ratio=10.0)
+        # min_width=32, min_height=32를 설정하여 1000x50 이미지가 최소 크기는 통과하도록 함
+        validator = ImageValidator(
+            min_width=32,
+            min_height=32,
+            max_aspect_ratio=10.0
+        )
         
         # 1000x50 이미지 (비율 20:1, 최소 크기는 만족)
         img = Image.new('RGB', (1000, 50), color='green')
