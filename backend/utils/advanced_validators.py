@@ -19,13 +19,28 @@ class ImageValidator:
     매직 바이트, 이미지 크기, 가로세로 비율 등을 검증합니다.
     """
     
-    # 매직 바이트 시그니처
+    # ─── 매직 바이트 시그니처 ──────────────────────────────────────
+    #
+    # JPEG : FF D8 FF (3B prefix)
+    # PNG  : 89 50 4E 47 0D 0A 1A 0A (8B prefix)
+    # GIF  : 'GIF87a' 또는 'GIF89a' (6B prefix)
+    # WebP : 'RIFF' (4B) + [4B size] + 'WEBP' (4B)
+    #         → prefix 체크로는 바이트 0~3만 확인되어
+    #           AVI('RIFF????AVI ') 등과 오감지됨
+    #         → _validate_webp()에서 바이트 8~12를 별도 확인
+    #
+    # MAGIC_BYTES는 prefix-only 형식인 포맷만 포함합니다.
+    # WebP는 구조가 다르므로 별도 핸들링됩니다.
+    # ───────────────────────────────────────────────────────────────
     MAGIC_BYTES = {
         'jpeg': [b'\xff\xd8\xff'],
-        'png': [b'\x89PNG\r\n\x1a\n'],
-        'gif': [b'GIF87a', b'GIF89a'],
-        'webp': [b'RIFF', b'WEBP']
+        'png':  [b'\x89PNG\r\n\x1a\n'],
+        'gif':  [b'GIF87a', b'GIF89a'],
     }
+
+    # WebP는 고정 prefix가 아닌 구조체 형식이므로 별도 상수
+    _WEBP_RIFF   = b'RIFF'   # bytes 0..3
+    _WEBP_MARKER = b'WEBP'   # bytes 8..11
     
     def __init__(
         self,
@@ -50,10 +65,39 @@ class ImageValidator:
         self.max_aspect_ratio = max_aspect_ratio
         
         self.logger = logging.getLogger('aiclassifier.validation')
-    
+
+    # ─── WebP 전용 검증 ────────────────────────────────────────────
+
+    @classmethod
+    def _is_webp(cls, image_bytes: bytes) -> bool:
+        """
+        WebP 파일 구조체 검증
+
+        WebP는 RIFF 컨테이너를 사용하며, 구조는 다음과 같습니다:
+          bytes  0.. 3 : 'RIFF'
+          bytes  4.. 7 : 파일 크기 (LE uint32, 검증 대상 아님)
+          bytes  8..11 : 'WEBP'  ← 이 부분이 실제 형식 식별자
+
+        'RIFF'만 확인하면 AVI, WAV 등 다른 RIFF 기반 형식과
+        오감지됩니다. 최소 12바이트가 있고 바이트 8~12가 'WEBP'인지
+        확인하여 정확히 판별합니다.
+        """
+        if len(image_bytes) < 12:
+            return False
+        return (
+            image_bytes[0:4] == cls._WEBP_RIFF
+            and image_bytes[8:12] == cls._WEBP_MARKER
+        )
+
+    # ─── 매직 바이트 검증 ──────────────────────────────────────────
+
     def validate_magic_bytes(self, image_bytes: bytes) -> Tuple[bool, Optional[str]]:
         """
         매직 바이트를 확인하여 실제 이미지 파일인지 검증
+        
+        검증 순서:
+          1. WebP 구조체 검증 (_is_webp — RIFF + WEBP 복합 체크)
+          2. MAGIC_BYTES prefix 매칭 (JPEG / PNG / GIF)
         
         Args:
             image_bytes (bytes): 이미지 바이트 데이터
@@ -64,7 +108,13 @@ class ImageValidator:
         if len(image_bytes) < 12:
             self.logger.warning("파일이 너무 작습니다 (매직 바이트 확인 불가)")
             return False, None
+
+        # 1. WebP 구조체 검증 (RIFF 오감지 방지)
+        if self._is_webp(image_bytes):
+            self.logger.debug("이미지 형식 확인: WEBP")
+            return True, 'webp'
         
+        # 2. prefix-only 포맷 매칭
         for img_format, signatures in self.MAGIC_BYTES.items():
             for signature in signatures:
                 if image_bytes.startswith(signature):
@@ -74,10 +124,17 @@ class ImageValidator:
         self.logger.warning("알 수 없는 파일 형식 (이미지가 아닐 수 있음)")
         return False, None
     
+    # ─── 크기·비율 검증 ────────────────────────────────────────────
+
     def validate_image_dimensions(self, image_bytes: bytes) -> Tuple[bool, Optional[str]]:
         """
         이미지 크기와 가로세로 비율 검증
         
+        검증 순서 (주의: 순서 변경 시 테스트도 함께 수정 필요)
+          1. 최소 크기
+          2. 최대 크기
+          3. 가로세로 비율
+
         Args:
             image_bytes (bytes): 이미지 바이트 데이터
         
@@ -127,6 +184,8 @@ class ImageValidator:
             self.logger.error(error_msg)
             return False, error_msg
     
+    # ─── 종합 검증 ─────────────────────────────────────────────────
+
     def comprehensive_validation(self, image_bytes: bytes) -> Tuple[bool, Optional[str]]:
         """
         종합 이미지 검증 (매직 바이트 + 크기)
@@ -155,7 +214,8 @@ class ImageValidator:
         return True, None
 
 
-# 글로벌 검증기 인스턴스
+# ─── 글로벌 검증기 싱글턴 ──────────────────────────────────────────
+
 _global_validator: Optional[ImageValidator] = None
 
 
