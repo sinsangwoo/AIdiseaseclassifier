@@ -73,7 +73,14 @@ class TestValidators:
     @pytest.mark.unit
     @pytest.mark.validation
     def test_validate_file_empty_filename(self):
-        """validate_file - 파일명 없음"""
+        """validate_file - filename='' 일 때 실행 경로 검증
+
+        Werkzeug FileStorage는 filename이 빈 문자열이면
+        bool(file) → False로 평가됩니다.
+        따라서 validators.py의 첫 번째 체크인
+        `if not file`에서 종료되어
+        '파일이 제공되지 않았습니다'를 반환합니다.
+        """
         from backend.utils.validators import validate_file
         
         file = FileStorage(
@@ -85,8 +92,30 @@ class TestValidators:
         is_valid, error_msg = validate_file(file, {'jpg', 'png'})
         
         assert is_valid is False
+        assert '파일이 제공되지 않았습니다' in error_msg
+
+    @pytest.mark.unit
+    @pytest.mark.validation
+    def test_validate_file_whitespace_only_filename(self):
+        """validate_file - filename이 공백만 포함된 경우
+
+        filename='  '이면 bool(file) → True (truthy)를 통과하지만
+        `file.filename.strip() == ''` 체크에서 걸려
+        '파일명이 없습니다'를 반환합니다.
+        """
+        from backend.utils.validators import validate_file
+
+        file = FileStorage(
+            stream=io.BytesIO(b"test"),
+            filename='   ',
+            content_type='image/jpeg'
+        )
+
+        is_valid, error_msg = validate_file(file, {'jpg', 'png'})
+
+        assert is_valid is False
         assert '파일명이 없습니다' in error_msg
-    
+
     @pytest.mark.unit
     @pytest.mark.validation
     def test_validate_file_invalid_extension(self):
@@ -287,12 +316,27 @@ class TestImageValidator:
     @pytest.mark.unit
     @pytest.mark.validation
     def test_validate_image_dimensions_wrong_aspect_ratio(self):
-        """이미지 크기 검증 - 비정상 비율"""
+        """이미지 크기 검증 - 비정상 비율
+
+        validate_image_dimensions의 검증 순서:
+          1. 최소 크기 (min_width / min_height)
+          2. 최대 크기 (max_width / max_height)
+          3. 가로세로 비율 (max_aspect_ratio)
+
+        비율 체크에 정확히 도달하려면 크기 체크를 먼저 통과해야 합니다.
+        min_height=1로 명시하여 height=25가 크기 체크를 통과하고,
+        aspect_ratio = 500/25 = 20.0 > max_aspect_ratio=10.0으로
+        비율 체크에서 실패하는 경로를 테스트합니다.
+        """
         from backend.utils.advanced_validators import ImageValidator
         
-        validator = ImageValidator(max_aspect_ratio=10.0)
+        validator = ImageValidator(
+            min_width=1,
+            min_height=1,
+            max_aspect_ratio=10.0
+        )
         
-        # 500x25 이미지 (비율 20:1)
+        # 500x25 이미지 (비율 20:1 → max 10:1 초과)
         img = Image.new('RGB', (500, 25), color='green')
         img_bytes = io.BytesIO()
         img.save(img_bytes, format='PNG')

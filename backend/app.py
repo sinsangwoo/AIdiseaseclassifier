@@ -250,6 +250,7 @@ def create_app(config_name=None):
         Phase 3-4 개선사항:
         - ModelService를 통한 캐싱 지원
         - 상세한 성능 메트릭 제공
+        - from_cache 플래그를 통한 캐시 히트 여부 정확 반환
         """
         import time
         start_time = time.time()
@@ -296,14 +297,16 @@ def create_app(config_name=None):
             processed_image = image_processor.preprocess(image_bytes)
             
             # 7. 예측 수행 (캐싱 지원)
-            predictions = model_service.predict(processed_image)
+            #    predict()는 (predictions, from_cache) 튜플을 반환
+            predictions, from_cache = model_service.predict(processed_image)
             
             # 8. 처리 시간 계산
             processing_time_ms = (time.time() - start_time) * 1000
             
             top_result = predictions[0]
+            cache_label = "캐시 히트" if from_cache else "추론"
             request_logger.info(
-                f"✅ 예측 완료 - {file.filename}: "
+                f"✅ 예측 완료 [{cache_label}] - {file.filename}: "
                 f"{top_result['className']} ({top_result['probability']:.4f}) "
                 f"[{processing_time_ms:.0f}ms]"
             )
@@ -318,7 +321,7 @@ def create_app(config_name=None):
                     'filename': file.filename,
                     'model_version': '1.0.0-phase3-4',
                     'cache_enabled': model_service.enable_cache,
-                    'from_cache': model_service.stats['cache_hits'] > 0
+                    'from_cache': from_cache
                 }
             }
             
