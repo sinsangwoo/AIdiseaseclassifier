@@ -62,6 +62,20 @@ class Config:
     # 모델 경로 설정
     MODEL_PATH, LABELS_PATH = _get_model_paths.__func__()
     
+    # ─── Phase 3: 모델 캐싱 설정 ────────────────────────────────────
+    
+    # 모델 예측 결과 캐싱 활성화 여부
+    # True: OrderedDict LRU 캐시로 동일 이미지 재예측 방지
+    # False: 모든 요청에 대해 실제 추론 수행
+    ENABLE_MODEL_CACHE = os.environ.get('ENABLE_MODEL_CACHE', 'true').lower() in ('true', '1', 'yes')
+    
+    # LRU 캐시 최대 크기 (항목 수)
+    # 기본값 128: 동시 사용자 수와 이미지 중복도에 따라 조정
+    # Render 512MB 메모리 환경: 128개 캐시 항목 ≈ 5~10MB
+    MODEL_CACHE_SIZE = int(os.environ.get('MODEL_CACHE_SIZE', '128'))
+    
+    # ────────────────────────────────────────────────────────────────
+    
     # 이미지 처리 설정
     TARGET_IMAGE_SIZE = (224, 224)
     ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}

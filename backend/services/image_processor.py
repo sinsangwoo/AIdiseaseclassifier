@@ -10,7 +10,7 @@ from typing import Tuple
 import numpy as np
 from PIL import Image
 
-from utils import (
+from backend.utils import (
     LoggerMixin,
     InvalidImageError,
     ImageProcessingError,
