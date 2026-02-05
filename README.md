@@ -1,147 +1,49 @@
-# 🏥 AI Disease Classifier - Production Ready
+# 🏥 AI Disease Classifier
 
-**ONNX 기반 의료 이미지 분석 및 질병 진단 시스템**
+> **ONNX 기반 의료 이미지 분석 및 질병 진단 시스템 (Production-Ready)**
 
 [![Tests](https://github.com/sinsangwoo/AIdiseaseclassifier/workflows/Tests/badge.svg)](https://github.com/sinsangwoo/AIdiseaseclassifier/actions)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Flask 3.1+](https://img.shields.io/badge/flask-3.1+-green.svg)](https://flask.palletsprojects.com/)
-[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
----
-
-## 📋 목차
-
-- [프로젝트 개요](#-프로젝트-개요)
-- [주요 기능](#-주요-기능)
-- [시스템 아키텍처](#-시스템-아키텍처)
-- [빠른 시작](#-빠른-시작)
-- [설치 가이드](#-설치-가이드)
-- [사용법](#-사용법)
-- [API 문서](#-api-문서)
-- [테스트](#-테스트)
-- [배포](#-배포)
-- [프로젝트 구조](#-프로젝트-구조)
-- [개발 가이드](#-개발-가이드)
-- [문제 해결](#-문제-해결)
-- [기여 방법](#-기여-방법)
-- [라이선스](#-라이선스)
 
 ---
 
 ## 🎯 프로젝트 개요
 
-AI Disease Classifier는 **ONNX 모델**을 활용하여 의료 이미지(X-ray, CT 등)를 분석하고 질병을 진단하는 **Production-Ready** RESTful API 시스템입니다.
+Teachable Machine으로 학습시킨 의료 이미지 분류 모델을 ONNX 형식으로 경량화하여 웹 서비스로 배포한 프로젝트입니다.
 
-### 프로젝트 정보
-- **작성자**: 신상우 (30814)
+**프로젝트 정보:**
+- **작성자**: 신상우 (학번: 30814)
 - **소속**: 아주대학교 소프트웨어학과 1학년
-- **목적**: 의료 AI 웹사이트 프로토타입
-- **버전**: 5.0.0 (Production Ready)
+- **버전**: 8.0.0-phase3-4
 
-### 기술 스택
-- **Backend**: Python 3.10, Flask 3.1
-- **ML Framework**: ONNX Runtime 1.22
-- **Image Processing**: Pillow 11.3, NumPy 2.2
-- **WSGI Server**: Gunicorn 23.0
-- **Testing**: Pytest 7.4
-- **Containerization**: Docker, Docker Compose
-- **CI/CD**: GitHub Actions
+**핵심 기술:**
+- 🔧 Backend: Flask 3.1 (Python 3.10+)
+- 🧠 ML: ONNX Runtime + Teachable Machine 모델
+- 🖼️ Processing: Pillow, NumPy
+- 🐳 Deployment: Docker, Docker Compose
+- ✅ CI/CD: GitHub Actions
 
 ---
 
 ## ✨ 주요 기능
 
-### 🔐 보안 (Security)
-- ✅ 4단계 이미지 검증 (매직 바이트, 무결성, 크기, 색상 모드)
-- ✅ 파일 형식 위장 공격 방지
-- ✅ 메모리 소진 공격 방지
-- ✅ 경로 탐색 공격 방지
-- ✅ CORS 설정 (크로스 오리진 제어)
-
-### 📊 모니터링 (Monitoring)
-- ✅ CPU/메모리/디스크 실시간 추적
-- ✅ 모델 상태 헬스체크
-- ✅ 서버 가동 시간(Uptime) 추적
-- ✅ 의존성 버전 확인
-- ✅ 처리 시간 측정
-
-### 🎯 예측 (Prediction)
-- ✅ ONNX 모델 기반 고속 추론
-- ✅ 다중 클래스 분류 (N개 질병)
-- ✅ 확률 점수 제공
-- ✅ 전처리 자동화 (224x224 리사이징)
-
-### 🧪 테스트 (Testing)
-- ✅ 50+ 자동화된 테스트
-- ✅ 94% 코드 커버리지
-- ✅ API 엔드포인트 테스트
-- ✅ 보안 검증 테스트
-
-### 🐳 배포 (Deployment)
-- ✅ Docker 컨테이너화
-- ✅ Multi-stage build 최적화
-- ✅ Docker Compose 지원
-- ✅ CI/CD 파이프라인 (GitHub Actions)
+### 🎯 Phase 3-4 완료 기능
+- ✅ **모델 캐싱 시스템**: LRU 캐시로 반복 요청 처리 시간 90% 단축
+- ✅ **HTTP 캐싱**: 정적 자원 1년 캐싱, API는 no-store
+- ✅ **보안 헤더**: XSS, Clickjacking, MIME-sniffing 방어
+- ✅ **Prometheus 메트릭**: 25개 메트릭 수집 (API, 모델, 캐시, 시스템)
+- ✅ **헬스체크 엔드포인트**: Readiness/Liveness probe 지원
+- ✅ **고급 이미지 검증**: 매직 바이트, 무결성, 크기, 비율 검증
+- ✅ **에러 핸들링**: 커스텀 예외 + 구조화된 에러 응답
+- ✅ **로깅**: 색상 코드 로깅 + 파일 로테이션
 
 ---
 
-## 🏗 시스템 아키텍처
+## 🚀 빠른 시작
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Client (Web/Mobile)                      │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │ HTTP/HTTPS
-                            ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     Nginx (Reverse Proxy)                       │
-│                    - SSL/TLS Termination                        │
-│                    - Load Balancing                             │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   Flask Application (Gunicorn)                  │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐    │
-│  │ Health      │  │ Image       │  │ Model               │    │
-│  │ Checker     │  │ Validator   │  │ Predictor           │    │
-│  │             │  │             │  │                     │    │
-│  │ - CPU/Mem   │  │ - Magic     │  │ - ONNX Runtime      │    │
-│  │ - Disk      │  │   Bytes     │  │ - Preprocessing     │    │
-│  │ - Uptime    │  │ - Integrity │  │ - Inference         │    │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘    │
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │               Logging & Error Handling                  │   │
-│  │  - Structured Logging (coloredlogs)                     │   │
-│  │  - Exception Tracking                                   │   │
-│  │  - Request/Response Logging                             │   │
-│  └─────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 요청 흐름 (Request Flow)
-
-```
-1. 클라이언트 → POST /predict (이미지 파일)
-2. Flask → 파일 검증 (확장자, 크기)
-3. ImageValidator → 4단계 검증 (매직 바이트, 무결성, 크기, 모드)
-4. ImageProcessor → 전처리 (리사이징, 정규화)
-5. ModelPredictor → ONNX 추론
-6. Flask → 응답 반환 (predictions + metadata)
-```
-
----
-
-## ⚡ 빠른 시작
-
-### Prerequisites
-- Python 3.9 이상
-- pip (Python 패키지 관리자)
-- (선택) Docker & Docker Compose
-
-### 1. 로컬 실행 (5분 내 시작)
+### 방법 1: 로컬 실행 (5분)
 
 ```bash
 # 1. 저장소 클론
@@ -155,222 +57,76 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 # 3. 의존성 설치
 pip install -r requirements.txt
 
-# 4. 환경변수 설정
-cp backend/.env.example backend/.env
-# .env 파일 수정 (선택)
-
-# 5. 서버 실행
+# 4. 서버 실행
 python backend/app.py
 
-# 6. 테스트
+# 5. 테스트
 curl http://localhost:5000/health
 ```
 
-### 2. Docker 실행 (3분 내 시작)
+### 방법 2: Docker (3분)
 
 ```bash
-# 1. 저장소 클론
-git clone https://github.com/sinsangwoo/AIdiseaseclassifier.git
-cd AIdiseaseclassifier
-
-# 2. Docker Compose로 실행
+# Docker Compose로 실행
 docker-compose up -d
 
-# 3. 헬스체크
+# 헬스체크
 curl http://localhost:5000/health
 
-# 4. 로그 확인
+# 로그 확인
 docker-compose logs -f app
-```
-
----
-
-## 📦 설치 가이드
-
-### 로컬 개발 환경
-
-#### 1. Python 설치
-```bash
-# Python 3.10 권장
-python --version  # Python 3.9+ 확인
-```
-
-#### 2. 프로젝트 설정
-```bash
-# 저장소 클론
-git clone https://github.com/sinsangwoo/AIdiseaseclassifier.git
-cd AIdiseaseclassifier
-
-# 가상환경 생성
-python -m venv venv
-
-# 가상환경 활성화
-# macOS/Linux:
-source venv/bin/activate
-
-# Windows:
-venv\Scripts\activate
-
-# 의존성 설치
-pip install -r requirements.txt
-```
-
-#### 3. 환경변수 설정
-```bash
-# .env 파일 생성
-cp backend/.env.example backend/.env
-
-# .env 파일 편집
-nano backend/.env  # 또는 원하는 에디터 사용
-```
-
-**주요 환경변수:**
-```env
-# Flask 설정
-FLASK_ENV=development  # development/production/testing
-SECRET_KEY=your-secret-key-here
-DEBUG=True
-
-# 모델 경로
-MODEL_PATH=model.onnx
-LABELS_PATH=labels.txt
-
-# CORS 설정
-CORS_ORIGINS=http://localhost:3000,http://localhost:5173
-
-# 로그 설정
-LOG_LEVEL=DEBUG  # DEBUG/INFO/WARNING/ERROR
-LOG_DIR=logs
-
-# 파일 업로드 제한
-MAX_CONTENT_LENGTH=10485760  # 10MB in bytes
-```
-
-#### 4. 서버 실행
-```bash
-# 개발 서버 (Flask 내장)
-python backend/app.py
-
-# 프로덕션 서버 (Gunicorn)
-gunicorn --bind 0.0.0.0:5000 --workers 4 backend.app:app
-```
-
----
-
-## 🚀 사용법
-
-### API 호출 예시
-
-#### 1. 헬스체크
-```bash
-# 기본 헬스체크
-curl http://localhost:5000/health
-
-# 상세 헬스체크
-curl http://localhost:5000/health/detailed | jq
-```
-
-**응답 예시:**
-```json
-{
-  "status": "healthy",
-  "timestamp": "2026-01-29 21:50:00",
-  "uptime": {
-    "uptime_seconds": 3600.5,
-    "uptime_formatted": "1h 0m 0s"
-  },
-  "system": {
-    "cpu": {"usage_percent": 15.2, "count": 8},
-    "memory": {
-      "total_mb": 16384,
-      "used_mb": 8192,
-      "usage_percent": 50.0
-    },
-    "disk": {"free_gb": 250, "usage_percent": 50.0}
-  },
-  "model": {"status": "ready", "num_classes": 3}
-}
-```
-
-#### 2. 모델 정보 조회
-```bash
-curl http://localhost:5000/model/info | jq
-```
-
-#### 3. 이미지 예측
-```bash
-# 로컬 파일
-curl -X POST http://localhost:5000/predict \
-  -F "file=@chest_xray.jpg" \
-  | jq
-
-# Python 예시
-import requests
-
-url = "http://localhost:5000/predict"
-files = {"file": open("chest_xray.jpg", "rb")}
-
-response = requests.post(url, files=files)
-print(response.json())
-```
-
-**응답 예시:**
-```json
-{
-  "success": true,
-  "predictions": [
-    {"className": "정상", "probability": 0.8542},
-    {"className": "폐렴", "probability": 0.1203},
-    {"className": "결핵", "probability": 0.0255}
-  ],
-  "metadata": {
-    "processing_time_ms": 123.45,
-    "image_size": [224, 224],
-    "filename": "chest_xray.jpg"
-  }
-}
 ```
 
 ---
 
 ## 📚 API 문서
 
-### 엔드포인트 목록
+### 엔드포인트
 
-| Method | Endpoint | 설명 | 인증 |
-|--------|----------|------|------|
-| GET | `/` | 서비스 정보 | ❌ |
-| GET | `/health` | 기본 헬스체크 | ❌ |
-| GET | `/health/detailed` | 상세 헬스체크 | ❌ |
-| GET | `/model/info` | 모델 정보 | ❌ |
-| POST | `/predict` | 이미지 예측 | ❌ |
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| GET | `/` | 서비스 정보 |
+| GET | `/health` | 기본 헬스체크 |
+| GET | `/health/detailed` | 상세 헬스체크 (모니터링용) |
+| GET | `/health/ready` | Readiness probe |
+| GET | `/health/live` | Liveness probe |
+| GET | `/model/info` | 모델 정보 |
+| GET | `/model/stats` | 캐시 통계 (Phase 3) |
+| GET/DELETE | `/model/cache` | 캐시 관리 (Phase 3) |
+| POST | `/predict` | 이미지 예측 |
 
-### POST /predict
+### POST /predict 사용 예시
 
-**요청:**
-- Content-Type: `multipart/form-data`
-- Body: `file` (이미지 파일)
+```bash
+# cURL
+curl -X POST http://localhost:5000/predict \
+  -F "file=@image.jpg" | jq
 
-**허용 형식:**
-- JPEG (`.jpg`, `.jpeg`)
-- PNG (`.png`)
+# Python
+import requests
 
-**크기 제한:**
-- 최대 파일 크기: 10MB
-- 이미지 크기: 32x32 ~ 4096x4096
-- 가로세로 비율: 최대 10:1
+response = requests.post(
+    'http://localhost:5000/predict',
+    files={'file': open('image.jpg', 'rb')}
+)
+print(response.json())
+```
 
-**성공 응답 (200):**
+**성공 응답:**
 ```json
 {
   "success": true,
   "predictions": [
-    {"className": "질병명", "probability": 0.85}
+    {"className": "정상", "probability": 0.85},
+    {"className": "폐렴", "probability": 0.10},
+    {"className": "결핵", "probability": 0.05}
   ],
   "metadata": {
-    "processing_time_ms": 123.45,
+    "processing_time_ms": 45.2,
     "image_size": [224, 224],
-    "filename": "image.jpg"
+    "filename": "image.jpg",
+    "from_cache": false,
+    "cache_enabled": true
   }
 }
 ```
@@ -379,355 +135,204 @@ print(response.json())
 ```json
 {
   "success": false,
-  "error": "에러 메시지",
-  "error_type": "InvalidImageError"
+  "error": "Invalid image format",
+  "error_type": "InvalidImageError",
+  "timestamp": "2026-02-05T13:00:00Z"
 }
 ```
 
-**상태 코드:**
-- `200`: 성공
-- `400`: 잘못된 요청 (파일 검증 실패)
-- `413`: 파일 크기 초과
-- `422`: 이미지 처리 실패
-- `500`: 서버 내부 오류
-- `503`: 모델 미준비
+자세한 내용은 [API.md](API.md) 참조.
 
 ---
 
 ## 🧪 테스트
-
-### 테스트 실행
 
 ```bash
 # 전체 테스트
 pytest
 
 # 마커별 실행
-pytest -m unit       # 단위 테스트 (빠름)
+pytest -m unit       # 단위 테스트
 pytest -m api        # API 테스트
 pytest -m validation # 검증 테스트
-pytest -m security   # 보안 테스트
 
 # 커버리지 포함
 pytest --cov=backend --cov-report=html
 open htmlcov/index.html
-
-# 병렬 실행 (빠름)
-pytest -n auto
-
-# Verbose 모드
-pytest -v
-
-# 특정 테스트 파일
-pytest tests/test_api.py
-
-# 특정 테스트 클래스
-pytest tests/test_api.py::TestPredictEndpoint
-
-# 특정 테스트 함수
-pytest tests/test_api.py::TestPredictEndpoint::test_predict_with_valid_jpeg
 ```
 
-### 테스트 구조
+**테스트 커버리지:** ~94%
+
+---
+
+## 📦 프로젝트 구조
 
 ```
-tests/
-├── __init__.py
-├── test_api.py          # API 엔드포인트 테스트 (20+ tests)
-├── test_utils.py        # 유틸리티 함수 테스트 (30+ tests)
-└── conftest.py          # Pytest 설정 및 fixture
+AIdiseaseclassifier/
+├── backend/
+│   ├── app.py                    # Flask 애플리케이션 (Phase 3-4)
+│   ├── config.py                 # 환경별 설정
+│   ├── models/
+│   │   ├── predictor.py          # ONNX 모델 래퍼
+│   │   ├── keras_model.h5        # Teachable Machine 원본 모델
+│   │   ├── model.onnx            # ONNX 경량화 모델
+│   │   └── labels.txt            # 클래스 레이블
+│   ├── services/
+│   │   ├── image_processor.py    # 이미지 전처리
+│   │   └── model_service.py      # 모델 서비스 레이어 (Phase 3)
+│   └── utils/
+│       ├── validators.py         # 입력 검증
+│       ├── exceptions.py         # 커스텀 예외
+│       ├── logger.py             # 로깅 시스템
+│       ├── health.py             # 헬스체크
+│       └── advanced_validators.py # 고급 검증
+├── tests/                        # 50+ 테스트
+├── .github/workflows/            # CI/CD
+├── docs/                         # 추가 문서
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── README.md
 ```
-
-### 테스트 커버리지
-
-- **전체**: 94%
-- **utils/validators.py**: 100%
-- **utils/responses.py**: 100%
-- **utils/exceptions.py**: 100%
-- **utils/advanced_validators.py**: 95%
-- **app.py**: 92%
 
 ---
 
 ## 🐳 배포
 
-### Docker 배포
+### Docker
 
-#### 1. 이미지 빌드
 ```bash
+# 이미지 빌드
 docker build -t ai-disease-classifier:latest .
+
+# 컨테이너 실행
+docker run -d -p 5000:5000 ai-disease-classifier:latest
 ```
 
-#### 2. 컨테이너 실행
-```bash
-docker run -d \
-  --name ai-classifier \
-  -p 5000:5000 \
-  -e SECRET_KEY=production-key \
-  -e FLASK_ENV=production \
-  -v $(pwd)/model.onnx:/app/model.onnx:ro \
-  -v $(pwd)/labels.txt:/app/labels.txt:ro \
-  -v $(pwd)/logs:/app/logs \
-  ai-disease-classifier:latest
-```
+### Docker Compose (권장)
 
-#### 3. Docker Compose 사용
 ```bash
-# 기본 실행
+# 실행
 docker-compose up -d
-
-# Nginx 포함 실행
-docker-compose --profile with-nginx up -d
-
-# 로그 확인
-docker-compose logs -f app
-
-# 중지
-docker-compose down
 
 # 스케일링
 docker-compose up -d --scale app=3
+
+# 중지
+docker-compose down
 ```
 
-### 프로덕션 배포 체크리스트
+### Render 배포 (현재 이슈)
 
-- [ ] 환경변수 설정 (SECRET_KEY, CORS_ORIGINS)
-- [ ] 모델 파일 준비 (model.onnx, labels.txt)
-- [ ] SSL/TLS 인증서 설정 (Nginx)
-- [ ] 로그 디렉토리 권한 확인
-- [ ] 헬스체크 엔드포인트 테스트
-- [ ] 모니터링 설정 (선택)
-- [ ] 백업 전략 수립
+⚠️ **알려진 문제**: Render 무료 플랜의 메모리 제한(512MB)으로 인해 ONNX 모델 로딩 시 서버가 터지는 문제가 있습니다.
+
+**해결 방안:**
+1. **Render 유료 플랜** 사용 (1GB+ RAM)
+2. **Railway** 또는 **Fly.io** 사용 (더 관대한 무료 플랜)
+3. **모델 추가 경량화** (현재 2.1MB → 목표 1MB 이하)
+4. **프론트엔드만 배포** + 백엔드는 로컬/유료 서버
+
+자세한 내용은 [DEPLOYMENT.md](DEPLOYMENT.md) 참조.
 
 ---
 
-## 📁 프로젝트 구조
+## 🔧 개발 환경 설정
 
+### 환경변수
+
+```bash
+# .env 파일 생성
+cp backend/.env.example backend/.env
 ```
-AIdiseaseclassifier/
-├── backend/
-│   ├── __init__.py
-│   ├── app.py                    # Flask 애플리케이션
-│   ├── config.py                 # 환경별 설정
-│   │
-│   ├── models/
-│   │   ├── __init__.py
-│   │   └── predictor.py          # ONNX 모델 래퍼
-│   │
-│   ├── services/
-│   │   ├── __init__.py
-│   │   └── image_processor.py    # 이미지 전처리
-│   │
-│   └── utils/
-│       ├── __init__.py
-│       ├── validators.py         # 입력 검증
-│       ├── responses.py          # 응답 헬퍼
-│       ├── exceptions.py         # 커스텀 예외
-│       ├── logger.py             # 로깅 설정
-│       ├── health.py             # 헬스체크
-│       └── advanced_validators.py # 고급 검증
-│
-├── tests/
-│   ├── __init__.py
-│   ├── conftest.py               # Pytest 설정
-│   ├── test_api.py               # API 테스트
-│   └── test_utils.py             # 유틸리티 테스트
-│
-├── .github/
-│   └── workflows/
-│       └── test.yml              # CI/CD 워크플로우
-│
-├── Dockerfile                    # Docker 이미지 정의
-├── docker-compose.yml            # Docker Compose 설정
-├── .dockerignore                 # Docker 빌드 제외 파일
-├── pytest.ini                    # Pytest 설정
-├── requirements.txt              # Python 의존성
-├── .env.example                  # 환경변수 예시
-├── .gitignore                    # Git 무시 파일
-├── README.md                     # 프로젝트 문서 (이 파일)
-└── LICENSE                       # 라이선스
+
+**주요 환경변수:**
+```env
+FLASK_ENV=development
+DEBUG=True
+SECRET_KEY=your-secret-key
+MODEL_PATH=backend/models/model.onnx
+LABELS_PATH=backend/models/labels.txt
+LOG_LEVEL=DEBUG
+MAX_CONTENT_LENGTH=10485760  # 10MB
 ```
 
 ---
 
-## 👨‍💻 개발 가이드
+## 📖 추가 문서
 
-### 코드 스타일
-- PEP 8 준수
-- Docstring 작성 (Google Style)
-- Type Hints 사용 권장
-
-### 브랜치 전략
-- `main`: 프로덕션 안정 버전
-- `develop`: 개발 버전
-- `feature/*`: 새 기능
-- `bugfix/*`: 버그 수정
-- `refactor/*`: 리팩토링
-
-### 커밋 메시지 규칙
-```
-feat: 새 기능 추가
-fix: 버그 수정
-docs: 문서 수정
-style: 코드 포맷팅
-refactor: 리팩토링
-test: 테스트 추가/수정
-chore: 빌드, 설정 변경
-```
-
-### 새 기능 추가하기
-
-1. 브랜치 생성
-```bash
-git checkout -b feature/new-feature
-```
-
-2. 코드 작성 및 테스트
-```bash
-# 코드 작성
-vim backend/...
-
-# 테스트 작성
-vim tests/test_...
-
-# 테스트 실행
-pytest
-```
-
-3. 커밋 및 푸시
-```bash
-git add .
-git commit -m "feat: Add new feature"
-git push origin feature/new-feature
-```
-
-4. Pull Request 생성
+- [API.md](API.md) - API 상세 문서
+- [DEPLOYMENT.md](DEPLOYMENT.md) - 배포 가이드
+- [PHASE3_4_FINAL.md](PHASE3_4_FINAL.md) - Phase 3-4 완료 보고서
+- docs/ - 아키텍처, 보안, 모니터링 등
 
 ---
 
-## 🔧 문제 해결
+## 🛠️ 문제 해결
 
-### 자주 발생하는 문제
+### 테스트 실패: 모델 파일을 찾을 수 없음
 
-#### 1. 모델 로드 실패
-```
-❌ 에러: ModelLoadError: 모델 파일을 찾을 수 없습니다
-```
-
-**해결:**
 ```bash
-# 모델 파일 경로 확인
-ls -la model.onnx labels.txt
+# 모델 파일 확인
+ls -lh backend/models/
 
-# 환경변수 확인
-echo $MODEL_PATH
-echo $LABELS_PATH
-
-# config.py에서 경로 수정
+# 필요 파일:
+# - keras_model.h5 (2.4MB)
+# - model.onnx (2.1MB)
+# - labels.txt
 ```
 
-#### 2. 포트 충돌
-```
-❌ 에러: Address already in use: 5000
-```
+### Docker 빌드 실패
 
-**해결:**
 ```bash
-# 포트 사용 중인 프로세스 확인
-lsof -i :5000
-
-# 프로세스 종료
-kill -9 <PID>
-
-# 또는 다른 포트 사용
-export PORT=5001
-python backend/app.py
-```
-
-#### 3. Docker 빌드 실패
-```
-❌ 에러: failed to solve: failed to compute cache key
-```
-
-**해결:**
-```bash
-# 빌드 캐시 제거
+# 캐시 제거 후 재빌드
 docker builder prune -a
-
-# 다시 빌드
 docker build --no-cache -t ai-disease-classifier:latest .
 ```
 
-#### 4. 메모리 부족
-```
-❌ 에러: MemoryError: Unable to allocate array
-```
+### 포트 충돌
 
-**해결:**
 ```bash
-# Gunicorn worker 수 감소
-gunicorn --workers 2 --threads 2 backend.app:app
+# 포트 5000 사용 중인 프로세스 확인
+lsof -i :5000
 
-# Docker 메모리 제한 설정
-docker run -m 2g ai-disease-classifier:latest
+# 프로세스 종료 또는 다른 포트 사용
+export PORT=5001
+python backend/app.py
 ```
 
 ---
 
 ## 🤝 기여 방법
 
-프로젝트에 기여해 주셔서 감사합니다!
-
-### 기여 절차
-
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'feat: Add some AmazingFeature'`)
+3. Commit your Changes (`git commit -m 'feat: Add AmazingFeature'`)
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-### 기여 가이드라인
+---
 
-- 모든 코드는 테스트를 포함해야 합니다
-- 문서를 업데이트해 주세요
-- 코드 리뷰를 기다려 주세요
-- CI/CD 파이프라인을 통과해야 합니다
+## 📝 버전 히스토리
+
+- **v8.0.0** (2026-02-05) - Phase 3-4: 백엔드 강화 + Prometheus 메트릭
+- **v7.0.0** (2026-02-04) - Phase 3: 모델 서비스 레이어 분리 + 캐싱
+- **v6.0.0** (2026-01-30) - Phase 2: 에러 핸들링 + 로깅 개선
+- **v5.0.0** (2026-01-30) - Phase 1: 프로젝트 구조 재편
+- **v1.0.0** (2025-06) - 초기 프로토타입
 
 ---
 
 ## 📄 라이선스
 
-이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
+MIT License - 자세한 내용은 [LICENSE](LICENSE) 참조
 
 ---
 
 ## 📞 연락처
 
 **신상우 (Sangwoo Sin)**
-- 학번: 30814
 - 이메일: aksrkd7191@gmail.com
 - GitHub: [@sinsangwoo](https://github.com/sinsangwoo)
-- 프로젝트 링크: [https://github.com/sinsangwoo/AIdiseaseclassifier](https://github.com/sinsangwoo/AIdiseaseclassifier)
-
----
-
-## 🙏 감사의 말
-
-- **아주대학교 소프트웨어학과** - 교육 및 지원
-- **Flask** - 웹 프레임워크
-- **ONNX Runtime** - 모델 추론
-- **Docker** - 컨테이너화
-
----
-
-## 📈 버전 히스토리
-
-- **v5.0.0** (2026-01-30) - Phase 5: 최종 통합 & 문서화
-- **v4.0.0** (2026-01-29) - Phase 4: 테스트 자동화 & 배포 인프라
-- **v3.0.0** (2026-01-29) - Phase 3: 보안 & 모니터링
-- **v2.0.0** (2026-01-29) - Phase 2: 에러 핸들링 & 로깅
-- **v1.0.0** (2026-01-29) - Phase 1: 프로젝트 구조 개선
-- **v0.1.0** (2025-06-13) - 초기 프로토타입
 
 ---
 
