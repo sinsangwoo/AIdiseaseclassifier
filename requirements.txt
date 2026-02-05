@@ -37,6 +37,10 @@ numpy==1.26.4  # onnxruntime 1.19.2 호환
 psutil==5.9.8
 humanfriendly==10.0
 
+# ===== Observability - Phase 4 =====
+# Prometheus 메트릭 export (production-grade monitoring)
+prometheus-client==0.20.0
+
 # ===== Environment Management =====
 python-dotenv==1.0.0
 
