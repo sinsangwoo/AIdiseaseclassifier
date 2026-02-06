@@ -1,400 +1,341 @@
-# 🚀 배포 가이드
+# 🚀 배포 가이드 (Deployment Guide)
 
-AI Disease Classifier를 프로덕션 환경에 배포하는 완벽한 가이드
-
----
-
-## 목차
-
-- [배포 옵션](#배포-옵션)
-- [로컬 배포](#로컬-배포)
-- [Docker 배포](#docker-배포)
-- [클라우드 배포](#클라우드-배포)
-- [환경 설정](#환경-설정)
-- [모니터링 & 로깅](#모니터링--로깅)
-- [보안 설정](#보안-설정)
-- [성능 최적화](#성능-최적화)
-- [백업 & 복구](#백업--복구)
-- [문제 해결](#문제-해결)
+> AI Disease Classifier를 프로덕션 환경에 배포하는 종합 가이드
 
 ---
 
-## 배포 옵션
+## 📋 목차
 
-### 1. 로컬 서버
-- **난이도**: ⭐
-- **비용**: 무료
-- **용도**: 개발, 테스트
-- **확장성**: 낮음
-
-### 2. Docker + VPS
-- **난이도**: ⭐⭐
-- **비용**: 월 $5~20
-- **용도**: 소규모 프로덕션
-- **확장성**: 중간
-
-### 3. Kubernetes
-- **난이도**: ⭐⭐⭐⭐
-- **비용**: 월 $50+
-- **용도**: 대규모 프로덕션
-- **확장성**: 높음
-
-### 4. 서버리스 (AWS Lambda, Google Cloud Run)
-- **난이도**: ⭐⭐⭐
-- **비용**: 사용량 기반
-- **용도**: 불규칙한 트래픽
-- **확장성**: 자동
+1. [배포 전 체크리스트](#-배포-전-체크리스트)
+2. [Docker 배포](#-docker-배포)
+3. [클라우드 플랫폼](#-클라우드-플랫폼)
+4. [프론트엔드 배포](#-프론트엔드-배포)
+5. [모니터링 설정](#-모니터링-설정)
+6. [문제 해결](#-문제-해결)
 
 ---
 
-## 로컬 배포
+## ✅ 배포 전 체크리스트
 
-### 개발 서버 (Flask 내장)
+### 필수 사항
+- [ ] 모델 파일 준비 완료 (`model.onnx`, `labels.txt`)
+- [ ] 환경변수 설정 완료 (`.env` 파일)
+- [ ] 로컬 테스트 통과 (`pytest`)
+- [ ] Docker 이미지 빌드 성공
+- [ ] 메모리 요구사항 확인 (최소 1GB RAM 권장)
 
-```bash
-# 1. 환경 설정
-export FLASK_ENV=development
-export DEBUG=True
+### 보안 사항
+- [ ] `SECRET_KEY` 변경 (프로덕션 키 생성)
+- [ ] `DEBUG=False` 설정
+- [ ] CORS 오리진 제한 설정
+- [ ] SSL/TLS 인증서 준비 (HTTPS)
 
-# 2. 실행
-python backend/app.py
-```
-
-**특징:**
-- ✅ 빠른 재시작
-- ✅ 자동 리로드
-- ❌ 단일 워커
-- ❌ 낮은 성능
-
-### 프로덕션 서버 (Gunicorn)
-
-```bash
-# 1. Gunicorn 설치
-pip install gunicorn
-
-# 2. 실행
-gunicorn \
-  --bind 0.0.0.0:5000 \
-  --workers 4 \
-  --threads 2 \
-  --worker-class gthread \
-  --access-logfile - \
-  --error-logfile - \
-  --log-level info \
-  backend.app:app
-```
-
-**워커 수 계산:**
-```
-권장 워커 수 = (2 × CPU 코어 수) + 1
-예: 4 코어 → (2 × 4) + 1 = 9 워커
-```
-
-### Systemd 서비스 등록
-
-```bash
-# 1. 서비스 파일 생성
-sudo nano /etc/systemd/system/ai-classifier.service
-```
-
-```ini
-[Unit]
-Description=AI Disease Classifier
-After=network.target
-
-[Service]
-Type=notify
-User=www-data
-Group=www-data
-WorkingDirectory=/opt/ai-classifier
-Environment="PATH=/opt/ai-classifier/venv/bin"
-ExecStart=/opt/ai-classifier/venv/bin/gunicorn \
-    --bind 0.0.0.0:5000 \
-    --workers 4 \
-    --threads 2 \
-    --worker-class gthread \
-    backend.app:app
-
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-# 2. 서비스 시작
-sudo systemctl daemon-reload
-sudo systemctl enable ai-classifier
-sudo systemctl start ai-classifier
-
-# 3. 상태 확인
-sudo systemctl status ai-classifier
-
-# 4. 로그 확인
-sudo journalctl -u ai-classifier -f
-```
+### 모니터링
+- [ ] 헬스체크 엔드포인트 동작 확인
+- [ ] 로그 수집 설정
+- [ ] 에러 알림 설정 (선택)
 
 ---
 
-## Docker 배포
+## 🐳 Docker 배포
 
-### 단일 컨테이너
+### 방법 1: Docker Run
 
 ```bash
 # 1. 이미지 빌드
-docker build -t ai-classifier:latest .
+docker build -t ai-disease-classifier:latest .
 
 # 2. 컨테이너 실행
 docker run -d \
   --name ai-classifier \
-  --restart unless-stopped \
   -p 5000:5000 \
-  -e SECRET_KEY="your-production-secret-key" \
+  -e SECRET_KEY="production-secret-key-here" \
   -e FLASK_ENV=production \
-  -e CORS_ORIGINS="https://yourdomain.com" \
-  -v $(pwd)/model.onnx:/app/model.onnx:ro \
-  -v $(pwd)/labels.txt:/app/labels.txt:ro \
+  -e DEBUG=False \
   -v $(pwd)/logs:/app/logs \
-  --memory="2g" \
-  --cpus="2" \
-  ai-classifier:latest
+  --restart unless-stopped \
+  --memory="1g" \
+  ai-disease-classifier:latest
 
-# 3. 로그 확인
-docker logs -f ai-classifier
-
-# 4. 헬스체크
+# 3. 헬스체크
 curl http://localhost:5000/health
+
+# 4. 로그 확인
+docker logs -f ai-classifier
 ```
 
-### Docker Compose (권장)
+### 방법 2: Docker Compose (권장)
 
 ```bash
-# 1. docker-compose.yml 생성 (이미 제공됨)
-
-# 2. 환경변수 설정
-cat > .env << EOF
-SECRET_KEY=your-production-secret-key
-CORS_ORIGINS=https://yourdomain.com
-FLASK_ENV=production
-LOG_LEVEL=INFO
-EOF
-
-# 3. 실행
+# 1. 기본 실행
 docker-compose up -d
 
-# 4. 확인
+# 2. 스케일링 (로드 밸런싱)
+docker-compose up -d --scale app=3
+
+# 3. Nginx 포함 실행 (리버스 프록시)
+docker-compose --profile with-nginx up -d
+
+# 4. 상태 확인
 docker-compose ps
+
+# 5. 로그 확인
 docker-compose logs -f app
 
-# 5. 스케일링 (필요시)
-docker-compose up -d --scale app=3
+# 6. 중지 및 삭제
+docker-compose down
 ```
 
-### Nginx 리버스 프록시 포함
-
-```bash
-# 1. Nginx 설정 생성
-mkdir -p nginx
-cat > nginx/nginx.conf << EOF
-events {
-    worker_connections 1024;
-}
-
-http {
-    upstream app {
-        least_conn;
-        server app:5000;
-    }
-
-    server {
-        listen 80;
-        server_name yourdomain.com;
-
-        client_max_body_size 10M;
-
-        location / {
-            proxy_pass http://app;
-            proxy_set_header Host \$host;
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto \$scheme;
-        }
-
-        location /health {
-            proxy_pass http://app/health;
-            access_log off;
-        }
-    }
-}
-EOF
-
-# 2. Nginx 포함하여 실행
-docker-compose --profile with-nginx up -d
-```
-
----
-
-## 클라우드 배포
-
-### AWS EC2 + Docker
-
-```bash
-# 1. EC2 인스턴스 생성
-# - Ubuntu 22.04 LTS
-# - t2.medium (2 vCPU, 4GB RAM) 이상
-# - Security Group: 80, 443, 5000 포트 오픈
-
-# 2. 서버 접속
-ssh -i your-key.pem ubuntu@your-ec2-ip
-
-# 3. Docker 설치
-sudo apt update
-sudo apt install -y docker.io docker-compose
-sudo usermod -aG docker ubuntu
-newgrp docker
-
-# 4. 프로젝트 배포
-git clone https://github.com/sinsangwoo/AIdiseaseclassifier.git
-cd AIdiseaseclassifier
-
-# 5. Docker Compose 실행
-docker-compose up -d
-
-# 6. Nginx 설치 (선택)
-sudo apt install -y nginx
-sudo nano /etc/nginx/sites-available/ai-classifier
-```
-
-### Google Cloud Run
-
-```bash
-# 1. gcloud CLI 설치 및 인증
-gcloud auth login
-gcloud config set project YOUR_PROJECT_ID
-
-# 2. Dockerfile 확인
-
-# 3. 이미지 빌드 및 푸시
-gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/ai-classifier
-
-# 4. Cloud Run 배포
-gcloud run deploy ai-classifier \
-  --image gcr.io/YOUR_PROJECT_ID/ai-classifier \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --memory 2Gi \
-  --cpu 2 \
-  --max-instances 10
-```
-
-### Azure Container Instances
-
-```bash
-# 1. Azure CLI 로그인
-az login
-
-# 2. 리소스 그룹 생성
-az group create --name ai-classifier-rg --location eastus
-
-# 3. 컨테이너 레지스트리 생성
-az acr create --resource-group ai-classifier-rg \
-  --name aiclassifieracr --sku Basic
-
-# 4. 이미지 빌드 및 푸시
-az acr build --registry aiclassifieracr \
-  --image ai-classifier:latest .
-
-# 5. 컨테이너 인스턴스 생성
-az container create \
-  --resource-group ai-classifier-rg \
-  --name ai-classifier \
-  --image aiclassifieracr.azurecr.io/ai-classifier:latest \
-  --dns-name-label ai-classifier \
-  --ports 5000 \
-  --cpu 2 --memory 4
-```
-
----
-
-## 환경 설정
-
-### 프로덕션 환경변수
-
-```bash
-# .env.production
-FLASK_ENV=production
-DEBUG=False
-SECRET_KEY=<64자 이상의 랜덤 문자열>
-
-# 모델
-MODEL_PATH=/app/model.onnx
-LABELS_PATH=/app/labels.txt
-
-# CORS
-CORS_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
-
-# 로그
-LOG_LEVEL=INFO
-LOG_DIR=/app/logs
-
-# 파일 업로드
-MAX_CONTENT_LENGTH=10485760
-
-# Gunicorn
-WORKERS=4
-THREADS=2
-TIMEOUT=30
-```
-
-### SECRET_KEY 생성
-
-```python
-# Python으로 안전한 SECRET_KEY 생성
-import secrets
-print(secrets.token_urlsafe(64))
-```
-
-```bash
-# 또는 OpenSSL 사용
-openssl rand -hex 64
-```
-
----
-
-## 모니터링 & 로깅
-
-### 로그 관리
-
-```bash
-# 1. 로그 디렉토리 생성
-mkdir -p logs
-
-# 2. 로그 확인
-tail -f logs/app.log
-
-# 3. 로그 로테이션 (logrotate)
-sudo nano /etc/logrotate.d/ai-classifier
-```
-
-```
-/opt/ai-classifier/logs/*.log {
-    daily
-    missingok
-    rotate 14
-    compress
-    delaycompress
-    notifempty
-    create 0640 www-data www-data
-    sharedscripts
-}
-```
-
-### Prometheus + Grafana (선택)
-
+**docker-compose.yml 예시:**
 ```yaml
-# prometheus.yml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=False
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+```
+
+---
+
+## ☁️ 클라우드 플랫폼
+
+### 1. Railway (추천 ⭐)
+
+**장점:**
+- ✅ 무료 플랜 $5/월 크레딧 (충분함)
+- ✅ GitHub 연동 자동 배포
+- ✅ 메모리 제한 관대함 (8GB까지 무료)
+- ✅ PostgreSQL, Redis 통합 지원
+
+**배포 방법:**
+
+1. Railway 계정 생성: https://railway.app
+2. "New Project" → "Deploy from GitHub repo" 선택
+3. 저장소 연결 및 환경변수 설정
+4. 자동 배포 시작 (완료 시 URL 제공)
+
+**환경변수 설정 (Railway Dashboard):**
+```
+FLASK_ENV=production
+SECRET_KEY=your-secret-key
+DEBUG=False
+PORT=5000
+```
+
+### 2. Fly.io (추천 ⭐⭐)
+
+**장점:**
+- ✅ 무료 플랜 (VM 3개, 256MB RAM)
+- ✅ 글로벌 엣지 네트워크
+- ✅ 도커 기반 배포
+- ✅ 자동 스케일링
+
+**배포 방법:**
+
+```bash
+# 1. Fly CLI 설치
+curl -L https://fly.io/install.sh | sh
+
+# 2. 로그인
+fly auth login
+
+# 3. 앱 초기화
+fly launch
+
+# 4. 배포
+fly deploy
+
+# 5. 스케일링 (선택)
+fly scale count 2
+fly scale memory 512
+
+# 6. 상태 확인
+fly status
+```
+
+**fly.toml 예시:**
+```toml
+app = "ai-disease-classifier"
+primary_region = "nrt"  # Tokyo
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  FLASK_ENV = "production"
+  PORT = "8080"
+
+[[services]]
+  http_checks = []
+  internal_port = 8080
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+    force_https = true
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [services.health_check]
+    path = "/health"
+    interval = "15s"
+    timeout = "10s"
+```
+
+### 3. Render ⚠️
+
+**현재 문제:**
+- ❌ 무료 플랜 메모리 제한 (512MB) → ONNX 모델 로드 시 OOM
+- ❌ 서버가 자주 터짐
+
+**해결 방안:**
+1. **유료 플랜 사용** ($7/월, 1GB RAM)
+2. **모델 추가 경량화** (현재 2.1MB → 목표 1MB)
+3. **다른 플랫폼 사용** (Railway, Fly.io 권장)
+
+**배포 방법 (유료 플랜 사용 시):**
+
+1. Render 계정 생성: https://render.com
+2. "New Web Service" 선택
+3. GitHub 저장소 연결
+4. 설정:
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn --bind 0.0.0.0:$PORT backend.app:app`
+   - **Plan**: Starter ($7/월)
+5. 환경변수 설정
+6. "Create Web Service" 클릭
+
+**render.yaml 예시:**
+```yaml
+services:
+  - type: web
+    name: ai-disease-classifier
+    env: python
+    plan: starter  # 유료 플랜 필요!
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 2 backend.app:app"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+    healthCheckPath: /health
+```
+
+### 4. Heroku (비추천)
+
+**이유:**
+- ❌ 무료 플랜 폐지 (2022년 11월)
+- ❌ 최소 $5/월부터 시작
+- ❌ Railway, Fly.io보다 비싸고 기능 적음
+
+---
+
+## 🌐 프론트엔드 배포
+
+### GitHub Pages (무료, 추천)
+
+```bash
+# 1. frontend/index.html 수정 (API URL 변경)
+# API_URL을 배포된 백엔드 URL로 변경
+const API_URL = 'https://your-backend-url.railway.app';
+
+# 2. GitHub Pages 활성화
+# Settings → Pages → Source: main branch, /frontend 폴더
+
+# 3. 접속
+# https://sinsangwoo.github.io/AIdiseaseclassifier/
+```
+
+### Vercel (무료, 추천)
+
+```bash
+# 1. Vercel CLI 설치
+npm i -g vercel
+
+# 2. 배포
+cd frontend
+vercel
+
+# 3. 도메인 설정 (선택)
+vercel --prod
+```
+
+### Netlify (무료)
+
+```bash
+# 1. Netlify CLI 설치
+npm i -g netlify-cli
+
+# 2. 배포
+cd frontend
+netlify deploy --prod
+```
+
+---
+
+## 📊 모니터링 설정
+
+### 1. Prometheus + Grafana (선택)
+
+프로젝트에 이미 Prometheus 메트릭이 구현되어 있습니다.
+
+**docker-compose.yml에 추가:**
+```yaml
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  grafana-data:
+```
+
+**prometheus.yml:**
+```yaml
 global:
   scrape_interval: 15s
 
@@ -404,229 +345,91 @@ scrape_configs:
       - targets: ['app:5000']
 ```
 
-### 헬스체크 모니터링
+자세한 내용은 [PHASE3-4_COMPLETE.md](PHASE3-4_COMPLETE.md) 참조.
 
+### 2. 로그 수집
+
+**Papertrail (무료 100MB/월):**
 ```bash
-# 1. 헬스체크 스크립트
-cat > healthcheck.sh << 'EOF'
-#!/bin/bash
-response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/health)
-if [ $response -eq 200 ]; then
-  echo "OK"
-  exit 0
-else
-  echo "FAIL: HTTP $response"
-  exit 1
-fi
-EOF
-
-chmod +x healthcheck.sh
-
-# 2. Cron으로 주기적 체크
-crontab -e
-*/5 * * * * /opt/ai-classifier/healthcheck.sh || /usr/bin/systemctl restart ai-classifier
+# 환경변수 추가
+PAPERTRAIL_HOST=logs.papertrailapp.com
+PAPERTRAIL_PORT=12345
 ```
 
 ---
 
-## 보안 설정
+## 🔧 문제 해결
 
-### HTTPS 설정 (Let's Encrypt)
+### 문제 1: 메모리 부족 (OOM Killed)
 
-```bash
-# 1. Certbot 설치
-sudo apt install -y certbot python3-certbot-nginx
-
-# 2. 인증서 발급
-sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
-
-# 3. 자동 갱신 설정
-sudo crontab -e
-0 3 * * * /usr/bin/certbot renew --quiet
+**증상:**
+```
+Container killed due to memory usage
 ```
 
-### 방화벽 설정 (UFW)
+**해결:**
+1. 플랫폼 메모리 증설 (최소 1GB 권장)
+2. Gunicorn worker 수 감소: `--workers 2 --threads 2`
+3. 모델 경량화 고려
 
-```bash
-# 1. UFW 설치
-sudo apt install -y ufw
+### 문제 2: 배포 후 404 에러
 
-# 2. 규칙 설정
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
-sudo ufw allow ssh
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
+**원인:** 프론트엔드 API URL 미설정
 
-# 3. 활성화
-sudo ufw enable
-sudo ufw status
+**해결:**
+```javascript
+// frontend/script.js
+const API_URL = 'https://your-backend-url.com';  // 배포 URL로 변경
 ```
 
-### 환경변수 보안
+### 문제 3: CORS 에러
 
-```bash
-# 민감한 정보는 환경변수나 Secret Manager 사용
-# .env 파일은 .gitignore에 추가
-echo ".env" >> .gitignore
-```
+**원인:** CORS_ORIGINS 미설정
 
----
-
-## 성능 최적화
-
-### Gunicorn 튜닝
-
-```bash
-# CPU 바운드 작업
-gunicorn --workers 4 --threads 1 --worker-class sync backend.app:app
-
-# I/O 바운드 작업
-gunicorn --workers 2 --threads 4 --worker-class gthread backend.app:app
-
-# 비동기 처리
-gunicorn --workers 4 --worker-class gevent --worker-connections 1000 backend.app:app
-```
-
-### Docker 리소스 제한
-
-```yaml
-# docker-compose.yml
-services:
-  app:
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '1'
-          memory: 1G
-```
-
-### 캐싱 전략
-
+**해결:**
 ```python
-# Flask-Caching 추가 (선택)
-from flask_caching import Cache
+# backend/.env
+CORS_ORIGINS=https://your-frontend-url.com,https://sinsangwoo.github.io
+```
 
-cache = Cache(app, config={'CACHE_TYPE': 'simple'})
+### 문제 4: 모델 로드 실패
 
-@cache.cached(timeout=300)
-def expensive_function():
-    pass
+**증상:**
+```
+ModelLoadError: 모델 파일을 찾을 수 없습니다
+```
+
+**해결:**
+```bash
+# 모델 파일 경로 확인
+ls -lh backend/models/
+
+# 필수 파일:
+# - model.onnx (2.1MB)
+# - labels.txt
 ```
 
 ---
 
-## 백업 & 복구
+## 🎉 배포 완료 체크리스트
 
-### 백업 전략
-
-```bash
-# 1. 자동 백업 스크립트
-cat > backup.sh << 'EOF'
-#!/bin/bash
-DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR=/backup/$DATE
-
-mkdir -p $BACKUP_DIR
-cp model.onnx $BACKUP_DIR/
-cp labels.txt $BACKUP_DIR/
-cp -r logs $BACKUP_DIR/
-tar -czf /backup/backup_$DATE.tar.gz -C /backup $DATE
-rm -rf $BACKUP_DIR
-
-# 7일 이상 된 백업 삭제
-find /backup -name "backup_*.tar.gz" -mtime +7 -delete
-EOF
-
-chmod +x backup.sh
-
-# 2. Cron 등록 (매일 새벽 3시)
-0 3 * * * /opt/ai-classifier/backup.sh
-```
-
-### 복구 절차
-
-```bash
-# 1. 최신 백업 찾기
-LATEST_BACKUP=$(ls -t /backup/backup_*.tar.gz | head -1)
-
-# 2. 복구
-tar -xzf $LATEST_BACKUP -C /tmp
-cp /tmp/backup_*/model.onnx /opt/ai-classifier/
-cp /tmp/backup_*/labels.txt /opt/ai-classifier/
-
-# 3. 서비스 재시작
-sudo systemctl restart ai-classifier
-```
-
----
-
-## 문제 해결
-
-### 서비스가 시작되지 않음
-
-```bash
-# 1. 로그 확인
-sudo journalctl -u ai-classifier -n 100
-
-# 2. 포트 충돌 확인
-sudo lsof -i :5000
-
-# 3. 권한 확인
-ls -la /opt/ai-classifier
-```
-
-### 높은 메모리 사용량
-
-```bash
-# 1. 워커 수 감소
-gunicorn --workers 2 --threads 2 backend.app:app
-
-# 2. Docker 메모리 제한
-docker update --memory 1g ai-classifier
-```
-
-### 느린 응답 시간
-
-```bash
-# 1. 헬스체크 확인
-curl http://localhost:5000/health/detailed | jq '.system'
-
-# 2. 로그 확인
-tail -f logs/app.log | grep "processing_time"
-
-# 3. 워커 수 증가 (CPU 여유가 있다면)
-gunicorn --workers 8 backend.app:app
-```
-
----
-
-## 체크리스트
-
-### 배포 전
-
-- [ ] 환경변수 설정 완료
-- [ ] SECRET_KEY 생성 및 설정
+- [ ] 백엔드 배포 완료 및 헬스체크 통과
+- [ ] 프론트엔드 배포 완료 및 API 연결 확인
+- [ ] HTTPS 설정 완료
 - [ ] CORS 설정 확인
-- [ ] 모델 파일 준비 (model.onnx, labels.txt)
-- [ ] 로그 디렉토리 생성
-- [ ] 방화벽 규칙 설정
-- [ ] 테스트 실행 (pytest)
-
-### 배포 후
-
-- [ ] 헬스체크 확인 (`/health`)
-- [ ] 예측 API 테스트 (`/predict`)
-- [ ] 로그 확인
-- [ ] 모니터링 설정
-- [ ] 백업 설정
-- [ ] SSL/TLS 인증서 설정 (프로덕션)
-- [ ] 도메인 연결
+- [ ] 모니터링 설정 (선택)
+- [ ] 에러 알림 설정 (선택)
+- [ ] 백업 전략 수립
+- [ ] 도메인 연결 (선택)
 
 ---
 
-**문서 버전**: 5.0.0  
-**최종 업데이트**: 2026-01-30
+## 📞 지원
+
+문제가 발생하면 GitHub Issues에 등록해주세요:
+https://github.com/sinsangwoo/AIdiseaseclassifier/issues
+
+---
+
+**작성자**: 신상우 (aksrkd7191@gmail.com)
+**최종 수정**: 2026-02-05
