@@ -111,8 +111,9 @@ class ModelService:
         try:
             self.logger.info("🔥 모델 워밍업 시작...")
 
-            # 더미 이미지 생성 (1, 3, 224, 224) — NCHW 포맷
-            dummy_input = np.random.rand(1, 3, 224, 224).astype(np.float32)
+            # 더미 이미지 생성 (1, 224, 224, 3) — Teachable Machine 포맷 (NHWC)
+            # Teachable Machine 모델은 (batch, height, width, channels) 형식을 기대합니다
+            dummy_input = np.random.rand(1, 224, 224, 3).astype(np.float32)
 
             start_time = time.time()
             _ = self._predictor.predict(dummy_input)
