@@ -96,7 +96,12 @@ class TestModelInfoEndpoint:
         
         # 모델 정보 필드 확인
         assert 'model_path' in data
-        assert 'labels_path' in data
+        
+        # 모델이 로드된 경우 추가 필드 확인
+        if data.get('status') == 'ready':
+            assert 'num_classes' in data
+            assert 'classes' in data
+            assert isinstance(data['classes'], list)
 
 
 class TestPredictEndpoint:
