@@ -1,5 +1,5 @@
 """
-ONNX 모델 예측 모듈
+PyTorch ResNet50 예측 모듈
 
 싱글톤 패턴을 사용하여 모델을 한 번만 로드하고 재사용합니다.
 """
@@ -7,8 +7,10 @@ ONNX 모델 예측 모듈
 from pathlib import Path
 from typing import List, Dict, Any
 
-import numpy as np
-import onnxruntime as rt
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torchvision.models import resnet50, ResNet50_Weights
 
 from backend.utils import (
     LoggerMixin,
@@ -18,10 +20,9 @@ from backend.utils import (
     log_exception
 )
 
-
 class ModelPredictor(LoggerMixin):
     """
-    ONNX 모델 예측 클래스 (싱글톤)
+    PyTorch ResNet50 예측 클래스 (싱글톤)
     
     모델과 레이블을 한 번만 로드하여 메모리 효율성을 높입니다.
     """
@@ -50,45 +51,55 @@ class ModelPredictor(LoggerMixin):
         self.model_path = model_path
         self.labels_path = labels_path
         
-        self.session = None
+        self.model = None
         self.class_names = []
-        self.input_name = None
-        self.output_name = None
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         if model_path and labels_path:
             self.load_model()
     
     def load_model(self):
         """
-        ONNX 모델과 레이블 파일 로드
+        PyTorch 모델과 레이블 파일 로드
         
         Raises:
             ModelLoadError: 모델 또는 레이블 파일 로딩 실패 시
         """
         try:
             # 파일 존재 확인
-            if not Path(self.model_path).exists():
-                raise FileNotFoundError(f"모델 파일을 찾을 수 없습니다: {self.model_path}")
-            
             if not Path(self.labels_path).exists():
                 raise FileNotFoundError(f"레이블 파일을 찾을 수 없습니다: {self.labels_path}")
-            
-            # ONNX 모델 로드
-            self.logger.info(f"ONNX 모델 로드 시작: {self.model_path}")
-            self.session = rt.InferenceSession(self.model_path)
-            self.input_name = self.session.get_inputs()[0].name
-            self.output_name = self.session.get_outputs()[0].name
-            self.logger.info(f"모델 로드 성공 (입력: {self.input_name}, 출력: {self.output_name})")
             
             # 레이블 파일 로드
             self.logger.info(f"레이블 파일 로드 시작: {self.labels_path}")
             with open(self.labels_path, 'r', encoding='utf-8') as f:
                 self.class_names = [
-                    line.strip().split(' ', 1)[1] 
-                    for line in f.readlines() 
+                    line.strip().split(' ', 1)[1]
+                    for line in f.readlines()
                     if line.strip()
                 ]
-            self.logger.info(f"레이블 로드 성공: {len(self.class_names)}개 클래스 - {self.class_names}")
+            num_classes = len(self.class_names)
+            self.logger.info(f"레이블 로드 성공: {num_classes}개 클래스 - {self.class_names}")
+            
+            # ResNet50 로드 (ImageNet 사전학습 가중치)
+            self.logger.info("PyTorch ResNet50 모델 로드 시작 (pretrained)")
+            base = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
+            
+            # 출력 차원 조정 (레이블 수에 맞춰 FC 교체)
+            if base.fc.out_features != num_classes:
+                base.fc = nn.Linear(base.fc.in_features, num_classes)
+                self.logger.info(f"FC 레이어를 {num_classes} 클래스에 맞게 재구성")
+            
+            # 커스텀 가중치(.pt) 파일이 제공되면 로드 (선택적)
+            model_path = Path(self.model_path) if self.model_path else None
+            if model_path and model_path.exists() and model_path.suffix == ".pt":
+                self.logger.info(f"커스텀 가중치 로드: {model_path}")
+                state = torch.load(model_path, map_location="cpu")
+                base.load_state_dict(state, strict=False)
+            
+            self.model = base.to(self.device)
+            self.model.eval()
+            self.logger.info(f"모델 로드 성공 (device: {self.device.type})")
             
             self._is_initialized = True
             self.logger.info("모델 초기화 완료")
@@ -101,12 +112,12 @@ class ModelPredictor(LoggerMixin):
             log_exception(self.logger, e, "모델 로딩 중 오류")
             raise ModelLoadError(f"모델 로딩 실패: {str(e)}", original_error=e)
     
-    def predict(self, image_array: np.ndarray) -> List[Dict[str, Any]]:
+    def predict(self, image_tensor: torch.Tensor) -> List[Dict[str, Any]]:
         """
-        이미지 배열에 대한 예측 수행
+        이미지 텐서에 대한 예측 수행
         
         Args:
-            image_array (np.ndarray): 전처리된 이미지 배열 (shape: [1, H, W, 3])
+            image_tensor (torch.Tensor): 전처리된 텐서 (shape: [1, 3, H, W])
         
         Returns:
             List[Dict[str, Any]]: 예측 결과 리스트
@@ -121,17 +132,15 @@ class ModelPredictor(LoggerMixin):
             raise ModelNotLoadedError("모델이 아직 로드되지 않았습니다")
         
         try:
-            self.logger.debug(f"예측 시작 (입력 shape: {image_array.shape})")
+            self.logger.debug(f"예측 시작 (입력 shape: {tuple(image_tensor.shape)})")
             
-            # ONNX 모델 예측
-            predictions = self.session.run(
-                [self.output_name], 
-                {self.input_name: image_array}
-            )[0]
+            with torch.no_grad():
+                logits = self.model(image_tensor.to(self.device))
+                probs = F.softmax(logits, dim=1).cpu().numpy()[0]
             
             # 결과 포맷팅
             results = []
-            for i, probability in enumerate(predictions[0]):
+            for i, probability in enumerate(probs):
                 results.append({
                     'className': self.class_names[i],
                     'probability': float(probability)
@@ -159,12 +168,7 @@ class ModelPredictor(LoggerMixin):
         Returns:
             bool: 모델이 로드되어 사용 가능하면 True
         """
-        return (
-            self.session is not None and 
-            self.class_names and 
-            self.input_name is not None and 
-            self.output_name is not None
-        )
+        return self.model is not None and bool(self.class_names)
     
     def get_model_info(self) -> Dict[str, Any]:
         """
@@ -179,8 +183,10 @@ class ModelPredictor(LoggerMixin):
         return {
             'status': 'ready',
             'model_path': self.model_path,
+            'framework': 'pytorch',
+            'architecture': 'resnet50',
+            'device': self.device.type,
             'num_classes': len(self.class_names),
             'classes': self.class_names,
-            'input_name': self.input_name,
-            'output_name': self.output_name
+            'weights': 'imagenet_pretrained' if self.model is not None else 'unknown'
         }

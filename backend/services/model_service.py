@@ -1,7 +1,7 @@
 """
 모델 관리 서비스 (Phase 3 — 캐시 수술 완료)
 
-ONNX 모델의 로딩, 캐싱, 예측을 담당하는 서비스 레이어입니다.
+PyTorch 모델의 로딩, 캐싱, 예측을 담당하는 서비스 레이어입니다.
 
 캐시 아키텍처 (수술 전후)
 ─────────────────────────────────────────
@@ -27,6 +27,7 @@ from collections import OrderedDict
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+import torch
 
 from backend.models import ModelPredictor
 from backend.utils import get_logger, ModelLoadError, PredictionError
@@ -52,7 +53,7 @@ class ModelService:
     ):
         """
         Args:
-            model_path: ONNX 모델 파일 경로
+            model_path: 모델 파일 경로 (.pt 지원, 없으면 pretrained 사용)
             labels_path: 레이블 파일 경로
             enable_cache: 예측 캐싱 활성화 여부
             cache_size: LRU 캐시 최대 크기
@@ -111,9 +112,8 @@ class ModelService:
         try:
             self.logger.info("🔥 모델 워밍업 시작...")
 
-            # 더미 이미지 생성 (1, 224, 224, 3) — Teachable Machine 포맷 (NHWC)
-            # Teachable Machine 모델은 (batch, height, width, channels) 형식을 기대합니다
-            dummy_input = np.random.rand(1, 224, 224, 3).astype(np.float32)
+            # 더미 입력 생성 (1, 3, 224, 224) — PyTorch CHW 포맷
+            dummy_input = torch.rand(1, 3, 224, 224, dtype=torch.float32)
 
             start_time = time.time()
             _ = self._predictor.predict(dummy_input)
@@ -133,14 +133,14 @@ class ModelService:
 
     def predict(
         self,
-        processed_image: np.ndarray,
+        processed_image,
         use_cache: Optional[bool] = None
     ) -> Tuple[List[Dict[str, any]], bool]:
         """
         이미지 예측 (캐싱 지원)
 
         Args:
-            processed_image: 전처리된 이미지 (numpy array)
+            processed_image: 전처리된 이미지 (torch.Tensor 또는 numpy array)
             use_cache: 캐시 사용 여부 (None이면 기본 설정 따름)
 
         Returns:
@@ -180,14 +180,25 @@ class ModelService:
 
     # ─── 캐시 내부 구현 (OrderedDict LRU) ─────────────────────────
 
-    def _compute_image_hash(self, image_array: np.ndarray) -> str:
+    def _compute_image_hash(self, image_array) -> str:
         """
         이미지 배열의 해시값 계산 (SHA-256)
 
         numpy 배열의 바이트 표현이 동일하면 해시도 동일하므로,
         동일한 이미지에 대한 캐시 조회가 정확히 동작합니다.
         """
-        return hashlib.sha256(image_array.tobytes()).hexdigest()
+        try:
+            if isinstance(image_array, np.ndarray):
+                buf = image_array.tobytes()
+            elif torch.is_tensor(image_array):
+                buf = image_array.detach().cpu().numpy().tobytes()
+            else:
+                # 알 수 없는 타입은 문자열 표현으로 해시
+                buf = str(image_array).encode('utf-8')
+            return hashlib.sha256(buf).hexdigest()
+        except Exception:
+            # 해시 실패 시 랜덤 값으로 충돌 최소화
+            return hashlib.sha256(np.random.rand(32).tobytes()).hexdigest()
 
     def _get_from_cache(self, image_hash: str) -> Optional[List[Dict]]:
         """
