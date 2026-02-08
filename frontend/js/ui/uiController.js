@@ -93,6 +93,16 @@ class UIController {
                 this.onAgreementChange(e.target.checked);
             }
         });
+
+        // Save PNG Button
+        this.elements.savePngBtn?.addEventListener('click', () => {
+            this.handleSavePng();
+        });
+
+        // Save PDF Button
+        this.elements.savePdfBtn?.addEventListener('click', () => {
+            this.handleSavePdf();
+        });
     }
 
     resetUI() {
@@ -107,6 +117,7 @@ class UIController {
         if (this._currentObjectURL) {
             URL.revokeObjectURL(this._currentObjectURL);
             this._currentObjectURL = null;
+            this._lastFile = null;
             console.log('🧹 Object URL Revoked');
         }
 
@@ -143,9 +154,13 @@ class UIController {
     renderUploadArea(state) {
         if (state.uploadedImage) {
             if (this.elements.imagePreview) {
-                // Create object URL only if it doesn't exist or is different
-                if (!this._currentObjectURL) {
+                // Create object URL only if it's a new file
+                if (this._lastFile !== state.uploadedImage) {
+                    if (this._currentObjectURL) {
+                        URL.revokeObjectURL(this._currentObjectURL);
+                    }
                     this._currentObjectURL = URL.createObjectURL(state.uploadedImage);
+                    this._lastFile = state.uploadedImage;
                     console.log('🖼️ New Object URL Created:', this._currentObjectURL);
                 }
                 this.elements.imagePreview.src = this._currentObjectURL;
@@ -238,6 +253,92 @@ class UIController {
 
         if (this.elements.reportTimestamp) {
             this.elements.reportTimestamp.textContent = `진단 시각: ${new Date().toLocaleString()}`;
+        }
+
+        // Update Report ID with a random one if not set
+        const reportIdElem = document.getElementById('reportId');
+        if (reportIdElem && reportIdElem.textContent.includes('REQ-2026-AI')) {
+            const randomId = 'REQ-' + Math.random().toString(16).slice(2, 8).toUpperCase();
+            reportIdElem.textContent = randomId;
+        }
+    }
+
+    /**
+     * PNG 저장 기능 (html2canvas)
+     */
+    async handleSavePng() {
+        const reportCard = document.getElementById('reportCard');
+        if (!reportCard) return;
+
+        try {
+            console.log('📸 Capturing PNG...');
+            const canvas = await html2canvas(reportCard, {
+                useCORS: true,
+                scale: 2, // 고해상도
+                backgroundColor: '#ffffff'
+            });
+
+            const link = document.createElement('a');
+            link.download = `AI_Diagnosis_Result_${new Date().getTime()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            console.log('✅ PNG Saved');
+        } catch (error) {
+            console.error('PNG 저장 실패:', error);
+            alert('PNG 저장 중 오류가 발생했습니다.');
+        }
+    }
+
+    /**
+     * PDF 리포트 생성 기능 (html2canvas -> jspdf)
+     * 텍스트 직접 입력 방식은 한글 폰트 문제가 발생할 수 있어 
+     * 리포트 화면을 캡처하여 PDF에 삽입하는 방식을 사용합니다.
+     */
+    async handleSavePdf() {
+        const reportCard = document.getElementById('reportCard');
+        if (!reportCard) return;
+
+        try {
+            console.log('📄 Generating PDF from screenshot...');
+            const { jsPDF } = window.jspdf;
+
+            // 1. Report Card 캡처
+            const canvas = await html2canvas(reportCard, {
+                useCORS: true,
+                scale: 2,
+                backgroundColor: '#ffffff'
+            });
+            const imgData = canvas.toDataURL('image/png');
+
+            // 2. PDF 생성
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            // 이미지 크기 계산 (비율 유지하며 맞춤)
+            const imgWidth = pageWidth - 20; // 좌우 여백 10mm씩
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+            // Header/Title
+            doc.setFontSize(18);
+            doc.setTextColor(0, 123, 255);
+            doc.text('AI Diagnosis Official Report', 10, 15);
+
+            // 캡처된 리포트 이미지 삽입
+            doc.addImage(imgData, 'PNG', 10, 25, imgWidth, imgHeight);
+
+            // Footer
+            doc.setFontSize(9);
+            doc.setTextColor(150, 150, 150);
+            doc.text(`Generated on ${new Date().toLocaleString()}`, 10, pageHeight - 10);
+            doc.text('Disclaimer: This report is for reference only and does not replace medical professional judgment.', 50, pageHeight - 10);
+
+            const reportId = document.getElementById('reportId')?.textContent || 'N/A';
+            doc.save(`AI_Diagnosis_Report_${reportId}.pdf`);
+            console.log('✅ PDF Saved from Screenshot');
+        } catch (error) {
+            console.error('PDF 생성 실패:', error);
+            alert('PDF 리포트 생성 중 오류가 발생했습니다.');
         }
     }
 
