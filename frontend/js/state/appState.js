@@ -161,3 +161,4 @@ class AppState {
 
 // 싱글턴 인스턴스 생성 및 export
 export const appState = new AppState();
+export default appState;

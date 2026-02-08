@@ -139,3 +139,5 @@ export const imageOptimizer = new ImageOptimizer({
     quality: 0.85,
     format: 'image/jpeg'
 });
+
+export default imageOptimizer;

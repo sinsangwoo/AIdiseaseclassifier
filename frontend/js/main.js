@@ -5,10 +5,12 @@
  * Phase 4: 이미지 최적화 및 진행 상태 UI 통합
  */
 
-import { appState } from './state/appState.js';
-import { imageOptimizer } from './imageOptimizer.js';
-import { apiClient } from './api/apiClient.js';
-import { uiController } from './ui/uiController.js';
+import appState from './state/appState.js';
+import imageOptimizer from './imageOptimizer.js';
+import apiClient from './api/client.js';
+import UIController from './ui/uiController.js';
+
+const uiController = new UIController();
 
 class MainController {
     constructor() {
