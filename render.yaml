@@ -18,17 +18,15 @@ services:
     
     # ✅ Start Command 최적화
     # - PYTHONPATH=. 추가: backend.app 모듈 임포트 문제 완전 해결
-    # - gthread: 스레드 기반 워커로 ONNX 호환성 및 안정성 향상
+    # - gevent: 비동기 워커 (Render 실행 명령과 일치)
     # - --workers 1: Free tier 메모리 제약 고려 (512MB)
-    # - --threads 2: 메모리 사용량 최적화 (기존 4 → 2)
-    # - --timeout 180: ONNX 모델 로딩 시간 고려 (기존 120 → 180)
+    # - --timeout 180: 모델 로딩 시간 고려
     # - --preload: 애플리케이션 사전 로딩으로 첫 요청 속도 개선
     startCommand: |
       export PYTHONPATH=. && \
       gunicorn --bind 0.0.0.0:$PORT \
                --workers 1 \
-               --worker-class gthread \
-               --threads 2 \
+               --worker-class gevent \
                --worker-tmp-dir /dev/shm \
                --timeout 180 \
                --max-requests 1000 \

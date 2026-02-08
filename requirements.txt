@@ -18,9 +18,7 @@ MarkupSafe==3.0.2
 # ===== WSGI Server =====
 gunicorn==23.0.0
 
-# ✅ gevent 제거 - gthread 워커 사용으로 불필요
-# gevent는 ONNX Runtime과 호환성 이슈 발생 (segfault)
-# gthread (스레드 기반)가 더 안정적이고 메모리 효율적
+gevent>=1.4
 
 # ===== ONNX Runtime =====
 # ✅ 1.19.2 버전 유지 - Render Free tier 안정성 검증됨
