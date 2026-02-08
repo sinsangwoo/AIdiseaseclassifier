@@ -56,7 +56,16 @@ def create_app(config_name=None):
     logger.info("="*70)
     
     # ===== CORS 설정 =====
-    CORS(app, origins=config.CORS_ORIGINS, methods=config.CORS_METHODS)
+    CORS(
+        app,
+        resources={r"/*": {"origins": "*"}},
+        methods=['GET', 'POST', 'OPTIONS'],
+        allow_headers=getattr(config, 'CORS_ALLOW_HEADERS', None),
+        expose_headers=getattr(config, 'CORS_EXPOSE_HEADERS', None),
+        max_age=getattr(config, 'CORS_MAX_AGE', None),
+        supports_credentials=getattr(config, 'CORS_SUPPORTS_CREDENTIALS', False),
+        send_wildcard=True
+    )
     logger.info(f"✓ CORS 설정 완료")
     
     # ===== 종속성 서비스 초기화 (애플리케이션 컨텍스트에 저장) =====
@@ -92,6 +101,11 @@ def create_app(config_name=None):
     app.register_blueprint(model_bp)
     app.register_blueprint(predict_bp)
     logger.info("✓ 블루프린트 등록 완료")
+
+    @app.route("/", methods=["OPTIONS"])
+    @app.route("/<path:path>", methods=["OPTIONS"])
+    def options_preflight(path=None):
+        return "", 200
     
     # ===== 전역 에러 핸들러 =====
     
@@ -125,6 +139,15 @@ def create_app(config_name=None):
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['X-XSS-Protection'] = '1; mode=block'
+
+        if 'Access-Control-Allow-Origin' not in response.headers:
+            response.headers['Access-Control-Allow-Origin'] = '*'
+        if 'Access-Control-Allow-Methods' not in response.headers:
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        if 'Access-Control-Allow-Headers' not in response.headers:
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        if 'Access-Control-Max-Age' not in response.headers:
+            response.headers['Access-Control-Max-Age'] = str(getattr(config, 'CORS_MAX_AGE', 3600))
         
         return response
     
