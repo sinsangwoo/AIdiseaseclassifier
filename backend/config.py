@@ -123,7 +123,12 @@ def get_config(env=None):
         Config: 환경에 맞는 설정 클래스
     """
     if env is None:
-        env = os.environ.get('FLASK_ENV', 'default')
+        env = os.environ.get('FLASK_ENV')
+        if not env:
+            if os.environ.get('RENDER') or os.environ.get('RENDER_SERVICE_ID') or os.environ.get('RENDER_EXTERNAL_URL'):
+                env = 'production'
+            else:
+                env = 'default'
     
     config_class = config.get(env, config['default'])
     
