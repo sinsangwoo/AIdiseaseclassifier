@@ -133,23 +133,24 @@ class UIController {
 
     renderUploadArea(state) {
         if (state.uploadedImage) {
-            // Show preview, hide upload
-            if (this.elements.uploadSection) this.elements.uploadSection.style.display = 'none';
-            if (this.elements.previewContainer) {
-                this.elements.previewContainer.style.display = 'block';
-                this.elements.previewContainer.classList.remove('hidden');
-            }
-            
             if (this.elements.imagePreview) {
                  // Create object URL for the File object
                  const objectURL = URL.createObjectURL(state.uploadedImage);
                  this.elements.imagePreview.src = objectURL;
+                 console.log('🖼️ Image Preview Src Set:', objectURL);
                  
                  // Clean up previous object URL if needed
                  if (this._previousObjectURL) {
                      URL.revokeObjectURL(this._previousObjectURL);
                  }
                  this._previousObjectURL = objectURL;
+            }
+
+            // Show preview, hide upload
+            if (this.elements.uploadSection) this.elements.uploadSection.style.display = 'none';
+            if (this.elements.previewContainer) {
+                this.elements.previewContainer.style.display = 'block';
+                this.elements.previewContainer.classList.remove('hidden');
             }
         } else {
             // Show upload, hide preview

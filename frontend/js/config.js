@@ -41,7 +41,7 @@ const CONFIG = {
   
   // ===== 요청 설정 =====
   REQUEST: {
-    TIMEOUT: 30000,
+    TIMEOUT: 90000,
     RETRY_ATTEMPTS: 3,
     RETRY_DELAY: 1000,
     RETRY_BACKOFF_MULTIPLIER: 2,

@@ -100,12 +100,15 @@ class Application {
         try {
             CONFIG.log('[App] 분석 요청 시작:', state.uploadedImage.name);
             
+            // 데이터 전처리 중 메시지 유지를 위해 강제 업데이트
+            appState.analyzing();
+            
             const result = await apiClient.predict(state.uploadedImage);
             
             CONFIG.log('[App] 분석 완료:', result);
             
             // 결과 저장
-            appState.setAnalysisResult(result);
+            appState.completeAnalysis(result);
             
         } catch (error) {
             CONFIG.log('[App] 분석 실패:', error);

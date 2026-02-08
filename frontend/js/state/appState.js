@@ -132,6 +132,10 @@ class AppState {
         this.setState({ agreeChecked: checked });
     }
 
+    setAnalysisResult(result) {
+        this.completeAnalysis(result);
+    }
+
     /**
      * 상태 초기화
      */
