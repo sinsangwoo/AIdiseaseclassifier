@@ -103,6 +103,10 @@ def create_app(config_name=None):
     def not_found(error):
         return error_response("요청한 경로를 찾을 수 없습니다", status_code=404, error_type="NotFoundError")
     
+    @app.errorhandler(405)
+    def method_not_allowed(error):
+        return error_response("허용되지 않은 메서드입니다", status_code=405, error_type="MethodNotAllowedError")
+    
     @app.errorhandler(500)
     def internal_server_error(error):
         return error_response("서버 내부 오류가 발생했습니다", status_code=500, error_type="InternalServerError")

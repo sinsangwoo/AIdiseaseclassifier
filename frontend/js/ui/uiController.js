@@ -138,4 +138,4 @@ class UIController {
     }
 }
 
-export const uiController = new UIController();
+export default UIController;
