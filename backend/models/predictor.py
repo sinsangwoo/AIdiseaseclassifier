@@ -1,5 +1,5 @@
 """
-PyTorch ResNet50 예측 모듈
+PyTorch MobileNetV3-Small 예측 모듈
 
 싱글톤 패턴을 사용하여 모델을 한 번만 로드하고 재사용합니다.
 """
@@ -10,7 +10,7 @@ from typing import List, Dict, Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models import resnet50, ResNet50_Weights
+from torchvision.models import mobilenet_v3_small, MobileNet_V3_Small_Weights
 
 from backend.utils import (
     LoggerMixin,
@@ -22,7 +22,7 @@ from backend.utils import (
 
 class ModelPredictor(LoggerMixin):
     """
-    PyTorch ResNet50 예측 클래스 (싱글톤)
+    PyTorch MobileNetV3-Small 예측 클래스 (싱글톤)
     
     모델과 레이블을 한 번만 로드하여 메모리 효율성을 높입니다.
     """
@@ -41,7 +41,7 @@ class ModelPredictor(LoggerMixin):
         모델 예측기 초기화
         
         Args:
-            model_path (str): ONNX 모델 파일 경로
+            model_path (str): 커스텀 PyTorch 가중치(.pt) 경로(선택)
             labels_path (str): 레이블 파일 경로
         """
         # 이미 초기화된 경우 스킵
@@ -81,14 +81,14 @@ class ModelPredictor(LoggerMixin):
             num_classes = len(self.class_names)
             self.logger.info(f"레이블 로드 성공: {num_classes}개 클래스 - {self.class_names}")
             
-            # ResNet50 로드 (ImageNet 사전학습 가중치)
-            self.logger.info("PyTorch ResNet50 모델 로드 시작 (pretrained)")
-            base = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
+            self.logger.info("PyTorch MobileNetV3-Small 모델 로드 시작 (pretrained)")
+            base = mobilenet_v3_small(weights=MobileNet_V3_Small_Weights.IMAGENET1K_V1)
             
-            # 출력 차원 조정 (레이블 수에 맞춰 FC 교체)
-            if base.fc.out_features != num_classes:
-                base.fc = nn.Linear(base.fc.in_features, num_classes)
-                self.logger.info(f"FC 레이어를 {num_classes} 클래스에 맞게 재구성")
+            # 출력 차원 조정 (레이블 수에 맞춰 classifier 교체)
+            last = base.classifier[-1]
+            if isinstance(last, nn.Linear) and last.out_features != num_classes:
+                base.classifier[-1] = nn.Linear(last.in_features, num_classes)
+                self.logger.info(f"classifier를 {num_classes} 클래스에 맞게 재구성")
             
             # 커스텀 가중치(.pt) 파일이 제공되면 로드 (선택적)
             model_path = Path(self.model_path) if self.model_path else None
@@ -99,6 +99,8 @@ class ModelPredictor(LoggerMixin):
             
             self.model = base.to(self.device)
             self.model.eval()
+            for p in self.model.parameters():
+                p.requires_grad_(False)
             self.logger.info(f"모델 로드 성공 (device: {self.device.type})")
             
             self._is_initialized = True
@@ -134,7 +136,7 @@ class ModelPredictor(LoggerMixin):
         try:
             self.logger.debug(f"예측 시작 (입력 shape: {tuple(image_tensor.shape)})")
             
-            with torch.no_grad():
+            with torch.inference_mode():
                 logits = self.model(image_tensor.to(self.device))
                 probs = F.softmax(logits, dim=1).cpu().numpy()[0]
             
@@ -184,7 +186,7 @@ class ModelPredictor(LoggerMixin):
             'status': 'ready',
             'model_path': self.model_path,
             'framework': 'pytorch',
-            'architecture': 'resnet50',
+            'architecture': 'mobilenet_v3_small',
             'device': self.device.type,
             'num_classes': len(self.class_names),
             'classes': self.class_names,

@@ -1,7 +1,7 @@
 """
 PyTorch 이미지 전처리 유틸
 
-ResNet50에 맞는 전처리(224x224 Resize, ToTensor, Normalize)를 제공합니다.
+MobileNetV3-Small에 맞는 전처리(224x224 Resize, ToTensor, Normalize)를 제공합니다.
 """
 
 import io
@@ -29,7 +29,7 @@ def _load_rgb(image_bytes: bytes) -> Image.Image:
 
 def build_torch_transform(target_size: Tuple[int, int] = (224, 224)) -> T.Compose:
     """
-    ResNet50용 전처리 파이프라인 생성
+    ImageNet 사전학습 모델용 전처리 파이프라인 생성
     """
     return T.Compose([
         T.Resize(target_size, interpolation=Image.BICUBIC),
@@ -40,7 +40,7 @@ def build_torch_transform(target_size: Tuple[int, int] = (224, 224)) -> T.Compos
 
 def preprocess_bytes_to_tensor(image_bytes: bytes, target_size: Tuple[int, int] = (224, 224)) -> torch.Tensor:
     """
-    이미지 바이트를 ResNet50 입력 텐서로 변환
+    이미지 바이트를 ImageNet 사전학습 모델 입력 텐서로 변환
     반환 텐서 shape: [1, 3, H, W]
     """
     img = _load_rgb(image_bytes)
