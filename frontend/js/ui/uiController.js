@@ -25,7 +25,8 @@ class UIController {
             progressBarFill: document.getElementById('progressBarFill'),
             // Optional elements
             savePngBtn: document.getElementById('savePngBtn'),
-            savePdfBtn: document.getElementById('savePdfBtn')
+            savePdfBtn: document.getElementById('savePdfBtn'),
+            reportImage: document.getElementById('reportImage')
         };
 
         // Callbacks
@@ -99,8 +100,16 @@ class UIController {
         // Reset DOM elements directly
         if (this.elements.imageInput) this.elements.imageInput.value = '';
         if (this.elements.imagePreview) this.elements.imagePreview.src = '';
+        if (this.elements.reportImage) this.elements.reportImage.src = '';
         if (this.elements.agreeCheckbox) this.elements.agreeCheckbox.checked = false;
-        
+
+        // Revoke Object URL if exists
+        if (this._currentObjectURL) {
+            URL.revokeObjectURL(this._currentObjectURL);
+            this._currentObjectURL = null;
+            console.log('🧹 Object URL Revoked');
+        }
+
         // Hide/Show sections
         if (this.elements.uploadSection) {
             this.elements.uploadSection.style.display = 'block';
@@ -118,7 +127,7 @@ class UIController {
             this.elements.progressContainer.style.display = 'none';
             this.elements.progressContainer.classList.add('hidden');
         }
-        
+
         // Reset buttons
         if (this.elements.analyzeBtn) this.elements.analyzeBtn.disabled = true;
     }
@@ -134,17 +143,13 @@ class UIController {
     renderUploadArea(state) {
         if (state.uploadedImage) {
             if (this.elements.imagePreview) {
-                 // Create object URL for the File object
-                 const objectURL = URL.createObjectURL(state.uploadedImage);
-                 this.elements.imagePreview.src = objectURL;
-                 this.elements.imagePreview.classList.add('preview__image--visible');
-                 console.log('🖼️ Image Preview Src Set:', objectURL);
-                 
-                 // Clean up previous object URL if needed
-                 if (this._previousObjectURL) {
-                     URL.revokeObjectURL(this._previousObjectURL);
-                 }
-                 this._previousObjectURL = objectURL;
+                // Create object URL only if it doesn't exist or is different
+                if (!this._currentObjectURL) {
+                    this._currentObjectURL = URL.createObjectURL(state.uploadedImage);
+                    console.log('🖼️ New Object URL Created:', this._currentObjectURL);
+                }
+                this.elements.imagePreview.src = this._currentObjectURL;
+                this.elements.imagePreview.classList.add('preview__image--visible');
             }
 
             // Show preview, hide upload
@@ -170,7 +175,7 @@ class UIController {
             this.elements.analyzeBtn.disabled = !isEnabled || state.isAnalyzing;
             this.elements.analyzeBtn.textContent = state.isAnalyzing ? '분석 중...' : 'AI 정밀 분석 시작';
         }
-        
+
         // Sync checkbox with state
         if (this.elements.agreeCheckbox) {
             this.elements.agreeCheckbox.checked = !!state.agreeChecked;
@@ -185,6 +190,12 @@ class UIController {
             this.elements.reportContainer.classList.remove('hidden');
             this.elements.previewContainer.style.display = 'none'; // Hide preview when showing report
             this.elements.previewContainer.classList.add('hidden');
+
+            // Set report image from the persisted URL
+            if (this.elements.reportImage && this._currentObjectURL) {
+                this.elements.reportImage.src = this._currentObjectURL;
+            }
+
             this.renderPredictions(state.analysisResult.predictions);
             this.renderMetadata(state.analysisResult.metadata || {});
         } else {
@@ -198,12 +209,12 @@ class UIController {
 
         // Sort predictions
         const sorted = predictions.sort((a, b) => b.probability - a.probability);
-        
+
         this.elements.resultsContent.innerHTML = sorted.map(pred => {
             const percentage = (pred.probability * 100).toFixed(1);
             const isNormal = pred.className.toLowerCase().includes('정상') || pred.className.toLowerCase().includes('normal');
             const styleClass = isNormal ? 'result-normal' : 'result-pneumonia';
-            
+
             return `
                 <div class="result-item ${styleClass}">
                     <span>${pred.className}</span>
@@ -215,14 +226,14 @@ class UIController {
         // Update comment
         const pneumonia = sorted.find(p => !p.className.toLowerCase().includes('정상'));
         if (pneumonia && this.elements.resultComment) {
-             const prob = pneumonia.probability * 100;
-             let text = '', className = '';
-             if (prob > 90) { text = "<strong>높은 위험:</strong> 폐렴일 가능성이 매우 높습니다."; className = 'warning'; }
-             else if (prob > 70) { text = "<strong>주의 필요:</strong> 폐렴 가능성이 있습니다."; className = 'warning'; }
-             else { text = "<strong>낮은 위험:</strong> 정상 범위로 보입니다."; className = 'privacy'; }
-             
-             this.elements.resultComment.innerHTML = `<i class="fa-solid fa-comment-medical"></i> <div>${text}</div>`;
-             this.elements.resultComment.className = `notice-box ${className}`;
+            const prob = pneumonia.probability * 100;
+            let text = '', className = '';
+            if (prob > 90) { text = "<strong>높은 위험:</strong> 폐렴일 가능성이 매우 높습니다."; className = 'warning'; }
+            else if (prob > 70) { text = "<strong>주의 필요:</strong> 폐렴 가능성이 있습니다."; className = 'warning'; }
+            else { text = "<strong>낮은 위험:</strong> 정상 범위로 보입니다."; className = 'privacy'; }
+
+            this.elements.resultComment.innerHTML = `<i class="fa-solid fa-comment-medical"></i> <div>${text}</div>`;
+            this.elements.resultComment.className = `notice-box ${className}`;
         }
 
         if (this.elements.reportTimestamp) {
