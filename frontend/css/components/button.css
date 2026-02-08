@@ -307,15 +307,15 @@
   background-color: var(--color-secondary-hover);
 }
 
-#savePngBtn,
-#savePdfBtn {
-  background-color: var(--color-success);
-}
+/* #savePngBtn, #savePdfBtn 등의 ID 기반 스타일은 가독성 및 확정성을 위해 클래스(.btn--success 등) 사용을 권장하며,
+   기존 코드와의 호환성을 위해 ID 기반 스타일은 호버 시에만 명시적으로 남겨둡니다. 
+   다만 outline 버튼과의 충돌을 막기 위해 background-color 강제 지정은 제거합니다. */
 
 #savePngBtn:hover,
 #savePdfBtn:hover {
-  background-color: var(--color-success-dark);
+  background-color: var(--color-success-dark) !important;
 }
+
 
 /* .main-buttons, .report-actions 클래스 지원 */
 .main-buttons,

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +8,13 @@
     <meta name="keywords" content="AI, 폐렴 진단, 의료 영상, X-ray, 딥러닝, 헬스케어">
     <meta name="author" content="신상우 (30814)">
     <meta name="theme-color" content="#007bff">
-    
+
     <title>Smart Medical AI | 폐렴 진단 솔루션</title>
-    
+
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫁</text></svg>">
-    
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫁</text></svg>">
+
     <!-- ✅ 환경변수 주입 포인트 (GitHub Actions에서 치환) -->
     <script>
         window.ENV = {
@@ -20,7 +22,7 @@
             ENVIRONMENT: '${VITE_ENV}' || 'production'
         };
     </script>
-    
+
     <!-- CSS Modules -->
     <link rel="stylesheet" href="./css/components/variables.css">
     <link rel="stylesheet" href="./css/components/layout.css">
@@ -30,10 +32,11 @@
     <link rel="stylesheet" href="./css/components/upload.css">
     <link rel="stylesheet" href="./css/components/progress.css">
     <link rel="stylesheet" href="./css/components/notice.css">
-    
+
     <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        crossorigin="anonymous">
+
     <!-- External Libraries (for report saving) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
@@ -42,12 +45,13 @@
 <body>
     <!-- Main Application Container -->
     <main class="container" role="main">
-        
+
         <!-- 1. Header Section -->
         <header class="section mb-xl">
             <div class="text-center">
                 <div class="mb-sm">
-                    <span class="text-small text-uppercase text-primary text-bold" style="letter-spacing: 2px;">Medical AI Solution</span>
+                    <span class="text-small text-uppercase text-primary text-bold" style="letter-spacing: 2px;">Medical
+                        AI Solution</span>
                 </div>
                 <h1 class="heading-1 mb-sm">
                     <i class="fa-solid fa-lungs-virus text-primary" aria-hidden="true"></i>
@@ -71,7 +75,7 @@
 
         <!-- 2. Workflow Section -->
         <div class="grid grid--1-col gap-xl">
-            
+
             <!-- Step 1: Image Upload -->
             <section aria-labelledby="upload-heading">
                 <div class="flex-between mb-md">
@@ -81,13 +85,10 @@
                     <span class="text-tiny text-muted"><i class="fa-solid fa-circle-info"></i> JPG, PNG 지원</span>
                 </div>
 
-                <div class="upload-section upload" 
-                     id="uploadSection" 
-                     role="button"
-                     tabindex="0"
-                     aria-label="X-ray 이미지 업로드 영역"
-                     onkeypress="if(event.key==='Enter') document.getElementById('imageInput').click()">
-                    
+                <div class="upload-section upload" id="uploadSection" role="button" tabindex="0"
+                    aria-label="X-ray 이미지 업로드 영역"
+                    onkeypress="if(event.key==='Enter') document.getElementById('imageInput').click()">
+
                     <div class="upload__icon">
                         <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
                     </div>
@@ -102,7 +103,7 @@
                         <span>의료 데이터 보안 프로토콜 적용됨</span>
                     </div>
                 </div>
-                
+
                 <input type="file" id="imageInput" accept="image/jpeg,image/png,image/jpg" hidden>
             </section>
 
@@ -112,7 +113,7 @@
                     <h3 id="preview-heading" class="heading-4 text-center mb-lg">
                         <span class="text-primary mr-sm">02.</span>영상 확인 및 분석
                     </h3>
-                    
+
                     <div class="grid grid--2-cols gap-lg" style="align-items: center;">
                         <div class="card__image-container">
                             <img id="imagePreview" class="preview__image" alt="업로드된 X-ray 미리보기">
@@ -138,7 +139,8 @@
                             </div>
 
                             <div class="btn-group btn-group--start mt-md">
-                                <button id="analyzeBtn" class="btn btn--primary btn--large btn--block" type="button" disabled>
+                                <button id="analyzeBtn" class="btn btn--primary btn--large btn--block" type="button"
+                                    disabled>
                                     <i class="btn__icon fa-solid fa-brain"></i>
                                     <span>AI 정밀 분석 시작</span>
                                 </button>
@@ -158,7 +160,7 @@
                     <div class="spinner spinner--pulse spinner--large mb-lg"></div>
                     <h3 class="heading-3 mb-sm">AI 분석 진행 중...</h3>
                     <p class="text-muted mb-lg">딥러닝 모델이 흉부 영상을 분석하고 있습니다.</p>
-                    
+
                     <div class="progress-bar progress--gradient progress--ai-analyzing">
                         <div class="progress-bar-fill" id="progressBarFill"></div>
                     </div>
@@ -185,11 +187,12 @@
                             <i class="fa-solid fa-file-medical text-primary text-large"></i>
                             <span class="text-bold text-large">AI Diagnosis Result</span>
                         </div>
-                        <div class="text-tiny text-muted bg-white p-sm" style="border-radius: 4px; border: 1px solid var(--color-border-light);">
+                        <div class="text-tiny text-muted bg-white p-sm"
+                            style="border-radius: 4px; border: 1px solid var(--color-border-light);">
                             ID: <span id="reportId">REQ-2026-AI</span>
                         </div>
                     </header>
-                    
+
                     <div class="card__body card__body--divided">
                         <section class="card__section" style="flex: 1;">
                             <h4 class="card__section-title">분석된 영상</h4>
@@ -200,12 +203,12 @@
                                 * AI가 주요 특징을 추출하여 분석한 원본 이미지입니다.
                             </p>
                         </section>
-                        
+
                         <section class="card__section" style="flex: 1.2;">
                             <h4 class="card__section-title">상세 분석 결과</h4>
-                            
+
                             <div id="resultsContent" class="grid gap-sm mb-lg"></div>
-                            
+
                             <div id="resultComment" class="notice notice--diagnosis notice--info" role="alert"></div>
                         </section>
                     </div>
@@ -237,7 +240,8 @@
                 <i class="notice__icon fa-solid fa-triangle-exclamation"></i>
                 <div class="notice__content">
                     <strong class="notice__title">의료적 주의사항</strong>
-                    <p class="mb-0">이 시스템은 <strong>교육 및 연구 목적</strong>으로 개발되었습니다. 제공되는 분석 결과는 참고용이며, 실제 환자의 진단 및 치료 결정은 반드시 전문 의료진과의 상담을 통해 이루어져야 합니다.</p>
+                    <p class="mb-0">이 시스템은 <strong>교육 및 연구 목적</strong>으로 개발되었습니다. 제공되는 분석 결과는 참고용이며, 실제 환자의 진단 및 치료 결정은
+                        반드시 전문 의료진과의 상담을 통해 이루어져야 합니다.</p>
                 </div>
             </div>
 
@@ -256,4 +260,5 @@
     <!-- ✅ ES6 Module 방식으로 앱 로드 -->
     <script type="module" src="js/app.js"></script>
 </body>
+
 </html>
