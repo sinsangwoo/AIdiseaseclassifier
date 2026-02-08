@@ -129,14 +129,16 @@ class UIController {
             if (this.elements.uploadSection) this.elements.uploadSection.style.display = 'none';
             if (this.elements.previewContainer) this.elements.previewContainer.style.display = 'block';
             
-            if (this.elements.imagePreview && this.elements.imagePreview.src !== state.uploadedImage.src) {
-                 // Create object URL if not already set or handle based on state content
-                 // Assuming state.uploadedImage is a File object
-                 const reader = new FileReader();
-                 reader.onload = (e) => {
-                     this.elements.imagePreview.src = e.target.result;
-                 };
-                 reader.readAsDataURL(state.uploadedImage);
+            if (this.elements.imagePreview) {
+                 // Create object URL for the File object
+                 const objectURL = URL.createObjectURL(state.uploadedImage);
+                 this.elements.imagePreview.src = objectURL;
+                 
+                 // Clean up previous object URL if needed
+                 if (this._previousObjectURL) {
+                     URL.revokeObjectURL(this._previousObjectURL);
+                 }
+                 this._previousObjectURL = objectURL;
             }
         } else {
             // Show upload, hide preview
