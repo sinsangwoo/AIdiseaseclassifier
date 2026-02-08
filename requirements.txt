@@ -27,12 +27,6 @@ onnxruntime==1.19.2
 onnx==1.17.0
 protobuf==3.20.3
 
-# ===== PyTorch (ResNet50 Upgrade) =====
-# TensorFlow 제거(미사용) 및 PyTorch로 전환
-# Windows/CPU 환경에서 기본 PyPI 빌드 사용
-torch
-torchvision
-
 # ===== Image Processing =====
 pillow==11.0.0
 numpy==1.26.4  # onnxruntime 1.19.2 호환

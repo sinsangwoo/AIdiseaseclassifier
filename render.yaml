@@ -77,10 +77,10 @@ services:
       
       # ✅ 모델 경로 (Render 워킹 디렉토리 기준 상대 경로)
       - key: MODEL_PATH
-        value: backend/models/artifacts/model.onnx
+        value: backend/models/model.onnx
       
       - key: LABELS_PATH
-        value: backend/models/artifacts/labels.txt
+        value: backend/models/labels.txt
       
       # ✅ ONNX Runtime 최적화 (메모리 충돌 및 segfault 방지)
       # OpenMP 스레드 수 제한 (Free tier 메모리 고려)

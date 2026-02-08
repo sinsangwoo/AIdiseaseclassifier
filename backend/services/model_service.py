@@ -27,7 +27,7 @@ from collections import OrderedDict
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
-import torch
+import numpy as np
 
 from backend.models import ModelPredictor
 from backend.utils import get_logger, ModelLoadError, PredictionError
@@ -112,8 +112,8 @@ class ModelService:
         try:
             self.logger.info("🔥 모델 워밍업 시작...")
 
-            # 더미 입력 생성 (1, 3, 224, 224) — PyTorch CHW 포맷
-            dummy_input = torch.rand(1, 3, 224, 224, dtype=torch.float32)
+            # 더미 입력 생성 (1, 224, 224, 3) — ONNX Runtime NHWC 포맷
+            dummy_input = np.random.rand(1, 224, 224, 3).astype(np.float32)
 
             start_time = time.time()
             _ = self._predictor.predict(dummy_input)
@@ -190,8 +190,6 @@ class ModelService:
         try:
             if isinstance(image_array, np.ndarray):
                 buf = image_array.tobytes()
-            elif torch.is_tensor(image_array):
-                buf = image_array.detach().cpu().numpy().tobytes()
             else:
                 # 알 수 없는 타입은 문자열 표현으로 해시
                 buf = str(image_array).encode('utf-8')

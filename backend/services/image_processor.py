@@ -1,13 +1,13 @@
 """
 이미지 전처리 서비스 모듈
 
-업로드된 이미지를 PyTorch ResNet50 입력에 맞게 전처리합니다.
+업로드된 이미지를 ONNX Runtime용 Numpy 배열로 전처리합니다.
 """
 
 import io
 from typing import Tuple
 
-import torch
+import numpy as np
 
 from backend.utils import (
     LoggerMixin,
@@ -22,7 +22,7 @@ class ImageProcessor(LoggerMixin):
     """
     이미지 전처리 클래스
     
-    업로드된 이미지를 PyTorch 모델에 맞는 형식으로 변환합니다.
+    업로드된 이미지를 ONNX 모델에 맞는 형식으로 변환합니다.
     """
     
     def __init__(self, target_size: Tuple[int, int] = (224, 224)):
@@ -35,7 +35,7 @@ class ImageProcessor(LoggerMixin):
         self.target_size = target_size
         self.logger.info(f"ImageProcessor 초기화 (target_size: {target_size})")
     
-    def preprocess(self, image_bytes: bytes) -> torch.Tensor:
+    def preprocess(self, image_bytes: bytes) -> np.ndarray:
         """
         이미지 바이트를 모델 입력 형식으로 전처리
         
@@ -43,15 +43,11 @@ class ImageProcessor(LoggerMixin):
             image_bytes (bytes): 원본 이미지 바이트 데이터
         
         Returns:
-            torch.Tensor: 전처리된 텐서 (shape: [1, 3, H, W])
-        
-        Raises:
-            InvalidImageError: 이미지 로딩 실패 시
-            ImageProcessingError: 전처리 중 오류 발생 시
+            np.ndarray: 전처리된 배열 (shape: [1, 224, 224, 3])
         """
         try:
             tensor = preprocess_bytes_to_tensor(image_bytes, self.target_size)
-            self.logger.debug(f"전처리 완료: shape={tuple(tensor.shape)}, dtype={tensor.dtype}")
+            self.logger.debug(f"전처리 완료: shape={tensor.shape}, dtype={tensor.dtype}")
             return tensor
             
         except (InvalidImageError, ImageProcessingError):
@@ -63,7 +59,7 @@ class ImageProcessor(LoggerMixin):
             log_exception(self.logger, e, "이미지 전처리 중 예상치 못한 오류")
             raise ImageProcessingError(f"이미지 전처리 실패: {str(e)}")
     
-    def preprocess_from_file(self, file_storage) -> torch.Tensor:
+    def preprocess_from_file(self, file_storage) -> np.ndarray:
         """
         Flask FileStorage 객체에서 직접 이미지 전처리
         
@@ -71,11 +67,7 @@ class ImageProcessor(LoggerMixin):
             file_storage: Flask request.files에서 받은 파일 객체
         
         Returns:
-            torch.Tensor: 전처리된 텐서
-        
-        Raises:
-            InvalidImageError: 파일 읽기 실패 시
-            ImageProcessingError: 전처리 중 오류 발생 시
+            np.ndarray: 전처리된 배열
         """
         try:
             # 메모리에 파일 읽기
@@ -112,6 +104,8 @@ class ImageProcessor(LoggerMixin):
             bool: 유효한 이미지면 True
         """
         try:
+            # 단순히 열 수 있는지 확인 (Pillow 사용)
+            from PIL import Image
             img_stream = io.BytesIO(image_bytes)
             img = Image.open(img_stream)
             img.verify()  # 이미지 무결성 검증
