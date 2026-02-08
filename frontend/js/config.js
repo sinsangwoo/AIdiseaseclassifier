@@ -23,7 +23,7 @@ const CONFIG = {
       return 'http://127.0.0.1:5000';
     } else if (hostname.includes('github.io')) {
       // GitHub Pages 프로덕션 (Render 백엔드)
-      return 'https://pneumonia-api.onrender.com';
+      return 'https://pneumonia-api-j3t8.onrender.com';
     } else {
       // 기타 환경 (기본값)
       return 'http://127.0.0.1:5000';
