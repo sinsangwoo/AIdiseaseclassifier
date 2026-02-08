@@ -164,8 +164,8 @@ CONFIG.log('Debug Mode:', CONFIG.DEBUG);
 CONFIG.log('Image Optimization:', CONFIG.FILE.OPTIMIZATION.ENABLED ? 'ON' : 'OFF');
 CONFIG.log('========================');
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = CONFIG;
-}
+export default CONFIG;
 
-window.CONFIG = CONFIG;
+if (typeof window !== 'undefined') {
+  window.CONFIG = CONFIG;
+}
