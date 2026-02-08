@@ -49,7 +49,7 @@ class Application {
         };
 
         // 초기 상태 설정
-        this.ui.handleClear();
+        this.ui.resetUI();
 
         // 헬스체크 (optional)
         if (CONFIG.DEBUG) {

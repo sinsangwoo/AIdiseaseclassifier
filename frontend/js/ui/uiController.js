@@ -7,6 +7,7 @@
 
 class UIController {
     constructor() {
+        console.log('✅ UIController Initialized');
         this.elements = {
             uploadSection: document.getElementById('uploadSection'),
             imageInput: document.getElementById('imageInput'),
@@ -79,7 +80,7 @@ class UIController {
 
         // Clear Button
         this.elements.clearBtn?.addEventListener('click', () => {
-            this.handleClear();
+            this.resetUI();
             if (this.onClear) {
                 this.onClear();
             }
@@ -97,7 +98,8 @@ class UIController {
         });
     }
 
-    handleClear() {
+    resetUI() {
+        console.log('🧹 UI Reset Triggered');
         // Reset DOM elements directly
         if (this.elements.imageInput) this.elements.imageInput.value = '';
         if (this.elements.imagePreview) this.elements.imagePreview.src = '';
