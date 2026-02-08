@@ -8,132 +8,222 @@
 class UIController {
     constructor() {
         this.elements = {
-            uploadArea: document.getElementById('upload-area'),
-            previewImage: document.getElementById('preview-image'),
-            analyzeBtn: document.getElementById('analyze-btn'),
-            resultsSection: document.getElementById('results-section'),
-            errorMessage: document.getElementById('error-message'),
-            // Phase 4: 진행 상태 UI
-            progressContainer: document.getElementById('progress-container'),
-            progressBar: document.getElementById('progress-bar'),
-            progressText: document.getElementById('progress-text'),
-            spinner: document.getElementById('spinner')
+            uploadSection: document.getElementById('uploadSection'),
+            imageInput: document.getElementById('imageInput'),
+            previewContainer: document.getElementById('previewContainer'),
+            imagePreview: document.getElementById('imagePreview'),
+            analyzeBtn: document.getElementById('analyzeBtn'),
+            clearBtn: document.getElementById('clearBtn'),
+            reportContainer: document.getElementById('reportContainer'),
+            resultsContent: document.getElementById('resultsContent'),
+            resultComment: document.getElementById('resultComment'),
+            reportTimestamp: document.getElementById('reportTimestamp'),
+            agreementBox: document.getElementById('agreementBox'),
+            agreeCheckbox: document.getElementById('agreeCheckbox'),
+            progressContainer: document.getElementById('progressContainer'),
+            progressBarFill: document.getElementById('progressBarFill'),
+            // Optional elements
+            savePngBtn: document.getElementById('savePngBtn'),
+            savePdfBtn: document.getElementById('savePdfBtn')
         };
+
+        // Callbacks
+        this.onAnalyze = null;
+        this.onFileSelect = null;
+        this.onClear = null;
+
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        // File Input Change
+        this.elements.imageInput?.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && this.onFileSelect) {
+                this.onFileSelect(file);
+            }
+        });
+
+        // Upload Section Drag & Drop / Click
+        if (this.elements.uploadSection) {
+            this.elements.uploadSection.addEventListener('click', () => {
+                this.elements.imageInput?.click();
+            });
+
+            this.elements.uploadSection.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.currentTarget.style.borderColor = 'var(--primary-color)';
+            });
+
+            this.elements.uploadSection.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+            });
+
+            this.elements.uploadSection.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+                const file = e.dataTransfer.files[0];
+                if (file && this.onFileSelect) {
+                    this.onFileSelect(file);
+                }
+            });
+        }
+
+        // Analyze Button
+        this.elements.analyzeBtn?.addEventListener('click', () => {
+            if (this.onAnalyze) {
+                this.onAnalyze();
+            }
+        });
+
+        // Clear Button
+        this.elements.clearBtn?.addEventListener('click', () => {
+            this.handleClear();
+            if (this.onClear) {
+                this.onClear();
+            }
+        });
+
+        // Agreement Checkbox
+        this.elements.agreeCheckbox?.addEventListener('change', (e) => {
+            // State update logic could go here or via app.js
+            // For now, let's just update button state locally for immediate feedback
+            // but ideally should be driven by state
+            if (this.elements.analyzeBtn) {
+                this.elements.analyzeBtn.disabled = !e.target.checked;
+            }
+            // Better: trigger a state update callback if we had one for agreement
+        });
+    }
+
+    handleClear() {
+        // Reset DOM elements directly
+        if (this.elements.imageInput) this.elements.imageInput.value = '';
+        if (this.elements.imagePreview) this.elements.imagePreview.src = '';
+        if (this.elements.agreeCheckbox) this.elements.agreeCheckbox.checked = false;
+        
+        // Hide/Show sections
+        if (this.elements.uploadSection) this.elements.uploadSection.style.display = 'block';
+        if (this.elements.previewContainer) this.elements.previewContainer.style.display = 'none';
+        if (this.elements.reportContainer) this.elements.reportContainer.style.display = 'none';
+        if (this.elements.progressContainer) this.elements.progressContainer.style.display = 'none';
+        
+        // Reset buttons
+        if (this.elements.analyzeBtn) this.elements.analyzeBtn.disabled = true;
     }
 
     render(state) {
         this.renderUploadArea(state);
         this.renderAnalyzeButton(state);
         this.renderResults(state);
-        this.renderError(state);
-        // Phase 4: 진행 상태 렌더링
         this.renderProgress(state);
+        this.renderError(state);
     }
 
     renderUploadArea(state) {
-        if (state.uploadedImage && this.elements.previewImage) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                this.elements.previewImage.src = e.target.result;
-                this.elements.previewImage.style.display = 'block';
-            };
-            reader.readAsDataURL(state.uploadedImage);
+        if (state.uploadedImage) {
+            // Show preview, hide upload
+            if (this.elements.uploadSection) this.elements.uploadSection.style.display = 'none';
+            if (this.elements.previewContainer) this.elements.previewContainer.style.display = 'block';
+            
+            if (this.elements.imagePreview && this.elements.imagePreview.src !== state.uploadedImage.src) {
+                 // Create object URL if not already set or handle based on state content
+                 // Assuming state.uploadedImage is a File object
+                 const reader = new FileReader();
+                 reader.onload = (e) => {
+                     this.elements.imagePreview.src = e.target.result;
+                 };
+                 reader.readAsDataURL(state.uploadedImage);
+            }
+        } else {
+            // Show upload, hide preview
+            if (this.elements.uploadSection) this.elements.uploadSection.style.display = 'block';
+            if (this.elements.previewContainer) this.elements.previewContainer.style.display = 'none';
         }
     }
 
     renderAnalyzeButton(state) {
         if (this.elements.analyzeBtn) {
-            this.elements.analyzeBtn.disabled = !state.uploadedImage || state.isAnalyzing;
-            this.elements.analyzeBtn.textContent = state.isAnalyzing ? '분석 중...' : '분석 시작';
+            // Button is enabled only if image exists AND agreement is checked
+            // We might need agreement state in appState
+            const isEnabled = state.uploadedImage && this.elements.agreeCheckbox?.checked;
+            this.elements.analyzeBtn.disabled = !isEnabled || state.isAnalyzing;
+            this.elements.analyzeBtn.textContent = state.isAnalyzing ? '분석 중...' : 'AI 정밀 분석 시작';
         }
     }
 
     renderResults(state) {
-        if (!this.elements.resultsSection) return;
+        if (!this.elements.reportContainer) return;
 
         if (state.analysisResult && state.analysisResult.success) {
-            this.elements.resultsSection.style.display = 'block';
+            this.elements.reportContainer.style.display = 'block';
+            this.elements.previewContainer.style.display = 'none'; // Hide preview when showing report
             this.renderPredictions(state.analysisResult.predictions);
-            this.renderMetadata(state.analysisResult.metadata);
+            this.renderMetadata(state.analysisResult.metadata || {});
         } else {
-            this.elements.resultsSection.style.display = 'none';
+            this.elements.reportContainer.style.display = 'none';
         }
     }
 
     renderPredictions(predictions) {
-        const container = document.getElementById('predictions-list');
-        if (!container) return;
+        if (!this.elements.resultsContent) return;
 
-        container.innerHTML = predictions.map((pred, index) => `
-            <div class="prediction-item ${index === 0 ? 'top-prediction' : ''}">
-                <div class="prediction-label">${pred.className}</div>
-                <div class="prediction-bar">
-                    <div class="prediction-fill" style="width: ${(pred.probability * 100).toFixed(1)}%"></div>
+        // Sort predictions
+        const sorted = predictions.sort((a, b) => b.probability - a.probability);
+        
+        this.elements.resultsContent.innerHTML = sorted.map(pred => {
+            const percentage = (pred.probability * 100).toFixed(1);
+            const isNormal = pred.className.toLowerCase().includes('정상') || pred.className.toLowerCase().includes('normal');
+            const styleClass = isNormal ? 'result-normal' : 'result-pneumonia';
+            
+            return `
+                <div class="result-item ${styleClass}">
+                    <span>${pred.className}</span>
+                    <span class="result-percentage">${percentage}%</span>
                 </div>
-                <div class="prediction-value">${(pred.probability * 100).toFixed(1)}%</div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
+
+        // Update comment
+        const pneumonia = sorted.find(p => !p.className.toLowerCase().includes('정상'));
+        if (pneumonia && this.elements.resultComment) {
+             const prob = pneumonia.probability * 100;
+             let text = '', className = '';
+             if (prob > 90) { text = "<strong>높은 위험:</strong> 폐렴일 가능성이 매우 높습니다."; className = 'warning'; }
+             else if (prob > 70) { text = "<strong>주의 필요:</strong> 폐렴 가능성이 있습니다."; className = 'warning'; }
+             else { text = "<strong>낮은 위험:</strong> 정상 범위로 보입니다."; className = 'privacy'; }
+             
+             this.elements.resultComment.innerHTML = `<i class="fa-solid fa-comment-medical"></i> <div>${text}</div>`;
+             this.elements.resultComment.className = `notice-box ${className}`;
+        }
+
+        if (this.elements.reportTimestamp) {
+            this.elements.reportTimestamp.textContent = `진단 시각: ${new Date().toLocaleString()}`;
+        }
     }
 
     renderMetadata(metadata) {
-        const container = document.getElementById('metadata-info');
-        if (!container) return;
-
-        container.innerHTML = `
-            <div class="metadata-item">
-                <span class="label">처리 시간:</span>
-                <span class="value">${metadata.processing_time_ms.toFixed(0)}ms</span>
-            </div>
-            <div class="metadata-item">
-                <span class="label">모델 버전:</span>
-                <span class="value">${metadata.model_version}</span>
-            </div>
-            ${metadata.from_cache ? '<div class="cache-badge">캐시됨 ⚡</div>' : ''}
-        `;
+        // Implementation for metadata if needed, or skip
     }
 
-    renderError(state) {
-        if (this.elements.errorMessage) {
-            if (state.error) {
-                this.elements.errorMessage.textContent = state.error;
-                this.elements.errorMessage.style.display = 'block';
+    renderProgress(state) {
+        const { progress } = state;
+        if (this.elements.progressContainer) {
+            if (state.isAnalyzing) {
+                this.elements.progressContainer.style.display = 'block';
+                if (this.elements.progressBarFill) {
+                    this.elements.progressBarFill.style.width = `${progress.percent}%`;
+                }
             } else {
-                this.elements.errorMessage.style.display = 'none';
+                this.elements.progressContainer.style.display = 'none';
             }
         }
     }
 
-    /**
-     * Phase 4: 진행 상태 렌더링
-     */
-    renderProgress(state) {
-        const { progress } = state;
-        
-        if (this.elements.progressContainer) {
-            // 분석 중일 때만 표시
-            if (state.isAnalyzing && progress.stage) {
-                this.elements.progressContainer.style.display = 'block';
-                
-                // 프로그레스 바 업데이트
-                if (this.elements.progressBar) {
-                    this.elements.progressBar.style.width = `${progress.percent}%`;
-                }
-                
-                // 텍스트 업데이트
-                if (this.elements.progressText) {
-                    this.elements.progressText.textContent = progress.message;
-                }
-                
-                // 스피너 표시
-                if (this.elements.spinner) {
-                    this.elements.spinner.style.display = 'block';
-                }
-            } else {
-                this.elements.progressContainer.style.display = 'none';
-                if (this.elements.spinner) {
-                    this.elements.spinner.style.display = 'none';
-                }
-            }
+    renderError(state) {
+        if (state.error) {
+            alert(state.error); // Simple alert for now as per legacy behavior
         }
     }
 }

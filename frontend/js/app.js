@@ -33,8 +33,20 @@ class Application {
         // UI 컨트롤러 초기화
         this.ui = new UIController();
         
-        // UI 컨트롤러에 분석 핸들러 연결
+        // 상태 변경 구독
+        appState.subscribe((state) => {
+            this.ui.render(state);
+        });
+
+        // UI 이벤트 핸들러 연결
         this.ui.onAnalyze = () => this.handleAnalysis();
+        this.ui.onFileSelect = (file) => {
+            appState.setUploadedImage(file);
+            // 체크박스 상태 리셋 등의 로직이 필요하면 추가
+        };
+        this.ui.onClear = () => {
+            appState.reset();
+        };
 
         // 초기 상태 설정
         this.ui.handleClear();
