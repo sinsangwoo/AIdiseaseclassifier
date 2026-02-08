@@ -104,7 +104,7 @@ class UIController {
         // Hide/Show sections
         if (this.elements.uploadSection) {
             this.elements.uploadSection.style.display = 'block';
-            this.elements.uploadSection.classList.remove('hidden');
+            this.elements.uploadSection.classList.remove('hidden', 'upload--disabled');
         }
         if (this.elements.previewContainer) {
             this.elements.previewContainer.style.display = 'none';
@@ -137,6 +137,7 @@ class UIController {
                  // Create object URL for the File object
                  const objectURL = URL.createObjectURL(state.uploadedImage);
                  this.elements.imagePreview.src = objectURL;
+                 this.elements.imagePreview.classList.add('preview__image--visible');
                  console.log('🖼️ Image Preview Src Set:', objectURL);
                  
                  // Clean up previous object URL if needed
@@ -147,7 +148,10 @@ class UIController {
             }
 
             // Show preview, hide upload
-            if (this.elements.uploadSection) this.elements.uploadSection.style.display = 'none';
+            if (this.elements.uploadSection) {
+                this.elements.uploadSection.style.display = 'none';
+                this.elements.uploadSection.classList.add('upload--disabled');
+            }
             if (this.elements.previewContainer) {
                 this.elements.previewContainer.style.display = 'block';
                 this.elements.previewContainer.classList.remove('hidden');
