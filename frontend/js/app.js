@@ -47,6 +47,9 @@ class Application {
         this.ui.onClear = () => {
             appState.reset();
         };
+        this.ui.onAgreementChange = (checked) => {
+            appState.setAgreement(checked);
+        };
 
         // 초기 상태 설정
         this.ui.resetUI();
@@ -75,7 +78,7 @@ class Application {
     async handleAnalysis() {
         const state = appState.getState();
         
-        if (!state.uploadedFile) {
+        if (!state.uploadedImage) {
             ErrorHandler.handleError(
                 new Error('분석할 이미지가 없습니다.'),
                 'Analysis'
@@ -95,9 +98,9 @@ class Application {
         appState.startAnalysis();
 
         try {
-            CONFIG.log('[App] 분석 요청 시작:', state.uploadedFile.name);
+            CONFIG.log('[App] 분석 요청 시작:', state.uploadedImage.name);
             
-            const result = await apiClient.predict(state.uploadedFile);
+            const result = await apiClient.predict(state.uploadedImage);
             
             CONFIG.log('[App] 분석 완료:', result);
             

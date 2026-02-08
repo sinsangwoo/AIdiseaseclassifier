@@ -88,13 +88,9 @@ class UIController {
 
         // Agreement Checkbox
         this.elements.agreeCheckbox?.addEventListener('change', (e) => {
-            // State update logic could go here or via app.js
-            // For now, let's just update button state locally for immediate feedback
-            // but ideally should be driven by state
-            if (this.elements.analyzeBtn) {
-                this.elements.analyzeBtn.disabled = !e.target.checked;
+            if (this.onAgreementChange) {
+                this.onAgreementChange(e.target.checked);
             }
-            // Better: trigger a state update callback if we had one for agreement
         });
     }
 
@@ -106,10 +102,22 @@ class UIController {
         if (this.elements.agreeCheckbox) this.elements.agreeCheckbox.checked = false;
         
         // Hide/Show sections
-        if (this.elements.uploadSection) this.elements.uploadSection.style.display = 'block';
-        if (this.elements.previewContainer) this.elements.previewContainer.style.display = 'none';
-        if (this.elements.reportContainer) this.elements.reportContainer.style.display = 'none';
-        if (this.elements.progressContainer) this.elements.progressContainer.style.display = 'none';
+        if (this.elements.uploadSection) {
+            this.elements.uploadSection.style.display = 'block';
+            this.elements.uploadSection.classList.remove('hidden');
+        }
+        if (this.elements.previewContainer) {
+            this.elements.previewContainer.style.display = 'none';
+            this.elements.previewContainer.classList.add('hidden');
+        }
+        if (this.elements.reportContainer) {
+            this.elements.reportContainer.style.display = 'none';
+            this.elements.reportContainer.classList.add('hidden');
+        }
+        if (this.elements.progressContainer) {
+            this.elements.progressContainer.style.display = 'none';
+            this.elements.progressContainer.classList.add('hidden');
+        }
         
         // Reset buttons
         if (this.elements.analyzeBtn) this.elements.analyzeBtn.disabled = true;
@@ -127,7 +135,10 @@ class UIController {
         if (state.uploadedImage) {
             // Show preview, hide upload
             if (this.elements.uploadSection) this.elements.uploadSection.style.display = 'none';
-            if (this.elements.previewContainer) this.elements.previewContainer.style.display = 'block';
+            if (this.elements.previewContainer) {
+                this.elements.previewContainer.style.display = 'block';
+                this.elements.previewContainer.classList.remove('hidden');
+            }
             
             if (this.elements.imagePreview) {
                  // Create object URL for the File object
@@ -150,10 +161,14 @@ class UIController {
     renderAnalyzeButton(state) {
         if (this.elements.analyzeBtn) {
             // Button is enabled only if image exists AND agreement is checked
-            // We might need agreement state in appState
-            const isEnabled = state.uploadedImage && this.elements.agreeCheckbox?.checked;
+            const isEnabled = state.uploadedImage && state.agreeChecked;
             this.elements.analyzeBtn.disabled = !isEnabled || state.isAnalyzing;
             this.elements.analyzeBtn.textContent = state.isAnalyzing ? '분석 중...' : 'AI 정밀 분석 시작';
+        }
+        
+        // Sync checkbox with state
+        if (this.elements.agreeCheckbox) {
+            this.elements.agreeCheckbox.checked = !!state.agreeChecked;
         }
     }
 
@@ -162,11 +177,14 @@ class UIController {
 
         if (state.analysisResult && state.analysisResult.success) {
             this.elements.reportContainer.style.display = 'block';
+            this.elements.reportContainer.classList.remove('hidden');
             this.elements.previewContainer.style.display = 'none'; // Hide preview when showing report
+            this.elements.previewContainer.classList.add('hidden');
             this.renderPredictions(state.analysisResult.predictions);
             this.renderMetadata(state.analysisResult.metadata || {});
         } else {
             this.elements.reportContainer.style.display = 'none';
+            this.elements.reportContainer.classList.add('hidden');
         }
     }
 
@@ -216,11 +234,13 @@ class UIController {
         if (this.elements.progressContainer) {
             if (state.isAnalyzing) {
                 this.elements.progressContainer.style.display = 'block';
+                this.elements.progressContainer.classList.remove('hidden');
                 if (this.elements.progressBarFill) {
                     this.elements.progressBarFill.style.width = `${progress.percent}%`;
                 }
             } else {
                 this.elements.progressContainer.style.display = 'none';
+                this.elements.progressContainer.classList.add('hidden');
             }
         }
     }

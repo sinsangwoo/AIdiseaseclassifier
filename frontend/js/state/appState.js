@@ -18,6 +18,7 @@ class AppState {
                 percent: 0,
                 message: ''
             },
+            agreeChecked: false,
             // 캐시 통계
             cacheStats: null
         };
@@ -127,6 +128,10 @@ class AppState {
         });
     }
 
+    setAgreement(checked) {
+        this.setState({ agreeChecked: checked });
+    }
+
     /**
      * 상태 초기화
      */
@@ -136,6 +141,7 @@ class AppState {
             uploadedImage: null,
             analysisResult: null,
             error: null,
+            agreeChecked: false,
             progress: {
                 stage: '',
                 percent: 0,
