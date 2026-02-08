@@ -271,18 +271,41 @@ class UIController {
         if (!reportCard) return;
 
         try {
-            console.log('📸 Capturing PNG...');
+            console.log('📸 Capturing PNG with optimizations...');
             const canvas = await html2canvas(reportCard, {
                 useCORS: true,
-                scale: 2, // 고해상도
-                backgroundColor: '#ffffff'
+                scale: 3, // 품질 향상을 위해 배율 증가
+                backgroundColor: '#ffffff',
+                logging: false,
+                onclone: (clonedDoc) => {
+                    // 클론된 문서에서 스타일 보정
+                    const clonedReport = clonedDoc.getElementById('reportCard');
+                    if (clonedReport) {
+                        // html2canvas에서 겹침을 유발할 수 있는 스타일 초기화
+                        const allElements = clonedReport.getElementsByTagName('*');
+                        for (let el of allElements) {
+                            el.style.letterSpacing = 'normal';
+                            el.style.wordSpacing = 'normal';
+                        }
+
+                        // 버튼 등 불필요한 요소 숨기기 (선택 사항)
+                        const footerButtons = clonedReport.querySelector('.card__footer .btn-group');
+                        if (footerButtons) footerButtons.style.display = 'none';
+
+                        // 갭(gap) 속성이 캔버스에서 무시되는 경우 대응
+                        const flexContainers = clonedReport.querySelectorAll('.flex-center, .flex-between, .grid');
+                        flexContainers.forEach(container => {
+                            container.style.gap = '0'; // 갭 제거 후 자식에게 마진 부여가 더 안전할 수 있으나 일단 초기화
+                        });
+                    }
+                }
             });
 
             const link = document.createElement('a');
             link.download = `AI_Diagnosis_Result_${new Date().getTime()}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
-            console.log('✅ PNG Saved');
+            console.log('✅ Optimized PNG Saved');
         } catch (error) {
             console.error('PNG 저장 실패:', error);
             alert('PNG 저장 중 오류가 발생했습니다.');
@@ -305,8 +328,20 @@ class UIController {
             // 1. Report Card 캡처
             const canvas = await html2canvas(reportCard, {
                 useCORS: true,
-                scale: 2,
-                backgroundColor: '#ffffff'
+                scale: 3, // 고해상도
+                backgroundColor: '#ffffff',
+                onclone: (clonedDoc) => {
+                    const clonedReport = clonedDoc.getElementById('reportCard');
+                    if (clonedReport) {
+                        const allElements = clonedReport.getElementsByTagName('*');
+                        for (let el of allElements) {
+                            el.style.letterSpacing = 'normal';
+                            el.style.wordSpacing = 'normal';
+                        }
+                        const footerButtons = clonedReport.querySelector('.card__footer .btn-group');
+                        if (footerButtons) footerButtons.style.display = 'none';
+                    }
+                }
             });
             const imgData = canvas.toDataURL('image/png');
 
