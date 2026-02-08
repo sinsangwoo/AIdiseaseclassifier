@@ -53,19 +53,20 @@ jsPDF를 활용한 정식 의료 진단서 형식의 PDF 리포트 생성
 
 ## 📂 프로젝트 구조 (Project Structure)
 
-.
+AIdiseaseclassifier/
 ├── backend/
-│   ├── app.py              # Application Entry Point & Route Handlers
-│   ├── models/             # Optimized ONNX binaries & Labels
-│   ├── services/           # Inference Engine & Core Business Logic
-│   └── utils/              # Security Validators & Structured Logger
+│   ├── app.py              # Flask API 서버 엔트리 포인트
+│   ├── models/             # 최적화된 ONNX 모델 및 라벨 파일
+│   ├── services/           # 추론 엔진 및 핵심 비즈니스 로직
+│   └── utils/              # 보안 검증 및 구조화된 로거
 ├── frontend/
-│   ├── index.html          # Main User Interface
-│   ├── js/                 # API Client & UI State Management
-│   └── css/                # Component-based Architecture Styles
-├── tests/                  # Pytest-based Integration Testing
-├── Dockerfile              # Multi-stage Build Configuration
-└── requirements.txt        # Minimized Production Dependencies
+│   ├── index.html          # 메인 UI (Vanilla JS/CSS3)
+│   ├── js/                 # API 통신 및 UI 상태 관리
+│   └── css/                # 컴포넌트 기반 스타일시트
+├── tests/                  # Pytest 기반 통합 테스트 스위트
+├── Dockerfile              # 멀티 스테이지 빌드 설정
+└── requirements.txt        # 최적화된 최소 의존성 라이브러리
+
 
 ---
 
