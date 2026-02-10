@@ -2,6 +2,8 @@
 
 ONNX-optimized medical image classification system for pneumonia diagnosis.
 
+## https://sinsangwoo.github.io/AIdiseaseclassifier/
+
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Flask 3.1+](https://img.shields.io/badge/flask-3.1+-green.svg)](https://flask.palletsprojects.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -68,8 +70,6 @@ python backend/app.py
 ```bash
 docker-compose up -d --build
 ```
-
-Access the application at `http://localhost:5000`
 
 ## API Endpoints
 
