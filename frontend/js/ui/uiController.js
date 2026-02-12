@@ -248,7 +248,7 @@ class UIController {
             else { text = "<strong>낮은 위험:</strong> 정상 범위로 보입니다."; className = 'privacy'; }
 
             this.elements.resultComment.innerHTML = `<i class="fa-solid fa-comment-medical"></i> <div>${text}</div>`;
-            this.elements.resultComment.className = `notice-box ${className}`;
+            this.elements.resultComment.className = `notice notice--diagnosis ${className}`;
         }
 
         if (this.elements.reportTimestamp) {
@@ -275,7 +275,7 @@ class UIController {
             const canvas = await html2canvas(reportCard, {
                 useCORS: true,
                 scale: 3, // 품질 향상을 위해 배율 증가
-                backgroundColor: '#ffffff',
+                backgroundColor: '#0B0B0D',
                 logging: false,
                 onclone: (clonedDoc) => {
                     // 클론된 문서에서 스타일 보정
@@ -329,7 +329,7 @@ class UIController {
             const canvas = await html2canvas(reportCard, {
                 useCORS: true,
                 scale: 3, // 고해상도
-                backgroundColor: '#ffffff',
+                backgroundColor: '#0B0B0D',
                 onclone: (clonedDoc) => {
                     const clonedReport = clonedDoc.getElementById('reportCard');
                     if (clonedReport) {
@@ -356,7 +356,7 @@ class UIController {
 
             // Header/Title
             doc.setFontSize(18);
-            doc.setTextColor(0, 123, 255);
+            doc.setTextColor(201, 169, 110);
             doc.text('AI Diagnosis Official Report', 10, 15);
 
             // 캡처된 리포트 이미지 삽입

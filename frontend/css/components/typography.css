@@ -1,15 +1,14 @@
 /**
  * typography.css
- * 타이포그래피 시스템
- * 
- * 의료 AI 웹사이트의 신뢰감과 전문성을 전달하는 핵심 요소
+ * Premium Editorial Typography System
+ * Playfair Display (Headings) + Inter (Body) + Noto Sans KR (Korean)
+ */
 
 /* ============================================
-   기본 타이포그래피 설정 (Base Typography)
+   폰트 임포트 — Dual Serif + Sans-Serif System
    ============================================ */
 
-/* 폰트 임포트 - Outfit (Modern Geometric) & Noto Sans KR */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
 
 /* 전역 텍스트 설정 */
 body {
@@ -20,135 +19,133 @@ body {
   color: var(--color-text-primary);
   background-color: var(--color-bg-primary);
 
-  /* 고품질 텍스트 렌더링 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 
-  /* 단어 분절 개선 */
   word-break: keep-all;
   overflow-wrap: break-word;
 }
 
-/* 텍스트 선택 색상 - Electric Cyan */
+/* 텍스트 선택 색상 */
 ::selection {
-  background-color: var(--color-primary);
-  color: var(--color-black);
+  background-color: rgba(201, 169, 110, 0.3);
+  color: var(--color-white);
 }
 
 ::-moz-selection {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary-dark);
+  background-color: rgba(201, 169, 110, 0.3);
+  color: var(--color-white);
 }
 
 
 /* ============================================
-   제목 스타일 (Headings) - Premium Aesthetic
+   제목 스타일 (Headings) — Cinematic Serif
    ============================================ */
 
-/* 메인 타이틀 - H1 */
+/* H1 — Hero Statement */
 h1,
 .heading-1 {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-normal);
   line-height: var(--line-height-tight);
-  letter-spacing: -0.03em;
+  letter-spacing: var(--tracking-tight);
   color: var(--color-white);
 
-  margin: 0 0 var(--spacing-sm) 0;
+  margin: 0 0 var(--spacing-md) 0;
 
-  /* 아이콘과 함께 사용 */
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--spacing-md);
 
-  /* 텍스트 그라디언트 효과 */
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  /* Clean text — no gradient */
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: unset;
+  background-clip: unset;
 
-  /* 애니메이션 */
-  animation: title-entrance 1.2s var(--ease-out);
+  animation: heading-reveal 1s var(--ease-out);
 }
 
-@keyframes title-entrance {
+/* Hero-specific mega title */
+.heading-hero {
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-white);
+  text-align: center;
+}
+
+.heading-hero em,
+.heading-hero i:not([class]) {
+  font-style: italic;
+  color: var(--color-primary);
+  -webkit-text-fill-color: var(--color-primary);
+}
+
+@keyframes heading-reveal {
   from {
     opacity: 0;
     transform: translateY(20px);
-    filter: blur(10px);
   }
 
   to {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0);
   }
 }
 
-/* 타이틀 아이콘 */
+/* H1 아이콘 */
 h1 i,
 .heading-1__icon {
-  font-size: 0.9em;
+  font-size: 0.7em;
   -webkit-text-fill-color: initial;
   color: var(--color-primary);
-  filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.5));
-
-  /* 미묘한 펄스 애니메이션 */
-  animation: icon-glow 3s ease-in-out infinite;
+  filter: none;
+  animation: none;
 }
 
-@keyframes icon-glow {
-
-  0%,
-  100% {
-    filter: drop-shadow(0 0 5px rgba(0, 242, 254, 0.3));
-    transform: scale(1);
-  }
-
-  50% {
-    filter: drop-shadow(0 0 20px rgba(0, 242, 254, 0.7));
-    transform: scale(1.05);
-  }
-}
-
-/* 서브 타이틀 - H2 */
+/* H2 */
 h2,
 .heading-2 {
+  font-family: var(--font-family-heading);
   font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--line-height-tight);
-  letter-spacing: -0.02em;
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-snug);
+  letter-spacing: var(--tracking-tight);
   color: var(--color-white);
-
   margin: 0 0 var(--spacing-md) 0;
 }
 
-/* 섹션 타이틀 - H3 */
+/* H3 */
 h3,
 .heading-3 {
+  font-family: var(--font-family-heading);
   font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--line-height-tight);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-snug);
   color: var(--color-text-primary);
-
   margin: 0 0 var(--spacing-sm) 0;
 }
 
-/* 서브섹션 타이틀 - H4 */
+/* H4 — Section Labels */
 h4,
 .heading-4 {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   line-height: var(--line-height-normal);
   color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
 
   margin: 0 0 var(--spacing-md) 0;
   padding-bottom: var(--spacing-xs);
-
-  /* 세련된 하단 보더 */
-  border-bottom: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--color-border-light);
   position: relative;
 }
 
@@ -157,66 +154,61 @@ h4::after {
   position: absolute;
   bottom: -1px;
   left: 0;
-  width: 40px;
-  height: 2px;
-  background: var(--gradient-primary);
+  width: 30px;
+  height: 1px;
+  background: var(--color-primary);
   transition: width var(--transition-base) var(--ease-out);
 }
 
 h4:hover::after {
-  width: 100%;
+  width: 60px;
 }
 
-/* 소제목 - H5 */
+/* H5 */
 h5,
 .heading-5 {
+  font-family: var(--font-family-primary);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   line-height: var(--line-height-normal);
   color: var(--color-text-primary);
-
   margin: 0 0 var(--spacing-xs) 0;
 }
 
 
 /* ============================================
-   부제목 & 설명 텍스트 (Subtitles & Descriptions)
+   부제목 & 설명 텍스트
    ============================================ */
 
 .subtitle,
 .text-subtitle {
+  font-family: var(--font-family-primary);
   font-size: var(--font-size-md);
-  font-weight: var(--font-weight-normal);
+  font-weight: var(--font-weight-light);
   line-height: var(--line-height-normal);
   color: var(--color-text-secondary);
-
   margin: 0 0 var(--spacing-lg) 0;
 
-  /* 애니메이션 */
-  animation: subtitle-entrance 1s var(--ease-out) 0.2s both;
+  animation: subtitle-entrance 0.8s var(--ease-out) 0.3s both;
 }
 
 @keyframes subtitle-entrance {
   from {
     opacity: 0;
-    transform: translateY(-5px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-/* 작은 부제목 */
-.subtitle--small {
-  font-size: var(--font-size-base);
-  margin-bottom: var(--spacing-md);
-}
-
-/* 강조된 부제목 */
-.subtitle--emphasized {
+/* Label 스타일 — 작은 대문자 */
+.text-label {
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
   color: var(--color-primary);
 }
 
@@ -231,23 +223,19 @@ p,
   font-weight: var(--font-weight-normal);
   line-height: var(--line-height-normal);
   color: var(--color-text-primary);
-
   margin: 0 0 var(--spacing-md) 0;
 }
 
-/* 큰 본문 텍스트 */
 .text-large {
   font-size: var(--font-size-md);
   line-height: var(--line-height-normal);
 }
 
-/* 작은 텍스트 */
 .text-small {
   font-size: var(--font-size-sm);
   line-height: var(--line-height-normal);
 }
 
-/* 매우 작은 텍스트 (법적 고지, 타임스탬프 등) */
 .text-tiny {
   font-size: var(--font-size-xs);
   line-height: var(--line-height-normal);
@@ -256,10 +244,9 @@ p,
 
 
 /* ============================================
-   텍스트 스타일 유틸리티 (Text Style Utilities)
+   텍스트 스타일 유틸리티
    ============================================ */
 
-/* 폰트 굵기 */
 .text-light {
   font-weight: var(--font-weight-light);
 }
@@ -280,7 +267,6 @@ p,
   font-weight: var(--font-weight-bold);
 }
 
-/* 텍스트 색상 */
 .text-primary {
   color: var(--color-text-primary);
 }
@@ -317,7 +303,6 @@ p,
   color: var(--color-primary);
 }
 
-/* 텍스트 정렬 */
 .text-left {
   text-align: left;
 }
@@ -334,10 +319,9 @@ p,
   text-align: justify;
 }
 
-/* 텍스트 변환 */
 .text-uppercase {
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: var(--tracking-wide);
 }
 
 .text-lowercase {
@@ -348,7 +332,6 @@ p,
   text-transform: capitalize;
 }
 
-/* 줄 높이 */
 .line-height-tight {
   line-height: var(--line-height-tight);
 }
@@ -363,69 +346,59 @@ p,
 
 
 /* ============================================
-   특수 텍스트 스타일 (Special Text Styles)
+   특수 텍스트 스타일
    ============================================ */
 
-/* 강조 텍스트 */
 strong,
 b,
 .text-strong {
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
 }
 
-/* 기울임 텍스트 */
 em,
-i,
 .text-italic {
   font-style: italic;
 }
 
-/* 하이라이트 텍스트 */
-mark,
-.text-highlight {
-  background-color: var(--color-warning-light);
-  color: var(--color-warning-dark);
-  padding: 2px 4px;
-  border-radius: var(--radius-sm);
+/* Fix: don't italicize Font Awesome icons */
+i[class*="fa-"] {
+  font-style: normal;
 }
 
-/* 코드 텍스트 */
-code,
-.text-code {
-  font-family: var(--font-family-monospace);
-  font-size: 0.9em;
-  background-color: var(--color-gray-100);
-  color: var(--color-primary-dark);
+mark,
+.text-highlight {
+  background-color: rgba(201, 169, 110, 0.15);
+  color: var(--color-primary);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
 }
 
-/* 링크 텍스트 */
+code,
+.text-code {
+  font-family: var(--font-family-monospace);
+  font-size: 0.9em;
+  background-color: var(--color-gray-200);
+  color: var(--color-primary);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
 a,
 .text-link {
   color: var(--color-primary);
   text-decoration: none;
   font-weight: var(--font-weight-medium);
-
   transition: all var(--transition-fast) var(--ease-out);
-
-  /* 하단 언더라인 효과 */
-  background: linear-gradient(to right,
-      var(--color-primary) 0%,
-      var(--color-primary) 100%);
-  background-size: 0 2px;
-  background-position: 0 100%;
-  background-repeat: no-repeat;
+  border-bottom: 1px solid transparent;
 }
 
 a:hover,
 .text-link:hover {
   color: var(--color-primary-hover);
-  background-size: 100% 2px;
+  border-bottom-color: var(--color-primary);
 }
 
-/* 삭제선 텍스트 */
 del,
 s,
 .text-strikethrough {
@@ -433,42 +406,34 @@ s,
   opacity: 0.6;
 }
 
-/* 밑줄 텍스트 */
 u,
 .text-underline {
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
 }
 
 
 /* ============================================
-   숫자 전용 스타일 (Number Styles)
+   숫자 전용 스타일
    ============================================ */
 
-/* 통계 숫자 (큰 강조 숫자) */
 .text-stat {
+  font-family: var(--font-family-heading);
   font-size: var(--font-size-3xl);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-normal);
   line-height: var(--line-height-tight);
-  color: var(--color-primary);
-
-  /* 숫자 정렬 */
+  color: var(--color-white);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum' 1;
 }
 
-/* 퍼센티지 숫자 */
 .text-percentage {
+  font-family: var(--font-family-monospace);
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
-
-  /* 숫자 정렬 */
   font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum' 1;
 }
 
-/* 모노스페이스 숫자 (표, 차트 등) */
 .text-monospace {
   font-family: var(--font-family-monospace);
   font-variant-numeric: tabular-nums;
@@ -476,7 +441,7 @@ u,
 
 
 /* ============================================
-   아이콘과 텍스트 조합 (Icon + Text)
+   아이콘과 텍스트 조합
    ============================================ */
 
 .text-with-icon {
@@ -493,39 +458,30 @@ u,
 
 
 /* ============================================
-   타임스탬프 스타일 (Timestamp)
+   타임스탬프 스타일
    ============================================ */
 
 .timestamp,
 .text-timestamp {
+  font-family: var(--font-family-monospace);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-normal);
-  color: var(--color-text-secondary);
-
+  color: var(--color-text-muted);
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
-
-  /* 시간 아이콘 */
-}
-
-.timestamp i,
-.text-timestamp i {
-  font-size: 1em;
-  opacity: 0.8;
 }
 
 
 /* ============================================
-   반응형 타이포그래피 (Responsive Typography)
+   반응형 타이포그래피
    ============================================ */
 
 @media (max-width: 768px) {
 
-  /* 제목 크기 축소 */
   h1,
   .heading-1 {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-2xl);
   }
 
   h2,
@@ -533,52 +489,57 @@ u,
     font-size: var(--font-size-lg);
   }
 
+  .heading-hero {
+    font-size: var(--font-size-3xl);
+  }
+
   .subtitle,
   .text-subtitle {
     font-size: var(--font-size-base);
   }
 
-  /* 통계 숫자 크기 조정 */
   .text-stat {
     font-size: var(--font-size-2xl);
   }
 }
 
 @media (max-width: 480px) {
-
-  /* 본문 텍스트 최적화 */
   body {
     font-size: var(--font-size-sm);
   }
 
   h1,
   .heading-1 {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-xl);
     gap: var(--spacing-sm);
+  }
+
+  .heading-hero {
+    font-size: var(--font-size-2xl);
   }
 }
 
 
 /* ============================================
-   레거시 클래스 지원 (Legacy Support)
+   레거시 클래스 지원
    ============================================ */
 
-/* 기존 프로젝트의 클래스들 */
 .report-title {
+  font-family: var(--font-family-heading);
   font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-normal);
   color: var(--color-text-primary);
   text-align: center;
   margin-bottom: var(--spacing-xs);
 }
 
 .report-timestamp {
+  font-family: var(--font-family-monospace);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-normal);
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   text-align: center;
   margin-bottom: var(--spacing-xl);
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -597,6 +558,7 @@ u,
 }
 
 .result-percentage {
+  font-family: var(--font-family-monospace);
   font-weight: var(--font-weight-bold);
   font-size: var(--font-size-lg);
   font-variant-numeric: tabular-nums;
@@ -604,10 +566,9 @@ u,
 
 
 /* ============================================
-   접근성 개선 (Accessibility)
+   접근성 (Accessibility)
    ============================================ */
 
-/* 스크린 리더 전용 텍스트 */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -620,16 +581,15 @@ u,
   border-width: 0;
 }
 
-/* 포커스 가능한 텍스트 */
 .text-focusable:focus {
-  outline: 3px solid var(--color-primary-light);
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
 
 
 /* ============================================
-   프린트 최적화 (Print Styles)
+   프린트 최적화
    ============================================ */
 
 @media print {
@@ -652,7 +612,8 @@ u,
   }
 
   h4 {
-    font-size: 16pt;
+    font-size: 14pt;
+    text-transform: none;
   }
 
   a {

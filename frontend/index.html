@@ -7,7 +7,7 @@
     <meta name="description" content="AI 기반 흉부 X-ray 폐렴 진단 시스템 - 의료 영상을 업로드하여 실시간 분석 결과를 확인하세요">
     <meta name="keywords" content="AI, 폐렴 진단, 의료 영상, X-ray, 딥러닝, 헬스케어">
     <meta name="author" content="신상우 (30814)">
-    <meta name="theme-color" content="#007bff">
+    <meta name="theme-color" content="#0B0B0D">
 
     <title>Smart Medical AI | 폐렴 진단 솔루션</title>
 
@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="./css/components/variables.css">
     <link rel="stylesheet" href="./css/components/layout.css">
     <link rel="stylesheet" href="./css/components/typography.css">
+    <link rel="stylesheet" href="./css/components/navigation.css">
     <link rel="stylesheet" href="./css/components/button.css">
     <link rel="stylesheet" href="./css/components/card.css">
     <link rel="stylesheet" href="./css/components/upload.css">
@@ -43,41 +44,65 @@
 </head>
 
 <body>
+
+    <!-- ============================================
+         Navigation Bar
+         ============================================ -->
+    <nav class="nav" id="mainNav">
+        <div class="nav__inner">
+            <a href="#" class="nav__logo">
+                <span class="nav__logo-icon">🫁</span>
+                <span class="nav__logo-text">SMART MEDICAL</span>
+            </a>
+            <div class="nav__links">
+                <a href="#upload-section" class="nav__link">Diagnosis</a>
+                <a href="#" class="nav__link nav__link--cta">
+                    <span>v7.0.0</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
     <!-- Main Application Container -->
     <main class="container" role="main">
 
-        <!-- 1. Header Section -->
-        <header class="section mb-xl">
-            <div class="text-center">
-                <div class="mb-sm">
-                    <span class="text-small text-uppercase text-primary text-bold" style="letter-spacing: 2px;">Medical
-                        AI Solution</span>
-                </div>
-                <h1 class="heading-1 mb-sm">
-                    <i class="fa-solid fa-lungs-virus text-primary" aria-hidden="true"></i>
-                    <span>AI 폐렴 진단 시스템</span>
-                </h1>
-                <p class="subtitle text-large">
-                    딥러닝 알고리즘을 활용한 흉부 X-ray 실시간 정밀 분석
-                </p>
-                <div class="flex-center gap-sm mt-md">
-                    <span class="text-tiny text-muted bg-gray-100 p-sm" style="border-radius: 20px; padding: 4px 12px;">
-                        <i class="fa-solid fa-code-branch"></i> v7.0.0
-                    </span>
-                    <span class="text-tiny text-muted bg-gray-100 p-sm" style="border-radius: 20px; padding: 4px 12px;">
-                        <i class="fa-solid fa-user-doctor"></i> Dev: 신상우
-                    </span>
-                </div>
+        <!-- ============================================
+             1. Hero Section — Full Viewport
+             ============================================ -->
+        <header class="section section--hero mb-xl">
+            <div class="hero__label text-label reveal">
+                Medical AI Solution
+            </div>
+            <h1 class="heading-hero reveal">
+                <span>AI-Powered</span><br>
+                <em>Pneumonia</em><br>
+                <span>Diagnosis</span>
+            </h1>
+            <p class="subtitle text-center reveal" style="max-width: 500px;">
+                딥러닝 알고리즘을 활용한 흉부 X-ray 실시간 정밀 분석 시스템
+            </p>
+            <div class="hero__meta reveal">
+                <span class="hero__tag">
+                    <i class="fa-solid fa-user-doctor"></i> Dev: 신상우
+                </span>
+            </div>
+
+            <!-- Scroll Indicator -->
+            <div class="hero__scroll-indicator reveal">
+                <span class="hero__scroll-text">SCROLL</span>
+                <div class="hero__scroll-line"></div>
             </div>
         </header>
 
         <div class="section-divider" aria-hidden="true"></div>
 
-        <!-- 2. Workflow Section -->
-        <div class="grid grid--1-col gap-xl">
+        <!-- ============================================
+             2. Workflow Section — Centered Content
+             ============================================ -->
+        <div class="grid grid--1-col gap-xl" id="upload-section">
 
             <!-- Step 1: Image Upload -->
-            <section aria-labelledby="upload-heading">
+            <section aria-labelledby="upload-heading" class="reveal">
                 <div class="flex-between mb-md">
                     <h3 id="upload-heading" class="heading-4 mb-0">
                         <span class="text-primary mr-sm">01.</span>영상 업로드
@@ -157,15 +182,15 @@
             <!-- Step 3: Progress Indicator -->
             <section id="progressContainer" class="progress-container hidden" aria-live="polite">
                 <div class="card card--glass p-xl text-center">
-                    <div class="spinner spinner--pulse spinner--large mb-lg"></div>
-                    <h3 class="heading-3 mb-sm">AI 분석 진행 중...</h3>
+                    <div class="spinner spinner--minimal spinner--large mb-lg"></div>
+                    <h3 class="heading-3 mb-sm">AI 분석 진행 중</h3>
                     <p class="text-muted mb-lg">딥러닝 모델이 흉부 영상을 분석하고 있습니다.</p>
 
                     <div class="progress-bar progress--gradient progress--ai-analyzing">
                         <div class="progress-bar-fill" id="progressBarFill"></div>
                     </div>
                     <div class="flex-between mt-sm">
-                        <span class="text-tiny text-muted">Data Preprocessing</span>
+                        <span class="text-tiny text-muted">Preprocessing</span>
                         <span class="text-tiny text-muted">Feature Extraction</span>
                         <span class="text-tiny text-muted">Classification</span>
                     </div>
@@ -187,8 +212,8 @@
                             <i class="fa-solid fa-file-medical text-primary text-large"></i>
                             <span class="text-bold text-large">AI Diagnosis Result</span>
                         </div>
-                        <div class="text-tiny text-muted bg-white p-sm"
-                            style="border-radius: 4px; border: 1px solid var(--color-border-light);">
+                        <div class="text-tiny text-muted"
+                            style="padding: 6px 12px; border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);">
                             ID: <span id="reportId">REQ-2026-AI</span>
                         </div>
                     </header>
@@ -213,7 +238,7 @@
                         </section>
                     </div>
 
-                    <footer class="card__footer bg-gray-100 flex-between">
+                    <footer class="card__footer flex-between">
                         <div class="text-tiny text-muted flex-center gap-sm">
                             <i class="fa-solid fa-shield-halved"></i>
                             개인정보 보호를 위해 분석 후 데이터는 즉시 파기됩니다.
@@ -234,7 +259,9 @@
 
         <div class="section-divider" aria-hidden="true"></div>
 
-        <!-- Footer Section -->
+        <!-- ============================================
+             Footer Section
+             ============================================ -->
         <footer class="section mt-xl">
             <div class="notice-box notice--warning notice--medical-warning mb-lg">
                 <i class="notice__icon fa-solid fa-triangle-exclamation"></i>
@@ -259,6 +286,8 @@
 
     <!-- ✅ ES6 Module 방식으로 앱 로드 -->
     <script type="module" src="js/app.js"></script>
+    <!-- Scroll animations -->
+    <script src="js/animations.js" defer></script>
 </body>
 
 </html>

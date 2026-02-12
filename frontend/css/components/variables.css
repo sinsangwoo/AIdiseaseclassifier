@@ -1,109 +1,106 @@
 /**
  * variables.css
- * 프로젝트 전역 CSS 변수 정의
- * 색상, 타이포그래피, 간격, 애니메이션 등 디자인 토큰을 관리합니다.
+ * Premium Editorial Design System — "Precision"
+ * Deep Noir + Gold Accent 기반 상위 0.1% 에디토리얼 디자인 토큰
  */
 
 :root {
    /* ============================================
-     색상 시스템 (Color System)
+     색상 시스템 (Color System) — Deep Noir + Gold
      ============================================ */
 
-   /* Primary Colors - Electric Cyan & Deep Obsidian */
-   --color-primary: #00f2fe;
-   --color-primary-hover: #4facfe;
-   --color-primary-light: rgba(0, 242, 254, 0.2);
-   --color-primary-dark: #00acc1;
+   /* Primary Colors — Refined Gold */
+   --color-primary: #C9A96E;
+   --color-primary-hover: #D4B97E;
+   --color-primary-light: rgba(201, 169, 110, 0.15);
+   --color-primary-dark: #A88B52;
 
-   /* Secondary Colors */
-   --color-secondary: #16213e;
-   --color-secondary-hover: #0f3460;
-   --color-secondary-light: #1a1a2e;
+   /* Secondary Colors — Deep Navy */
+   --color-secondary: #1A1A2E;
+   --color-secondary-hover: #252542;
+   --color-secondary-light: #0F0F1A;
 
-   /* Semantic Colors - High Contrast for Dark Theme */
-   --color-success: #00ff87;
-   --color-success-light: rgba(0, 255, 135, 0.1);
-   --color-success-dark: #00c86b;
+   /* Semantic Colors */
+   --color-success: #4ADE80;
+   --color-success-light: rgba(74, 222, 128, 0.08);
+   --color-success-dark: #22C55E;
 
-   --color-danger: #ff4d4d;
-   --color-danger-light: rgba(255, 77, 77, 0.1);
-   --color-danger-dark: #cc0000;
+   --color-danger: #EF4444;
+   --color-danger-light: rgba(239, 68, 68, 0.08);
+   --color-danger-dark: #DC2626;
 
-   --color-warning: #ffd700;
-   --color-warning-light: rgba(255, 215, 0, 0.1);
-   --color-warning-dark: #b8860b;
+   --color-warning: #F59E0B;
+   --color-warning-light: rgba(245, 158, 11, 0.08);
+   --color-warning-dark: #D97706;
+   --color-warning-text: #92400E;
 
-   --color-info: #00d2ff;
-   --color-info-light: rgba(0, 210, 255, 0.1);
-   --color-info-dark: #008eb3;
+   --color-info: #60A5FA;
+   --color-info-light: rgba(96, 165, 250, 0.08);
+   --color-info-dark: #3B82F6;
 
-   /* Neutral Colors - Dark Palette */
-   --color-white: #ffffff;
+   /* Neutral Colors — True Noir Palette */
+   --color-white: #F5F0EB;
    --color-black: #000000;
-   --color-gray-100: #121214;
-   --color-gray-200: #1a1a1c;
-   --color-gray-300: #2a2a2c;
-   --color-gray-400: #3a3a3c;
-   --color-gray-500: #5a5a5c;
-   --color-gray-600: #8a8a8c;
-   --color-gray-700: #aaaaac;
-   --color-gray-800: #ccccce;
-   --color-gray-900: #f8f9fa;
+   --color-gray-100: #0D0D0F;
+   --color-gray-200: #141416;
+   --color-gray-300: #1E1E22;
+   --color-gray-400: #2A2A30;
+   --color-gray-500: #4A4A52;
+   --color-gray-600: #6E6E78;
+   --color-gray-700: #9E9EA8;
+   --color-gray-800: #CCCCD2;
+   --color-gray-900: #F5F0EB;
 
-   /* Text Colors - High Readability on Dark */
-   --color-text-primary: #f8f9fa;
-   --color-text-secondary: #aaaaac;
-   --color-text-muted: #6a6a6c;
-   --color-text-disabled: #4a4a4c;
+   /* Text Colors — Sophisticated Readability */
+   --color-text-primary: #F5F0EB;
+   --color-text-secondary: #9E9EA8;
+   --color-text-muted: #6E6E78;
+   --color-text-disabled: #4A4A52;
 
-   /* Background Colors - Obsidian & Glass */
-   --color-bg-primary: #050505;
-   --color-bg-secondary: #0a0a0c;
-   --color-bg-disabled: #1a1a1c;
+   /* Background Colors — Deep Noir */
+   --color-bg-primary: #0B0B0D;
+   --color-bg-secondary: #0D0D0F;
+   --color-bg-disabled: #141416;
 
-   /* Glassmorphism Tokens */
-   --glass-bg: rgba(255, 255, 255, 0.03);
-   --glass-border: rgba(255, 255, 255, 0.08);
+   /* Glassmorphism Tokens — Subtle */
+   --glass-bg: rgba(255, 255, 255, 0.02);
+   --glass-border: rgba(255, 255, 255, 0.06);
    --glass-blur: 20px;
 
-   /* Gradient Colors - Premium Linear & Mesh */
-   --gradient-primary: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
-   --gradient-success: linear-gradient(135deg, #00ff87 0%, #60efff 100%);
-   --gradient-danger: linear-gradient(135deg, #ff4d4d 0%, #f9cbff 100%);
-   --gradient-dark: linear-gradient(135deg, #0a0a0c 0%, #16213e 100%);
+   /* Gradient Colors — Editorial */
+   --gradient-primary: linear-gradient(135deg, #C9A96E 0%, #E8D5A3 100%);
+   --gradient-success: linear-gradient(135deg, #4ADE80 0%, #86EFAC 100%);
+   --gradient-danger: linear-gradient(135deg, #EF4444 0%, #FCA5A5 100%);
+   --gradient-dark: linear-gradient(180deg, #0B0B0D 0%, #141416 100%);
+   --gradient-hero: linear-gradient(180deg, transparent 0%, rgba(11, 11, 13, 0.8) 100%);
 
-   /* Border Colors */
-   --color-border-light: rgba(255, 255, 255, 0.1);
-   --color-border-medium: rgba(255, 255, 255, 0.2);
-   --color-border-dark: rgba(255, 255, 255, 0.3);
+   /* Border Colors — Whisper Light */
+   --color-border-light: rgba(255, 255, 255, 0.06);
+   --color-border-medium: rgba(255, 255, 255, 0.12);
+   --color-border-dark: rgba(255, 255, 255, 0.20);
 
 
    /* ============================================
-     타이포그래피 (Typography) - 'Outfit' 도입
+     타이포그래피 (Typography) — Serif + Sans Dual System
      ============================================ */
 
    /* Font Families */
-   --font-family-primary: 'Outfit', 'Noto Sans KR', -apple-system, BlinkMacSystemFont,
+   --font-family-heading: 'Playfair Display', 'Noto Serif KR', Georgia, serif;
+   --font-family-primary: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont,
       'Segoe UI', sans-serif;
    --font-family-monospace: 'JetBrains Mono', 'Courier New', monospace;
 
-   /* Font Sizes - Slightly more spacious */
-   --font-size-xs: 0.75rem;
-   /* 12px */
-   --font-size-sm: 0.875rem;
-   /* 14px */
-   --font-size-base: 1rem;
-   /* 16px */
-   --font-size-md: 1.125rem;
-   /* 18px */
-   --font-size-lg: 1.25rem;
-   /* 20px */
-   --font-size-xl: 1.75rem;
-   /* 28px */
-   --font-size-2xl: 2.5rem;
-   /* 40px */
-   --font-size-3xl: 3.5rem;
-   /* 56px */
+   /* Font Sizes — Cinematic Scale */
+   --font-size-xs: 0.75rem;      /* 12px */
+   --font-size-sm: 0.875rem;     /* 14px */
+   --font-size-base: 1rem;       /* 16px */
+   --font-size-md: 1.125rem;     /* 18px */
+   --font-size-lg: 1.25rem;      /* 20px */
+   --font-size-xl: 1.75rem;      /* 28px */
+   --font-size-2xl: 2.5rem;      /* 40px */
+   --font-size-3xl: 3.5rem;      /* 56px */
+   --font-size-4xl: 5rem;        /* 80px — Hero */
+   --font-size-5xl: 7rem;        /* 112px — Statement */
 
    /* Font Weights */
    --font-weight-light: 300;
@@ -113,57 +110,60 @@
    --font-weight-bold: 700;
 
    /* Line Heights */
-   --line-height-tight: 1.1;
+   --line-height-tight: 1.05;
+   --line-height-snug: 1.2;
    --line-height-normal: 1.65;
    --line-height-loose: 2;
 
+   /* Letter Spacing */
+   --tracking-tight: -0.03em;
+   --tracking-normal: 0;
+   --tracking-wide: 0.08em;
+   --tracking-wider: 0.15em;
+   --tracking-widest: 0.25em;
+
 
    /* ============================================
-     간격 시스템 (Spacing System)
+     간격 시스템 (Spacing System) — Editorial Whitespace
      ============================================ */
 
-   --spacing-xs: 0.375rem;
-   /* 6px */
-   --spacing-sm: 0.75rem;
-   /* 12px */
-   --spacing-md: 1.25rem;
-   /* 20px */
-   --spacing-lg: 2rem;
-   /* 32px */
-   --spacing-xl: 3rem;
-   /* 48px */
-   --spacing-2xl: 4.5rem;
-   /* 72px */
-   --spacing-3xl: 6rem;
-   /* 96px */
+   --spacing-xs: 0.375rem;   /* 6px */
+   --spacing-sm: 0.75rem;    /* 12px */
+   --spacing-md: 1.25rem;    /* 20px */
+   --spacing-lg: 2rem;       /* 32px */
+   --spacing-xl: 3.5rem;     /* 56px */
+   --spacing-2xl: 6rem;      /* 96px */
+   --spacing-3xl: 10rem;     /* 160px */
 
 
    /* ============================================
      레이아웃 (Layout)
      ============================================ */
 
-   /* Container */
-   --container-max-width: 800px;
-   --container-padding: 64px;
-   --container-padding-mobile: 32px;
+   /* Container — Full Viewport */
+   --container-max-width: 1200px;
+   --container-narrow: 800px;
+   --container-padding: 80px;
+   --container-padding-mobile: 24px;
 
-   /* Border Radius - More Rounded/Futuristic */
-   --radius-sm: 8px;
-   --radius-md: 16px;
-   --radius-lg: 24px;
-   --radius-xl: 32px;
+   /* Border Radius — Refined */
+   --radius-sm: 4px;
+   --radius-md: 8px;
+   --radius-lg: 12px;
+   --radius-xl: 16px;
    --radius-full: 100px;
    --radius-circle: 50%;
 
-   /* Shadows - Glowy & Layered */
-   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-   --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.6);
-   --shadow-lg: 0 16px 64px rgba(0, 0, 0, 0.8), 0 0 1px rgba(255, 255, 255, 0.1);
-   --shadow-xl: 0 32px 128px rgba(0, 0, 0, 1), 0 0 2px rgba(255, 255, 255, 0.2);
-   --shadow-glow: 0 0 20px rgba(0, 242, 254, 0.3);
-   --shadow-hover: 0 0 30px rgba(0, 242, 254, 0.5), 0 10px 40px rgba(0, 0, 0, 0.6);
+   /* Shadows — Subtle & Deep */
+   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+   --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+   --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+   --shadow-xl: 0 24px 80px rgba(0, 0, 0, 0.6);
+   --shadow-glow: 0 0 30px rgba(201, 169, 110, 0.15);
+   --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.5);
 
    /* Z-index Layers */
+   --z-index-nav: 50;
    --z-index-dropdown: 100;
    --z-index-modal: 200;
    --z-index-tooltip: 300;
@@ -178,8 +178,9 @@
    --transition-fast: 0.2s;
    --transition-base: 0.4s;
    --transition-slow: 0.8s;
+   --transition-slower: 1.2s;
 
-   /* Transition Easings - Custom Bezier */
+   /* Transition Easings */
    --ease-in: cubic-bezier(0.4, 0, 1, 1);
    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
@@ -190,20 +191,20 @@
      컴포넌트별 변수 (Component Variables)
      ============================================ */
 
-   /* Button - Minimalist Glow */
-   --btn-padding-y: 16px;
-   --btn-padding-x: 32px;
-   --btn-border-radius: var(--radius-md);
-   --btn-font-size: var(--font-size-base);
-   --btn-font-weight: var(--font-weight-semibold);
+   /* Button — Minimalist Border */
+   --btn-padding-y: 14px;
+   --btn-padding-x: 36px;
+   --btn-border-radius: var(--radius-sm);
+   --btn-font-size: var(--font-size-sm);
+   --btn-font-weight: var(--font-weight-medium);
    --btn-transition: all var(--transition-base) var(--ease-out);
-   --btn-transform-hover: translateY(-4px);
-   --btn-transform-active: translateY(-1px);
+   --btn-transform-hover: translateY(-2px);
+   --btn-transform-active: translateY(0);
 
-   /* Card - Glassmorphism */
-   --card-padding: 32px;
-   --card-border-radius: var(--radius-lg);
-   --card-bg: var(--glass-bg);
+   /* Card — Editorial Clean */
+   --card-padding: 40px;
+   --card-border-radius: var(--radius-md);
+   --card-bg: rgba(255, 255, 255, 0.02);
    --card-border: 1px solid var(--glass-border);
    --card-shadow: var(--shadow-md);
    --card-backdrop: blur(var(--glass-blur));
@@ -216,27 +217,32 @@
    --input-focus-border: var(--color-primary);
 
    /* Progress Bar */
-   --progress-height: 8px;
+   --progress-height: 3px;
    --progress-border-radius: var(--radius-full);
-   --progress-bg: var(--color-gray-200);
+   --progress-bg: var(--color-gray-300);
    --progress-fill-bg: var(--gradient-primary);
    --progress-transition: width 1s var(--ease-in-out);
 
    /* Upload Section */
-   --upload-border-width: 2px;
+   --upload-border-width: 1px;
    --upload-border-style: solid;
    --upload-border-color: var(--color-border-light);
-   --upload-border-radius: var(--radius-lg);
-   --upload-padding: 48px;
-   --upload-bg: rgba(255, 255, 255, 0.02);
+   --upload-border-radius: var(--radius-md);
+   --upload-padding: 60px;
+   --upload-bg: transparent;
    --upload-hover-border: var(--color-primary);
-   --upload-hover-bg: rgba(0, 242, 254, 0.05);
+   --upload-hover-bg: rgba(201, 169, 110, 0.03);
 
    /* Notice Box */
    --notice-padding: 24px;
    --notice-border-width: 1px;
    --notice-border-radius: var(--radius-md);
-   --notice-gap: 20px;
+   --notice-gap: 16px;
+
+   /* Navigation */
+   --nav-height: 80px;
+   --nav-bg: transparent;
+   --nav-bg-scrolled: rgba(11, 11, 13, 0.9);
 
 
    /* ============================================
@@ -250,14 +256,3 @@
    --breakpoint-xl: 1200px;
    --breakpoint-2xl: 1400px;
 }
-
-/* ============================================
-   다크 모드 지원 (Dark Mode Support)
-   향후 다크 모드 구현 시 사용할 변수
-   ============================================ */
-
-/*@media (prefers-color-scheme: dark) {
-  :root {
-    /* 다크 모드 색상은 필요 시 추가 */
-/* --color-bg-primary: #1a1a1a; */
-/* --color-text-primary: #ffffff; */

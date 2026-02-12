@@ -1,6 +1,8 @@
 /**
  * layout.css
- * 전체 레이아웃 및 페이지 구조
+ * Premium Editorial Layout — Full-Viewport Immersive
+ */
+
 /* ============================================
    전역 리셋 (Global Reset)
    ============================================ */
@@ -13,34 +15,27 @@
   padding: 0;
 }
 
-/* 스크롤바 스타일링 (현대적인 느낌) */
+/* 스크롤바 스타일링 — Minimal */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg,
-      var(--color-primary) 0%,
-      var(--color-primary-hover) 100%);
+  background: rgba(201, 169, 110, 0.3);
   border-radius: 10px;
-  transition: background var(--transition-fast);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg,
-      var(--color-primary-hover) 0%,
-      var(--color-primary-dark) 100%);
+  background: rgba(201, 169, 110, 0.5);
 }
 
-/* Firefox 스크롤바 */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-primary) rgba(0, 0, 0, 0.05);
+  scrollbar-color: rgba(201, 169, 110, 0.3) transparent;
 }
 
 
@@ -49,237 +44,166 @@
    ============================================ */
 
 html {
-  /* 스크롤 동작 */
   scroll-behavior: smooth;
-
-  /* 텍스트 크기 조정 방지 */
   -webkit-text-size-adjust: 100%;
   -moz-text-size-adjust: 100%;
   text-size-adjust: 100%;
-
-  /* 기본 폰트 크기 */
   font-size: 16px;
-
-  /* 높이 */
   height: 100%;
 }
 
 
 /* ============================================
-   Body - Premium Obsidian Dark & Glowing Orbs
+   Body — Deep Noir Canvas
    ============================================ */
 
 body {
-  /* 레이아웃 */
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
   min-height: 100vh;
 
-  /* 간격 */
-  padding: var(--spacing-xl);
+  padding: 0;
 
-  /* 배경 - Obsidian Dark & Grid */
+  /* Background — Deep Noir with subtle noise */
   background-color: var(--color-bg-primary);
-  background-image:
-    radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
-  background-size: 40px 40px;
 
-  /* 색상 */
   color: var(--color-text-primary);
 
-  /* 오버플로우 */
   overflow-x: hidden;
   overflow-y: auto;
 
-  /* 안티에일리어싱 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  /* 렌더링 최적화 */
   text-rendering: optimizeLegibility;
 
   position: relative;
 }
 
-/* Glowing Orbs - Premium Decorative Background */
-body::before,
+/* Ambient Light — Subtle warm glow */
+body::before {
+  content: '';
+  position: fixed;
+  top: -20%;
+  right: -15%;
+  width: 60vw;
+  height: 60vw;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201, 169, 110, 0.06) 0%, transparent 70%);
+  filter: blur(80px);
+  z-index: -1;
+  pointer-events: none;
+  animation: ambient-drift 30s ease-in-out infinite alternate;
+}
+
 body::after {
   content: '';
   position: fixed;
+  bottom: -20%;
+  left: -15%;
   width: 50vw;
   height: 50vw;
   border-radius: 50%;
-  filter: blur(100px);
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.03) 0%, transparent 70%);
+  filter: blur(80px);
   z-index: -1;
-  opacity: 0.15;
   pointer-events: none;
+  animation: ambient-drift-2 35s ease-in-out infinite alternate;
 }
 
-body::before {
-  top: -10%;
-  right: -10%;
-  background: radial-gradient(circle, var(--color-primary) 0%, transparent 70%);
-  animation: orb-drift-1 20s ease-in-out infinite alternate;
-}
-
-body::after {
-  bottom: -10%;
-  left: -10%;
-  background: radial-gradient(circle, #764ba2 0%, transparent 70%);
-  animation: orb-drift-2 25s ease-in-out infinite alternate;
-}
-
-@keyframes orb-drift-1 {
+@keyframes ambient-drift {
   0% {
     transform: translate(0, 0) scale(1);
   }
 
   100% {
-    transform: translate(-10%, 15%) scale(1.2);
+    transform: translate(-5%, 10%) scale(1.1);
   }
 }
 
-@keyframes orb-drift-2 {
+@keyframes ambient-drift-2 {
   0% {
-    transform: translate(0, 0) scale(1.1);
+    transform: translate(0, 0) scale(1);
   }
 
   100% {
-    transform: translate(15%, -10%) scale(0.9);
+    transform: translate(8%, -5%) scale(0.9);
   }
 }
 
+
 /* ============================================
-   메인 컨테이너 - Advanced Glassmorphism
+   메인 컨테이너 — Full Viewport Wrapper
    ============================================ */
 
 .container {
-  /* 레이아웃 */
   position: relative;
   z-index: 1;
-
-  /* 크기 */
   width: 100%;
-  max-width: var(--container-max-width);
-
-  /* 간격 */
-  padding: var(--container-padding);
-
-  /* 배경 - 프리미엄 글래스모피즘 */
-  background: var(--card-bg);
-  backdrop-filter: var(--card-backdrop);
-  -webkit-backdrop-filter: var(--card-backdrop);
-
-  /* 테두리 - Subtle Border-Gradient Look */
-  border: var(--card-border);
-  border-radius: var(--radius-xl);
-
-  /* 그림자 */
-  box-shadow: var(--shadow-xl);
-
-  /* 텍스트 정렬 */
-  text-align: center;
-
-  /* 애니메이션 - Sophisticated Slide Up */
-  animation: container-entrance 1.2s var(--ease-out);
-
-  /* 오버플로우 */
-  overflow: hidden;
+  max-width: 100%;
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  text-align: left;
+  animation: page-entrance 1s var(--ease-out);
+  overflow: visible;
 }
 
-@keyframes container-entrance {
+@keyframes page-entrance {
   0% {
     opacity: 0;
-    transform: translateY(60px);
-    clip-path: inset(100% 0 0 0);
   }
 
   100% {
     opacity: 1;
-    transform: translateY(0);
-    clip-path: inset(0 0 0 0);
   }
 }
 
-/* 컨테이너 조명 효과 (3D & Premium) */
-.container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  z-index: 2;
-}
-
-@keyframes top-shimmer {
-
-  0%,
-  100% {
-    opacity: 0.6;
-    transform: scaleX(0.8);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scaleX(1);
-  }
-}
-
-/* 컨테이너 빛 반사 효과 */
+/* Remove container pseudo-element decorations */
+.container::before,
 .container::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-
-  background: radial-gradient(circle,
-      rgba(255, 255, 255, 0.3) 0%,
-      transparent 70%);
-
-  pointer-events: none;
-  opacity: 0;
-
-  animation: light-sweep 8s ease-in-out infinite;
-}
-
-@keyframes light-sweep {
-
-  0%,
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-
-  50% {
-    opacity: 0.5;
-    transform: translate(50%, 50%) rotate(180deg);
-  }
+  display: none;
 }
 
 
 /* ============================================
-   섹션 간격 시스템
+   섹션 시스템 — Editorial Sections
    ============================================ */
 
 .section {
-  margin-bottom: var(--spacing-2xl);
-
-  animation: section-fade-in 0.6s var(--ease-out);
+  width: 100%;
+  max-width: var(--container-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding: var(--spacing-2xl) var(--container-padding);
+  animation: section-reveal 0.8s var(--ease-out);
 }
 
 .section:last-child {
   margin-bottom: 0;
 }
 
-@keyframes section-fade-in {
+/* Hero Section — Full Viewport */
+.section--hero {
+  max-width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: var(--nav-height) var(--container-padding) var(--spacing-2xl);
+  position: relative;
+}
+
+@keyframes section-reveal {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(30px);
   }
 
   to {
@@ -288,23 +212,48 @@ body::after {
   }
 }
 
-/* 섹션 구분선 */
-.section-divider {
-  height: 1px;
-  margin: var(--spacing-2xl) 0;
+/* Scroll reveal class — applied via JS */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out);
+}
 
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 섹션 구분선 — Minimal */
+.section-divider {
+  width: 100%;
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  height: 1px;
   background: linear-gradient(90deg,
       transparent 0%,
-      var(--color-border-light) 20%,
-      var(--color-border-light) 80%,
+      var(--color-border-light) 30%,
+      var(--color-border-light) 70%,
       transparent 100%);
-
   opacity: 0.5;
 }
 
 
 /* ============================================
-   그리드 시스템 (유연한 레이아웃)
+   Workflow Wrapper — Centered Content
+   ============================================ */
+
+.grid.grid--1-col {
+  width: 100%;
+  max-width: var(--container-narrow);
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 var(--container-padding);
+}
+
+
+/* ============================================
+   그리드 시스템
    ============================================ */
 
 .grid {
@@ -326,7 +275,7 @@ body::after {
 
 /* 그리드 아이템 애니메이션 */
 .grid>* {
-  animation: grid-item-entrance 0.5s var(--ease-out);
+  animation: grid-item-entrance 0.6s var(--ease-out);
   animation-fill-mode: both;
 }
 
@@ -349,12 +298,12 @@ body::after {
 @keyframes grid-item-entrance {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: translateY(20px);
   }
 
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -409,7 +358,6 @@ body::after {
    여백 유틸리티 (Spacing Utilities)
    ============================================ */
 
-/* 마진 */
 .mt-0 {
   margin-top: 0;
 }
@@ -450,7 +398,6 @@ body::after {
   margin-bottom: var(--spacing-xl);
 }
 
-/* 패딩 */
 .p-0 {
   padding: 0;
 }
@@ -486,7 +433,7 @@ body::after {
 }
 
 .fade-in {
-  animation: fade-in 0.5s var(--ease-out);
+  animation: fade-in 0.6s var(--ease-out);
 }
 
 @keyframes fade-in {
@@ -514,13 +461,13 @@ body::after {
 }
 
 .slide-up {
-  animation: slide-up 0.5s var(--ease-out);
+  animation: slide-up 0.6s var(--ease-out);
 }
 
 @keyframes slide-up {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px);
   }
 
   to {
@@ -534,15 +481,17 @@ body::after {
    반응형 브레이크포인트
    ============================================ */
 
-/* 태블릿 (768px 이하) */
 @media (max-width: 768px) {
   body {
-    padding: var(--spacing-md);
+    padding: 0;
   }
 
-  .container {
-    padding: var(--container-padding-mobile);
-    border-radius: var(--radius-lg);
+  .section {
+    padding: var(--spacing-xl) var(--container-padding-mobile);
+  }
+
+  .grid.grid--1-col {
+    padding: 0 var(--container-padding-mobile);
   }
 
   .grid--2-cols,
@@ -550,66 +499,30 @@ body::after {
     grid-template-columns: 1fr;
   }
 
-  .section {
-    margin-bottom: var(--spacing-xl);
+  .section--hero {
+    min-height: 80vh;
+    padding: var(--nav-height) var(--container-padding-mobile) var(--spacing-xl);
   }
 }
 
-/* 모바일 (480px 이하) */
 @media (max-width: 480px) {
-  body {
-    padding: var(--spacing-sm);
-
-    /* 배경 애니메이션 단순화 (성능) */
-    animation: gradient-shift-simple 15s ease infinite;
+  .section {
+    padding: var(--spacing-lg) var(--spacing-md);
   }
 
-  @keyframes gradient-shift-simple {
-
-    0%,
-    100% {
-      background-position: 0 0, 0% 50%;
-    }
-
-    50% {
-      background-position: 0 0, 100% 50%;
-    }
+  .grid.grid--1-col {
+    padding: 0 var(--spacing-md);
   }
 
-  .container {
-    padding: var(--spacing-lg);
-    border-radius: var(--radius-md);
-
-    /* 모바일에서 애니메이션 간소화 */
-    animation: container-entrance-mobile 0.8s var(--ease-out);
-  }
-
-  @keyframes container-entrance-mobile {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* 모바일에서 장식 요소 제거 (성능) */
-  body::after {
-    display: none;
+  .section--hero {
+    min-height: 70vh;
+    padding: var(--nav-height) var(--spacing-md) var(--spacing-lg);
   }
 }
 
-/* 작은 모바일 (360px 이하) */
 @media (max-width: 360px) {
   html {
     font-size: 14px;
-  }
-
-  .container {
-    padding: var(--spacing-md);
   }
 }
 
@@ -619,63 +532,21 @@ body::after {
    ============================================ */
 
 @media (min-width: 1200px) {
-  .container {
-    max-width: 800px;
-    padding: calc(var(--container-padding) * 1.2);
-  }
-
-  /* 배경 애니메이션 더 화려하게 */
-  body {
-    background-size: 100px 100px, 500% 500%;
+  .section {
+    padding: var(--spacing-3xl) var(--container-padding);
   }
 }
 
 
 /* ============================================
-   다크 모드 대응 (준비)
-   ============================================ */
-
-@media (prefers-color-scheme: dark) {
-  /* 향후 다크 모드 구현 시 활성화 */
-  /*
-  body {
-    background: 
-      linear-gradient(
-        135deg,
-        #1a1a2e 0%,
-        #16213e 50%,
-        #0f3460 100%
-      );
-  }
-  
-  .container {
-    background: rgba(30, 30, 50, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  */
-}
-
-
-/* ============================================
-   고대비 모드
+   접근성
    ============================================ */
 
 @media (prefers-contrast: high) {
   body {
-    background: #ffffff;
-  }
-
-  .container {
-    background: #ffffff;
-    border: 2px solid #000000;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    background: #000000;
   }
 }
-
-
-/* ============================================
-   애니메이션 감소 모드
-   ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
 
@@ -694,12 +565,6 @@ body::after {
   body,
   body::before,
   body::after {
-    animation: none;
-  }
-
-  .container,
-  .container::before,
-  .container::after {
     animation: none;
   }
 }
@@ -723,15 +588,8 @@ body::after {
   .container {
     max-width: 100%;
     box-shadow: none;
-    border: 1px solid #000000;
+    border: none;
     background: #ffffff;
-    backdrop-filter: none;
-    page-break-inside: avoid;
-  }
-
-  .container::before,
-  .container::after {
-    display: none;
   }
 
   .hidden-print {
@@ -741,7 +599,7 @@ body::after {
 
 
 /* ============================================
-   로딩 오버레이 (전체 화면)
+   로딩 오버레이
    ============================================ */
 
 .loading-overlay {
@@ -750,93 +608,14 @@ body::after {
   left: 0;
   width: 100%;
   height: 100%;
-
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(11, 11, 13, 0.95);
   backdrop-filter: blur(10px);
-
   display: none;
   justify-content: center;
   align-items: center;
-
   z-index: 9999;
-
-  animation: overlay-fade-in 0.3s var(--ease-out);
 }
 
 .loading-overlay.active {
   display: flex;
-}
-
-@keyframes overlay-fade-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-
-/* ============================================
-   스크롤 인디케이터 (선택적)
-   ============================================ */
-
-.scroll-indicator {
-  position: fixed;
-  bottom: var(--spacing-xl);
-  left: 50%;
-  transform: translateX(-50%);
-
-  width: 24px;
-  height: 40px;
-
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  border-radius: 12px;
-
-  z-index: 10;
-
-  animation: scroll-bounce 2s ease-in-out infinite;
-}
-
-.scroll-indicator::before {
-  content: '';
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-
-  width: 4px;
-  height: 8px;
-
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 2px;
-
-  animation: scroll-dot 2s ease-in-out infinite;
-}
-
-@keyframes scroll-bounce {
-
-  0%,
-  100% {
-    transform: translateX(-50%) translateY(0);
-  }
-
-  50% {
-    transform: translateX(-50%) translateY(8px);
-  }
-}
-
-@keyframes scroll-dot {
-
-  0%,
-  100% {
-    opacity: 0;
-    top: 8px;
-  }
-
-  50% {
-    opacity: 1;
-    top: 20px;
-  }
 }
