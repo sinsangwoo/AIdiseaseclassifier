@@ -209,6 +209,7 @@ class UIController {
             // Set report image from the persisted URL
             if (this.elements.reportImage && this._currentObjectURL) {
                 this.elements.reportImage.src = this._currentObjectURL;
+                this.elements.reportImage.classList.add('preview__image--visible');
             }
 
             this.renderPredictions(state.analysisResult.predictions);
