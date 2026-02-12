@@ -11,10 +11,10 @@
   /* 레이아웃 */
   display: none;
   width: 100%;
-  
+
   /* 간격 */
   margin: var(--spacing-xl) 0;
-  
+
   /* 애니메이션 */
   animation: progress-entrance 0.4s var(--ease-out);
 }
@@ -28,6 +28,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -41,147 +42,135 @@
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
-  
+
   /* 레이아웃 */
   text-align: center;
-  
+
   /* 간격 */
   margin: 0 0 var(--spacing-md) 0;
-  
+
   /* 아이콘과 함께 */
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--spacing-sm);
-  
+
   /* 애니메이션 */
   animation: message-pulse 2s ease-in-out infinite;
 }
 
 @keyframes message-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .progress__message i,
 .progress__icon {
   color: var(--color-primary);
   font-size: 1.1em;
-  
+
   /* 회전 애니메이션 (뇌 아이콘 등) */
   animation: icon-spin 2s linear infinite;
 }
 
 @keyframes icon-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 
 /* ============================================
-   프로그레스 바 (Progress Bar)
+   프로그레스 바 (Progress Bar) - Neon Scanning Look
    ============================================ */
 
 .progress-bar,
 .progress {
-  /* 레이아웃 */
   position: relative;
   width: 100%;
   height: var(--progress-height);
-  
-  /* 배경 */
-  background-color: var(--progress-bg);
-  
-  /* 테두리 */
+  background-color: var(--color-gray-100);
   border-radius: var(--progress-border-radius);
-  
-  /* 오버플로우 */
   overflow: hidden;
-  
-  /* 그림자 - 깊이감 */
-  box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.08),
-    0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* 프리미엄 그라디언트 배경 */
 .progress--gradient {
-  background: linear-gradient(
-    90deg,
-    var(--color-gray-100) 0%,
-    var(--color-gray-200) 50%,
-    var(--color-gray-100) 100%
-  );
-  background-size: 200% 100%;
-  animation: progress-bg-shimmer 2s ease-in-out infinite;
+  background: rgba(255, 255, 255, 0.02);
 }
 
-@keyframes progress-bg-shimmer {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-
-/* ============================================
-   프로그레스 채우기 (Progress Fill)
-   ============================================ */
-
+/* 프로그레스 채우기 (Progress Fill) - Electric Cyan */
 .progress-bar-fill,
 .progress__fill {
-  /* 레이아웃 */
   height: 100%;
   width: 0%;
-  
-  /* 배경 - 그라디언트로 프리미엄 느낌 */
-  background: linear-gradient(
-    90deg,
-    var(--color-primary) 0%,
-    var(--color-primary-light) 50%,
-    var(--color-primary) 100%
-  );
-  background-size: 200% 100%;
-  
-  /* 테두리 */
+  background: var(--gradient-primary);
   border-radius: var(--progress-border-radius);
-  
-  /* 애니메이션 */
   transition: var(--progress-transition);
-  
-  /* 빛나는 효과 */
-  animation: progress-shimmer 2s ease-in-out infinite;
-  
-  /* 상대 위치 (하이라이트용) */
   position: relative;
-  overflow: hidden;
+  box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
 }
 
-@keyframes progress-shimmer {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-/* 하이라이트 효과 (빛 반사) */
-.progress__fill::before {
+/* Shimmer & Scan Effect */
+.progress-bar-fill::before {
   content: '';
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.4) 50%,
-    transparent 100%
-  );
-  
-  animation: progress-highlight 2s ease-in-out infinite;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      transparent 100%);
+  animation: progress-highlight 1.5s ease-in-out infinite;
 }
 
 @keyframes progress-highlight {
-  0% { left: -100%; }
-  100% { left: 200%; }
+  0% {
+    left: -100%;
+  }
+
+  100% {
+    left: 100%;
+  }
+}
+
+/* AI 분석 특화 애니메이션 */
+.progress--ai-analyzing::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: linear-gradient(90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0) 100%);
+  background-size: 20% 100%;
+  animation: ai-scan-line 2s linear infinite;
+}
+
+@keyframes ai-scan-line {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 
@@ -191,49 +180,60 @@
 
 /* 성공 상태 */
 .progress--success .progress__fill {
-  background: linear-gradient(
-    90deg,
-    var(--color-success) 0%,
-    var(--color-success-light) 50%,
-    var(--color-success) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--color-success) 0%,
+      var(--color-success-light) 50%,
+      var(--color-success) 100%);
   background-size: 200% 100%;
   animation: progress-shimmer 2s ease-in-out infinite,
-             progress-success-pulse 0.6s ease-out;
+    progress-success-pulse 0.6s ease-out;
 }
 
 @keyframes progress-success-pulse {
-  0%, 100% { transform: scaleY(1); }
-  50% { transform: scaleY(1.2); }
+
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  50% {
+    transform: scaleY(1.2);
+  }
 }
 
 /* 경고 상태 */
 .progress--warning .progress__fill {
-  background: linear-gradient(
-    90deg,
-    var(--color-warning) 0%,
-    var(--color-warning-light) 50%,
-    var(--color-warning) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--color-warning) 0%,
+      var(--color-warning-light) 50%,
+      var(--color-warning) 100%);
   background-size: 200% 100%;
 }
 
 /* 에러 상태 */
 .progress--error .progress__fill {
-  background: linear-gradient(
-    90deg,
-    var(--color-danger) 0%,
-    var(--color-danger-light) 50%,
-    var(--color-danger) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--color-danger) 0%,
+      var(--color-danger-light) 50%,
+      var(--color-danger) 100%);
   background-size: 200% 100%;
   animation: progress-error-shake 0.4s ease-out;
 }
 
 @keyframes progress-error-shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-4px);
+  }
+
+  75% {
+    transform: translateX(4px);
+  }
 }
 
 
@@ -292,6 +292,7 @@
   0% {
     left: -30%;
   }
+
   100% {
     left: 100%;
   }
@@ -309,7 +310,7 @@
   border-radius: 50%;
   background: none;
   box-shadow: none;
-  
+
   position: relative;
   display: flex;
   align-items: center;
@@ -334,12 +335,14 @@
   border: 6px solid var(--color-primary);
   border-top-color: transparent;
   border-right-color: transparent;
-  
+
   animation: circular-spin 1s linear infinite;
 }
 
 @keyframes circular-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .progress--circular .progress__percentage {
@@ -360,33 +363,35 @@
   /* 크기 */
   width: 40px;
   height: 40px;
-  
+
   /* 레이아웃 */
   margin: var(--spacing-lg) auto;
-  
+
   /* 테두리 */
   border: 4px solid var(--color-gray-200);
   border-top-color: var(--color-primary);
   border-radius: 50%;
-  
+
   /* 애니메이션 */
   animation: spinner-rotate 0.8s linear infinite;
 }
 
 @keyframes spinner-rotate {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 스피너 크기 변형 */
-.spinner--small { 
-  width: 24px; 
-  height: 24px; 
+.spinner--small {
+  width: 24px;
+  height: 24px;
   border-width: 3px;
 }
 
-.spinner--large { 
-  width: 60px; 
-  height: 60px; 
+.spinner--large {
+  width: 60px;
+  height: 60px;
   border-width: 5px;
 }
 
@@ -398,10 +403,13 @@
 }
 
 @keyframes spinner-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
     transform: scale(1.3);
     opacity: 0.5;
@@ -426,7 +434,7 @@
   height: 12px;
   background-color: var(--color-primary);
   border-radius: 50%;
-  
+
   animation: dots-bounce 1.4s ease-in-out infinite;
 }
 
@@ -443,10 +451,14 @@
 }
 
 @keyframes dots-bounce {
-  0%, 80%, 100% {
+
+  0%,
+  80%,
+  100% {
     transform: scale(0.8);
     opacity: 0.5;
   }
+
   40% {
     transform: scale(1.2);
     opacity: 1;
@@ -459,21 +471,24 @@
    ============================================ */
 
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--color-gray-200) 25%,
-    var(--color-gray-100) 50%,
-    var(--color-gray-200) 75%
-  );
+  background: linear-gradient(90deg,
+      var(--color-gray-200) 25%,
+      var(--color-gray-100) 50%,
+      var(--color-gray-200) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
-  
+
   border-radius: var(--radius-md);
 }
 
 @keyframes skeleton-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .skeleton--text {
@@ -513,15 +528,18 @@
   top: -40px;
   left: 0;
   font-size: 24px;
-  
+
   animation: ai-brain-move 3s ease-in-out infinite;
 }
 
 @keyframes ai-brain-move {
-  0%, 100% {
+
+  0%,
+  100% {
     left: 0%;
     transform: translateX(0) scale(1);
   }
+
   50% {
     left: calc(100% - 30px);
     transform: translateX(0) scale(1.2);
@@ -531,13 +549,20 @@
 /* 진단 중 텍스트 애니메이션 */
 .progress__analyzing-text {
   display: inline-block;
-  
+
   animation: analyzing-blink 1.5s ease-in-out infinite;
 }
 
 @keyframes analyzing-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .progress__analyzing-text::after {
@@ -545,15 +570,29 @@
   display: inline-block;
   width: 20px;
   text-align: left;
-  
+
   animation: dots-typing 1.5s steps(4, end) infinite;
 }
 
 @keyframes dots-typing {
-  0%, 20% { content: ''; }
-  40% { content: '.'; }
-  60% { content: '..'; }
-  80%, 100% { content: '...'; }
+
+  0%,
+  20% {
+    content: '';
+  }
+
+  40% {
+    content: '.';
+  }
+
+  60% {
+    content: '..';
+  }
+
+  80%,
+  100% {
+    content: '...';
+  }
 }
 
 
@@ -566,9 +605,20 @@
 }
 
 @keyframes progress-complete {
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
-  100% { opacity: 0; transform: scale(0.95); }
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
 }
 
 /* 체크 마크 애니메이션 */
@@ -578,12 +628,12 @@
   height: 60px;
   border-radius: 50%;
   background-color: var(--color-success);
-  
+
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  
+
   animation: checkmark-pop 0.6s var(--ease-elastic);
 }
 
@@ -594,9 +644,17 @@
 }
 
 @keyframes checkmark-pop {
-  0% { transform: translate(-50%, -50%) scale(0); }
-  50% { transform: translate(-50%, -50%) scale(1.2); }
-  100% { transform: translate(-50%, -50%) scale(1); }
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+  }
+
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .progress__checkmark i {
@@ -610,22 +668,23 @@
    ============================================ */
 
 @media (max-width: 768px) {
+
   .progress-container p,
   .progress__message {
     font-size: var(--font-size-sm);
   }
-  
+
   .spinner,
   .loading-spinner {
     width: 32px;
     height: 32px;
   }
-  
+
   .progress--circular {
     width: 60px;
     height: 60px;
   }
-  
+
   .progress--circular::before,
   .progress--circular::after {
     border-width: 4px;
@@ -633,11 +692,12 @@
 }
 
 @media (max-width: 480px) {
+
   .progress-bar,
   .progress {
     height: 8px;
   }
-  
+
   .loading-dots__dot {
     width: 10px;
     height: 10px;
@@ -664,13 +724,14 @@
 
 /* 애니메이션 감소 선호 사용자 대응 */
 @media (prefers-reduced-motion: reduce) {
+
   .progress__fill,
   .spinner,
   .loading-dots__dot,
   .skeleton {
     animation: none;
   }
-  
+
   .progress__fill {
     transition: width 0.3s ease;
   }
@@ -682,6 +743,7 @@
    ============================================ */
 
 @media print {
+
   .progress-container,
   .spinner,
   .loading-dots,

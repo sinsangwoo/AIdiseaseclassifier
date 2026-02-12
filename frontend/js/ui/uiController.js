@@ -54,17 +54,17 @@ class UIController {
 
             this.elements.uploadSection.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                e.currentTarget.style.borderColor = 'var(--primary-color)';
+                e.currentTarget.classList.add('upload--active');
             });
 
             this.elements.uploadSection.addEventListener('dragleave', (e) => {
                 e.preventDefault();
-                e.currentTarget.style.borderColor = 'var(--border-color)';
+                e.currentTarget.classList.remove('upload--active');
             });
 
             this.elements.uploadSection.addEventListener('drop', (e) => {
                 e.preventDefault();
-                e.currentTarget.style.borderColor = 'var(--border-color)';
+                e.currentTarget.classList.remove('upload--active');
                 const file = e.dataTransfer.files[0];
                 if (file && this.onFileSelect) {
                     this.onFileSelect(file);
@@ -231,9 +231,9 @@ class UIController {
             const styleClass = isNormal ? 'result-normal' : 'result-pneumonia';
 
             return `
-                <div class="result-item ${styleClass}">
+                <div class="card--result card--result-${isNormal ? 'normal' : 'pneumonia'}">
                     <span>${pred.className}</span>
-                    <span class="result-percentage">${percentage}%</span>
+                    <span class="card__result-percentage">${percentage}%</span>
                 </div>
             `;
         }).join('');

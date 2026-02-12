@@ -4,7 +4,7 @@
 
 
 /* ============================================
-   파일 업로드 영역 (Upload Section)
+   파일 업로드 영역 (Upload Section) - Scanner Port Look
    ============================================ */
 
 .upload-section,
@@ -15,138 +15,124 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  
+
   /* 크기 */
   width: 100%;
-  min-height: 200px;
+  min-height: 240px;
   padding: var(--upload-padding);
-  
-  /* 테두리 - 점선으로 업로드 영역 강조 */
+
+  /* 테두리 - Scanner Port Lens Aesthetic */
   border: var(--upload-border-width) var(--upload-border-style) var(--upload-border-color);
   border-radius: var(--upload-border-radius);
-  
-  /* 배경 */
-  background-color: var(--upload-bg);
-  background-image: 
-    repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 10px,
-      rgba(0, 123, 255, 0.02) 10px,
-      rgba(0, 123, 255, 0.02) 20px
-    );
-  
+
+  /* 배경 - Dark Futuristic Glass */
+  background: rgba(255, 255, 255, 0.01);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.5);
+
   /* 상호작용 */
   cursor: pointer;
   user-select: none;
-  
+
   /* 애니메이션 */
   transition: all var(--transition-base) var(--ease-out);
-  
+
   /* 진입 애니메이션 */
-  animation: upload-entrance 0.6s var(--ease-out) 0.3s both;
+  animation: upload-entrance 1s var(--ease-out) 0.5s both;
+
+  /* 오버플로우 (Scanning line 용) */
+  overflow: hidden;
+}
+
+/* Scanning Line Animation */
+.upload-section::after,
+.upload::after {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+  box-shadow: 0 0 15px var(--color-primary);
+  opacity: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.upload-section:hover::after,
+.upload:hover::after {
+  opacity: 0.8;
+  animation: scanning 2s linear infinite;
+}
+
+@keyframes scanning {
+  0% {
+    top: 0%;
+  }
+
+  100% {
+    top: 100%;
+  }
 }
 
 @keyframes upload-entrance {
   from {
     opacity: 0;
-    transform: scale(0.98);
+    transform: translateY(20px) scale(0.98);
   }
+
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 
-/* 호버 상태 - 인터랙티브한 피드백 */
+/* 호버 상태 */
 .upload-section:hover,
 .upload:hover {
-  border-color: var(--upload-hover-border);
-  background-color: var(--upload-hover-bg);
-  transform: translateY(-2px);
-  
-  box-shadow: 
-    0 8px 24px rgba(0, 123, 255, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.04);
+  border-color: var(--color-primary);
+  background-color: rgba(0, 242, 254, 0.05);
+  box-shadow:
+    inset 0 0 60px rgba(0, 242, 254, 0.1),
+    0 0 30px rgba(0, 242, 254, 0.1);
+  transform: scale(1.01);
 }
 
 /* 활성 상태 (파일 드래그 중) */
 .upload-section.upload--active,
 .upload.upload--active {
   border-color: var(--color-primary);
-  border-width: 3px;
-  background-color: rgba(0, 123, 255, 0.05);
-  
-  box-shadow: 
-    0 0 0 4px var(--color-primary-light),
-    0 8px 24px rgba(0, 123, 255, 0.12);
-  
-  transform: scale(1.02);
+  background-color: rgba(0, 242, 254, 0.1);
+  box-shadow: 0 0 50px rgba(0, 242, 254, 0.2);
+  transform: scale(1.03);
 }
-
-/* 비활성 상태 */
-.upload-section.upload--disabled,
-.upload.upload--disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  border-color: var(--color-gray-300);
-  background-color: var(--color-gray-100);
-}
-
-.upload-section.upload--disabled:hover,
-.upload.upload--disabled:hover {
-  transform: none;
-  box-shadow: none;
-}
-
 
 /* ============================================
-   업로드 아이콘 (Upload Icon)
+   업로드 아이콘 (Upload Icon) - Pulsing Cyan
    ============================================ */
 
 .upload-icon,
 .upload__icon {
-  /* 크기 */
-  font-size: 3rem;
-  
-  /* 색상 */
+  font-size: 3.5rem;
   color: var(--color-primary);
-  
-  /* 간격 */
   margin-bottom: var(--spacing-md);
-  
-  /* 애니메이션 */
+  filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.3));
   transition: all var(--transition-base) var(--ease-out);
-  
-  /* 부드러운 등장 */
   animation: icon-float 3s ease-in-out infinite;
 }
 
 @keyframes icon-float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
+    filter: drop-shadow(0 0 5px rgba(0, 242, 254, 0.3));
   }
+
   50% {
-    transform: translateY(-8px);
+    transform: translateY(-10px);
+    filter: drop-shadow(0 0 20px rgba(0, 242, 254, 0.6));
   }
-}
-
-.upload-section:hover .upload-icon,
-.upload:hover .upload__icon {
-  color: var(--color-primary-hover);
-  transform: scale(1.1) translateY(-4px);
-  animation: none;
-}
-
-.upload--active .upload__icon {
-  animation: icon-bounce 0.6s ease-in-out;
-}
-
-@keyframes icon-bounce {
-  0%, 100% { transform: translateY(0); }
-  25% { transform: translateY(-12px); }
-  50% { transform: translateY(0); }
-  75% { transform: translateY(-6px); }
 }
 
 
@@ -160,10 +146,10 @@
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
-  
+
   /* 간격 */
   margin: 0 0 var(--spacing-xs) 0;
-  
+
   /* 애니메이션 */
   transition: color var(--transition-base) var(--ease-out);
 }
@@ -178,14 +164,14 @@
   /* 타이포그래피 */
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-  
+
   /* 간격 */
   margin: 0;
-  
+
   /* 레이아웃 */
   text-align: center;
   max-width: 400px;
-  
+
   /* 애니메이션 */
   transition: color var(--transition-base) var(--ease-out);
 }
@@ -200,13 +186,13 @@
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
-  
+
   margin-top: var(--spacing-sm);
   padding: var(--spacing-xs) var(--spacing-sm);
-  
+
   background-color: var(--color-gray-100);
   border-radius: var(--radius-full);
-  
+
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
 }
@@ -244,10 +230,10 @@ input[type="file"].upload__input,
   /* 레이아웃 */
   display: none;
   width: 100%;
-  
+
   /* 간격 */
   margin-bottom: var(--spacing-xl);
-  
+
   /* 애니메이션 */
   animation: preview-entrance 0.5s var(--ease-out);
 }
@@ -262,6 +248,7 @@ input[type="file"].upload__input,
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -275,13 +262,13 @@ input[type="file"].upload__input,
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
-  
+
   /* 간격 */
   margin: 0 0 var(--spacing-md) 0;
-  
+
   /* 레이아웃 */
   text-align: center;
-  
+
   /* 아이콘과 함께 */
   display: flex;
   align-items: center;
@@ -303,41 +290,41 @@ input[type="file"].upload__input,
 .preview__image {
   /* 숨김 처리 (JavaScript로 제어) */
   display: none;
-  
+
   /* 레이아웃 */
   margin: 0 auto;
-  
+
   /* 크기 */
   max-width: 80%;
   max-height: 300px;
   width: auto;
   height: auto;
-  
+
   /* 테두리 */
   border: 2px solid var(--color-border-light);
   border-radius: var(--radius-lg);
-  
+
   /* 배경 - 투명 이미지 대응 */
   background-color: var(--color-gray-100);
-  background-image: 
+  background-image:
     linear-gradient(45deg, var(--color-gray-200) 25%, transparent 25%),
     linear-gradient(-45deg, var(--color-gray-200) 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, var(--color-gray-200) 75%),
     linear-gradient(-45deg, transparent 75%, var(--color-gray-200) 75%);
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-  
+
   /* 이미지 피팅 */
   object-fit: contain;
-  
+
   /* 그림자 */
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.08),
     0 2px 8px rgba(0, 0, 0, 0.04);
-  
+
   /* 애니메이션 */
   transition: all var(--transition-base) var(--ease-out);
-  
+
   /* 이미지 렌더링 품질 */
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
@@ -354,6 +341,7 @@ input[type="file"].upload__input,
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -365,7 +353,7 @@ input[type="file"].upload__input,
 .preview__image:hover {
   transform: scale(1.02);
   border-color: var(--color-primary-light);
-  box-shadow: 
+  box-shadow:
     0 12px 32px rgba(0, 123, 255, 0.12),
     0 4px 12px rgba(0, 0, 0, 0.08);
 }
@@ -381,15 +369,15 @@ input[type="file"].upload__input,
   justify-content: center;
   gap: var(--spacing-lg);
   flex-wrap: wrap;
-  
+
   /* 간격 */
   margin-top: var(--spacing-md);
   padding: var(--spacing-md);
-  
+
   /* 배경 */
   background-color: var(--color-gray-100);
   border-radius: var(--radius-md);
-  
+
   /* 타이포그래피 */
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
@@ -430,16 +418,18 @@ input[type="file"].upload__input,
   width: 40px;
   height: 40px;
   margin: -20px 0 0 -20px;
-  
+
   border: 3px solid var(--color-gray-300);
   border-top-color: var(--color-primary);
   border-radius: 50%;
-  
+
   animation: upload-spin 0.8s linear infinite;
 }
 
 @keyframes upload-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .upload__loading-text {
@@ -447,16 +437,23 @@ input[type="file"].upload__input,
   bottom: var(--spacing-md);
   left: 50%;
   transform: translateX(-50%);
-  
+
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-  
+
   animation: loading-pulse 1.5s ease-in-out infinite;
 }
 
 @keyframes loading-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 
@@ -475,16 +472,16 @@ input[type="file"].upload__input,
   align-items: center;
   justify-content: center;
   gap: var(--spacing-sm);
-  
+
   /* 간격 */
   margin-top: var(--spacing-md);
   padding: var(--spacing-sm) var(--spacing-md);
-  
+
   /* 배경 */
   background-color: var(--color-danger-light);
   border: 1px solid var(--color-danger);
   border-radius: var(--radius-md);
-  
+
   /* 타이포그래피 */
   font-size: var(--font-size-sm);
   color: var(--color-danger);
@@ -510,24 +507,31 @@ input[type="file"].upload__input,
   align-items: center;
   justify-content: center;
   gap: var(--spacing-sm);
-  
+
   margin-top: var(--spacing-md);
   padding: var(--spacing-sm) var(--spacing-md);
-  
+
   background-color: var(--color-success-light);
   border: 1px solid var(--color-success);
   border-radius: var(--radius-md);
-  
+
   font-size: var(--font-size-sm);
   color: var(--color-success);
   font-weight: var(--font-weight-medium);
-  
+
   animation: success-bounce 0.6s var(--ease-out);
 }
 
 @keyframes success-bounce {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 
@@ -536,27 +540,28 @@ input[type="file"].upload__input,
    ============================================ */
 
 @media (max-width: 768px) {
+
   .upload-section,
   .upload {
     min-height: 180px;
     padding: var(--spacing-lg);
   }
-  
+
   .upload-icon,
   .upload__icon {
     font-size: 2.5rem;
   }
-  
+
   .upload-text,
   .upload__text {
     font-size: var(--font-size-base);
   }
-  
+
   .upload-subtext,
   .upload__subtext {
     font-size: var(--font-size-xs);
   }
-  
+
   #imagePreview,
   .preview__image {
     max-width: 90%;
@@ -565,24 +570,25 @@ input[type="file"].upload__input,
 }
 
 @media (max-width: 480px) {
+
   .upload-section,
   .upload {
     min-height: 160px;
     padding: var(--spacing-md);
   }
-  
+
   .upload-icon,
   .upload__icon {
     font-size: 2rem;
     margin-bottom: var(--spacing-sm);
   }
-  
+
   #imagePreview,
   .preview__image {
     max-width: 100%;
     max-height: 200px;
   }
-  
+
   .preview__info {
     flex-direction: column;
     gap: var(--spacing-sm);
@@ -641,13 +647,14 @@ input[type="file"].upload__input,
    ============================================ */
 
 @media print {
+
   .upload-section,
   .upload {
     border: 1px solid #000;
     background: none;
     box-shadow: none;
   }
-  
+
   #imagePreview,
   .preview__image {
     max-width: 100%;

@@ -8,8 +8,8 @@
    기본 타이포그래피 설정 (Base Typography)
    ============================================ */
 
-/* 폰트 임포트 - 한글 최적화 */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+/* 폰트 임포트 - Outfit (Modern Geometric) & Noto Sans KR */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
 
 /* 전역 텍스트 설정 */
 body {
@@ -18,21 +18,22 @@ body {
   font-weight: var(--font-weight-normal);
   line-height: var(--line-height-normal);
   color: var(--color-text-primary);
-  
+  background-color: var(--color-bg-primary);
+
   /* 고품질 텍스트 렌더링 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  
+
   /* 단어 분절 개선 */
   word-break: keep-all;
   overflow-wrap: break-word;
 }
 
-/* 텍스트 선택 색상 - 브랜드 컬러 */
+/* 텍스트 선택 색상 - Electric Cyan */
 ::selection {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary-dark);
+  background-color: var(--color-primary);
+  color: var(--color-black);
 }
 
 ::-moz-selection {
@@ -42,7 +43,7 @@ body {
 
 
 /* ============================================
-   제목 스타일 (Headings)
+   제목 스타일 (Headings) - Premium Aesthetic
    ============================================ */
 
 /* 메인 타이틀 - H1 */
@@ -51,38 +52,38 @@ h1,
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
-  color: var(--color-text-primary);
-  
+  letter-spacing: -0.03em;
+  color: var(--color-white);
+
   margin: 0 0 var(--spacing-sm) 0;
-  
+
   /* 아이콘과 함께 사용 */
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--spacing-md);
-  
-  /* 텍스트 그라디언트 효과 (선택적) */
-  background: linear-gradient(
-    135deg,
-    var(--color-text-primary) 0%,
-    var(--color-primary) 100%
-  );
+
+  /* 텍스트 그라디언트 효과 */
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  
+
   /* 애니메이션 */
-  animation: title-entrance 0.8s var(--ease-out);
+  animation: title-entrance 1.2s var(--ease-out);
 }
 
 @keyframes title-entrance {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(20px);
+    filter: blur(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
+    filter: blur(0);
   }
 }
 
@@ -90,21 +91,24 @@ h1,
 h1 i,
 .heading-1__icon {
   font-size: 0.9em;
-  
-  /* 그라디언트 무시하고 단색 유지 */
-  -webkit-text-fill-color: var(--color-primary);
-  
+  -webkit-text-fill-color: initial;
+  color: var(--color-primary);
+  filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.5));
+
   /* 미묘한 펄스 애니메이션 */
-  animation: icon-pulse 3s ease-in-out infinite;
+  animation: icon-glow 3s ease-in-out infinite;
 }
 
-@keyframes icon-pulse {
-  0%, 100% {
-    opacity: 1;
+@keyframes icon-glow {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 5px rgba(0, 242, 254, 0.3));
     transform: scale(1);
   }
+
   50% {
-    opacity: 0.85;
+    filter: drop-shadow(0 0 20px rgba(0, 242, 254, 0.7));
     transform: scale(1.05);
   }
 }
@@ -113,10 +117,11 @@ h1 i,
 h2,
 .heading-2 {
   font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
   line-height: var(--line-height-tight);
-  color: var(--color-text-primary);
-  
+  letter-spacing: -0.02em;
+  color: var(--color-white);
+
   margin: 0 0 var(--spacing-md) 0;
 }
 
@@ -127,7 +132,7 @@ h3,
   font-weight: var(--font-weight-semibold);
   line-height: var(--line-height-tight);
   color: var(--color-text-primary);
-  
+
   margin: 0 0 var(--spacing-sm) 0;
 }
 
@@ -137,30 +142,29 @@ h4,
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
   line-height: var(--line-height-normal);
-  color: var(--color-text-primary);
-  
+  color: var(--color-primary);
+
   margin: 0 0 var(--spacing-md) 0;
-  padding-bottom: var(--spacing-sm);
-  
+  padding-bottom: var(--spacing-xs);
+
   /* 세련된 하단 보더 */
-  border-bottom: 2px solid transparent;
-  background: linear-gradient(
-    90deg,
-    var(--color-primary) 0%,
-    var(--color-primary-light) 60%,
-    transparent 100%
-  );
-  background-position: 0 100%;
-  background-size: 100% 2px;
-  background-repeat: no-repeat;
-  
-  /* 애니메이션 */
-  transition: all var(--transition-base) var(--ease-out);
+  border-bottom: 1px solid var(--glass-border);
+  position: relative;
 }
 
-h4:hover,
-.heading-4:hover {
-  background-size: 100% 3px;
+h4::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: var(--gradient-primary);
+  transition: width var(--transition-base) var(--ease-out);
+}
+
+h4:hover::after {
+  width: 100%;
 }
 
 /* 소제목 - H5 */
@@ -170,7 +174,7 @@ h5,
   font-weight: var(--font-weight-semibold);
   line-height: var(--line-height-normal);
   color: var(--color-text-primary);
-  
+
   margin: 0 0 var(--spacing-xs) 0;
 }
 
@@ -185,9 +189,9 @@ h5,
   font-weight: var(--font-weight-normal);
   line-height: var(--line-height-normal);
   color: var(--color-text-secondary);
-  
+
   margin: 0 0 var(--spacing-lg) 0;
-  
+
   /* 애니메이션 */
   animation: subtitle-entrance 1s var(--ease-out) 0.2s both;
 }
@@ -197,6 +201,7 @@ h5,
     opacity: 0;
     transform: translateY(-5px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -226,7 +231,7 @@ p,
   font-weight: var(--font-weight-normal);
   line-height: var(--line-height-normal);
   color: var(--color-text-primary);
-  
+
   margin: 0 0 var(--spacing-md) 0;
 }
 
@@ -255,40 +260,106 @@ p,
    ============================================ */
 
 /* 폰트 굵기 */
-.text-light { font-weight: var(--font-weight-light); }
-.text-normal { font-weight: var(--font-weight-normal); }
-.text-medium { font-weight: var(--font-weight-medium); }
-.text-semibold { font-weight: var(--font-weight-semibold); }
-.text-bold { font-weight: var(--font-weight-bold); }
+.text-light {
+  font-weight: var(--font-weight-light);
+}
+
+.text-normal {
+  font-weight: var(--font-weight-normal);
+}
+
+.text-medium {
+  font-weight: var(--font-weight-medium);
+}
+
+.text-semibold {
+  font-weight: var(--font-weight-semibold);
+}
+
+.text-bold {
+  font-weight: var(--font-weight-bold);
+}
 
 /* 텍스트 색상 */
-.text-primary { color: var(--color-text-primary); }
-.text-secondary { color: var(--color-text-secondary); }
-.text-muted { color: var(--color-text-muted); }
-.text-disabled { color: var(--color-text-disabled); }
+.text-primary {
+  color: var(--color-text-primary);
+}
 
-.text-success { color: var(--color-success); }
-.text-danger { color: var(--color-danger); }
-.text-warning { color: var(--color-warning-dark); }
-.text-info { color: var(--color-info); }
+.text-secondary {
+  color: var(--color-text-secondary);
+}
 
-.text-brand { color: var(--color-primary); }
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-disabled {
+  color: var(--color-text-disabled);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
+.text-danger {
+  color: var(--color-danger);
+}
+
+.text-warning {
+  color: var(--color-warning-dark);
+}
+
+.text-info {
+  color: var(--color-info);
+}
+
+.text-brand {
+  color: var(--color-primary);
+}
 
 /* 텍스트 정렬 */
-.text-left { text-align: left; }
-.text-center { text-align: center; }
-.text-right { text-align: right; }
-.text-justify { text-align: justify; }
+.text-left {
+  text-align: left;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-justify {
+  text-align: justify;
+}
 
 /* 텍스트 변환 */
-.text-uppercase { text-transform: uppercase; letter-spacing: 0.5px; }
-.text-lowercase { text-transform: lowercase; }
-.text-capitalize { text-transform: capitalize; }
+.text-uppercase {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.text-lowercase {
+  text-transform: lowercase;
+}
+
+.text-capitalize {
+  text-transform: capitalize;
+}
 
 /* 줄 높이 */
-.line-height-tight { line-height: var(--line-height-tight); }
-.line-height-normal { line-height: var(--line-height-normal); }
-.line-height-loose { line-height: var(--line-height-loose); }
+.line-height-tight {
+  line-height: var(--line-height-tight);
+}
+
+.line-height-normal {
+  line-height: var(--line-height-normal);
+}
+
+.line-height-loose {
+  line-height: var(--line-height-loose);
+}
 
 
 /* ============================================
@@ -336,15 +407,13 @@ a,
   color: var(--color-primary);
   text-decoration: none;
   font-weight: var(--font-weight-medium);
-  
+
   transition: all var(--transition-fast) var(--ease-out);
-  
+
   /* 하단 언더라인 효과 */
-  background: linear-gradient(
-    to right,
-    var(--color-primary) 0%,
-    var(--color-primary) 100%
-  );
+  background: linear-gradient(to right,
+      var(--color-primary) 0%,
+      var(--color-primary) 100%);
   background-size: 0 2px;
   background-position: 0 100%;
   background-repeat: no-repeat;
@@ -382,7 +451,7 @@ u,
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
   color: var(--color-primary);
-  
+
   /* 숫자 정렬 */
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
@@ -393,7 +462,7 @@ u,
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
-  
+
   /* 숫자 정렬 */
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
@@ -432,11 +501,11 @@ u,
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-normal);
   color: var(--color-text-secondary);
-  
+
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
-  
+
   /* 시간 아이콘 */
 }
 
@@ -452,22 +521,23 @@ u,
    ============================================ */
 
 @media (max-width: 768px) {
+
   /* 제목 크기 축소 */
   h1,
   .heading-1 {
     font-size: var(--font-size-xl);
   }
-  
+
   h2,
   .heading-2 {
     font-size: var(--font-size-lg);
   }
-  
+
   .subtitle,
   .text-subtitle {
     font-size: var(--font-size-base);
   }
-  
+
   /* 통계 숫자 크기 조정 */
   .text-stat {
     font-size: var(--font-size-2xl);
@@ -475,11 +545,12 @@ u,
 }
 
 @media (max-width: 480px) {
+
   /* 본문 텍스트 최적화 */
   body {
     font-size: var(--font-size-sm);
   }
-  
+
   h1,
   .heading-1 {
     font-size: var(--font-size-lg);
@@ -507,7 +578,7 @@ u,
   color: var(--color-text-secondary);
   text-align: center;
   margin-bottom: var(--spacing-xl);
-  
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -566,16 +637,24 @@ u,
     font-size: 12pt;
     color: #000;
   }
-  
+
   h1 {
     font-size: 24pt;
     -webkit-text-fill-color: #000;
   }
-  
-  h2 { font-size: 20pt; }
-  h3 { font-size: 18pt; }
-  h4 { font-size: 16pt; }
-  
+
+  h2 {
+    font-size: 20pt;
+  }
+
+  h3 {
+    font-size: 18pt;
+  }
+
+  h4 {
+    font-size: 16pt;
+  }
+
   a {
     color: #000;
     text-decoration: underline;

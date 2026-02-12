@@ -5,227 +5,250 @@
  */
 
 :root {
-  /* ============================================
+   /* ============================================
      색상 시스템 (Color System)
      ============================================ */
-  
-  /* Primary Colors - 주요 브랜드 색상 */
-  --color-primary: #007bff;
-  --color-primary-hover: #0056b3;
-  --color-primary-light: #cce5ff;
-  --color-primary-dark: #004085;
-  
-  /* Secondary Colors - 보조 색상 */
-  --color-secondary: #6c757d;
-  --color-secondary-hover: #5a6268;
-  --color-secondary-light: #e9ecef;
-  
-  /* Semantic Colors - 의미론적 색상 */
-  --color-success: #28a745;
-  --color-success-light: #e9f7ef;
-  --color-success-dark: #1e7e34;
-  
-  --color-danger: #e74c3c;
-  --color-danger-light: #fdedec;
-  --color-danger-dark: #c0392b;
-  
-  --color-warning: #ffc107;
-  --color-warning-light: #fffbe6;
-  --color-warning-dark: #856404;
-  
-  --color-info: #17a2b8;
-  --color-info-light: #e6f7ff;
-  --color-info-dark: #0c5460;
-  
-  /* Neutral Colors - 중립 색상 */
-  --color-white: #ffffff;
-  --color-black: #000000;
-  --color-gray-100: #f8f9fa;
-  --color-gray-200: #e9ecef;
-  --color-gray-300: #dee2e6;
-  --color-gray-400: #ced4da;
-  --color-gray-500: #adb5bd;
-  --color-gray-600: #6c757d;
-  --color-gray-700: #495057;
-  --color-gray-800: #343a40;
-  --color-gray-900: #212529;
-  
-  /* Text Colors - 텍스트 색상 */
-  --color-text-primary: #2c3e50;
-  --color-text-secondary: #8492a6;
-  --color-text-muted: #6c757d;
-  --color-text-disabled: #c0c0c0;
-  
-  /* Background Colors - 배경 색상 */
-  --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f8f9fa;
-  --color-bg-disabled: #e9ecef;
-  
-  /* Gradient Colors - 그라디언트 */
-  --gradient-primary: linear-gradient(120deg, #e0c3fc, #8ec5fc);
-  --gradient-success: linear-gradient(120deg, #d4fc79, #96e6a1);
-  --gradient-danger: linear-gradient(120deg, #ff9a9e, #fecfef);
-  
-  /* Border Colors - 테두리 색상 */
-  --color-border-light: #dee2e6;
-  --color-border-medium: #ced4da;
-  --color-border-dark: #adb5bd;
-  
-  
-  /* ============================================
-     타이포그래피 (Typography)
+
+   /* Primary Colors - Electric Cyan & Deep Obsidian */
+   --color-primary: #00f2fe;
+   --color-primary-hover: #4facfe;
+   --color-primary-light: rgba(0, 242, 254, 0.2);
+   --color-primary-dark: #00acc1;
+
+   /* Secondary Colors */
+   --color-secondary: #16213e;
+   --color-secondary-hover: #0f3460;
+   --color-secondary-light: #1a1a2e;
+
+   /* Semantic Colors - High Contrast for Dark Theme */
+   --color-success: #00ff87;
+   --color-success-light: rgba(0, 255, 135, 0.1);
+   --color-success-dark: #00c86b;
+
+   --color-danger: #ff4d4d;
+   --color-danger-light: rgba(255, 77, 77, 0.1);
+   --color-danger-dark: #cc0000;
+
+   --color-warning: #ffd700;
+   --color-warning-light: rgba(255, 215, 0, 0.1);
+   --color-warning-dark: #b8860b;
+
+   --color-info: #00d2ff;
+   --color-info-light: rgba(0, 210, 255, 0.1);
+   --color-info-dark: #008eb3;
+
+   /* Neutral Colors - Dark Palette */
+   --color-white: #ffffff;
+   --color-black: #000000;
+   --color-gray-100: #121214;
+   --color-gray-200: #1a1a1c;
+   --color-gray-300: #2a2a2c;
+   --color-gray-400: #3a3a3c;
+   --color-gray-500: #5a5a5c;
+   --color-gray-600: #8a8a8c;
+   --color-gray-700: #aaaaac;
+   --color-gray-800: #ccccce;
+   --color-gray-900: #f8f9fa;
+
+   /* Text Colors - High Readability on Dark */
+   --color-text-primary: #f8f9fa;
+   --color-text-secondary: #aaaaac;
+   --color-text-muted: #6a6a6c;
+   --color-text-disabled: #4a4a4c;
+
+   /* Background Colors - Obsidian & Glass */
+   --color-bg-primary: #050505;
+   --color-bg-secondary: #0a0a0c;
+   --color-bg-disabled: #1a1a1c;
+
+   /* Glassmorphism Tokens */
+   --glass-bg: rgba(255, 255, 255, 0.03);
+   --glass-border: rgba(255, 255, 255, 0.08);
+   --glass-blur: 20px;
+
+   /* Gradient Colors - Premium Linear & Mesh */
+   --gradient-primary: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+   --gradient-success: linear-gradient(135deg, #00ff87 0%, #60efff 100%);
+   --gradient-danger: linear-gradient(135deg, #ff4d4d 0%, #f9cbff 100%);
+   --gradient-dark: linear-gradient(135deg, #0a0a0c 0%, #16213e 100%);
+
+   /* Border Colors */
+   --color-border-light: rgba(255, 255, 255, 0.1);
+   --color-border-medium: rgba(255, 255, 255, 0.2);
+   --color-border-dark: rgba(255, 255, 255, 0.3);
+
+
+   /* ============================================
+     타이포그래피 (Typography) - 'Outfit' 도입
      ============================================ */
-  
-  /* Font Families */
-  --font-family-primary: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 
-                         'Segoe UI', sans-serif;
-  --font-family-monospace: 'Courier New', monospace;
-  
-  /* Font Sizes */
-  --font-size-xs: 0.75rem;      /* 12px */
-  --font-size-sm: 0.875rem;     /* 14px */
-  --font-size-base: 1rem;       /* 16px */
-  --font-size-md: 1.125rem;     /* 18px */
-  --font-size-lg: 1.25rem;      /* 20px */
-  --font-size-xl: 1.5rem;       /* 24px */
-  --font-size-2xl: 2rem;        /* 32px */
-  --font-size-3xl: 2.5rem;      /* 40px */
-  
-  /* Font Weights */
-  --font-weight-light: 300;
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-  
-  /* Line Heights */
-  --line-height-tight: 1.2;
-  --line-height-normal: 1.6;
-  --line-height-loose: 2;
-  
-  
-  /* ============================================
+
+   /* Font Families */
+   --font-family-primary: 'Outfit', 'Noto Sans KR', -apple-system, BlinkMacSystemFont,
+      'Segoe UI', sans-serif;
+   --font-family-monospace: 'JetBrains Mono', 'Courier New', monospace;
+
+   /* Font Sizes - Slightly more spacious */
+   --font-size-xs: 0.75rem;
+   /* 12px */
+   --font-size-sm: 0.875rem;
+   /* 14px */
+   --font-size-base: 1rem;
+   /* 16px */
+   --font-size-md: 1.125rem;
+   /* 18px */
+   --font-size-lg: 1.25rem;
+   /* 20px */
+   --font-size-xl: 1.75rem;
+   /* 28px */
+   --font-size-2xl: 2.5rem;
+   /* 40px */
+   --font-size-3xl: 3.5rem;
+   /* 56px */
+
+   /* Font Weights */
+   --font-weight-light: 300;
+   --font-weight-normal: 400;
+   --font-weight-medium: 500;
+   --font-weight-semibold: 600;
+   --font-weight-bold: 700;
+
+   /* Line Heights */
+   --line-height-tight: 1.1;
+   --line-height-normal: 1.65;
+   --line-height-loose: 2;
+
+
+   /* ============================================
      간격 시스템 (Spacing System)
      ============================================ */
-  
-  --spacing-xs: 0.25rem;    /* 4px */
-  --spacing-sm: 0.5rem;     /* 8px */
-  --spacing-md: 1rem;       /* 16px */
-  --spacing-lg: 1.5rem;     /* 24px */
-  --spacing-xl: 2rem;       /* 32px */
-  --spacing-2xl: 3rem;      /* 48px */
-  --spacing-3xl: 4rem;      /* 64px */
-  
-  
-  /* ============================================
+
+   --spacing-xs: 0.375rem;
+   /* 6px */
+   --spacing-sm: 0.75rem;
+   /* 12px */
+   --spacing-md: 1.25rem;
+   /* 20px */
+   --spacing-lg: 2rem;
+   /* 32px */
+   --spacing-xl: 3rem;
+   /* 48px */
+   --spacing-2xl: 4.5rem;
+   /* 72px */
+   --spacing-3xl: 6rem;
+   /* 96px */
+
+
+   /* ============================================
      레이아웃 (Layout)
      ============================================ */
-  
-  /* Container */
-  --container-max-width: 600px;
-  --container-padding: 40px;
-  --container-padding-mobile: 25px;
-  
-  /* Border Radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-full: 50px;
-  --radius-circle: 50%;
-  
-  /* Shadows */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.15);
-  --shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.15);
-  
-  /* Z-index Layers */
-  --z-index-dropdown: 100;
-  --z-index-modal: 200;
-  --z-index-tooltip: 300;
-  --z-index-notification: 400;
-  
-  
-  /* ============================================
+
+   /* Container */
+   --container-max-width: 800px;
+   --container-padding: 64px;
+   --container-padding-mobile: 32px;
+
+   /* Border Radius - More Rounded/Futuristic */
+   --radius-sm: 8px;
+   --radius-md: 16px;
+   --radius-lg: 24px;
+   --radius-xl: 32px;
+   --radius-full: 100px;
+   --radius-circle: 50%;
+
+   /* Shadows - Glowy & Layered */
+   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+   --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.6);
+   --shadow-lg: 0 16px 64px rgba(0, 0, 0, 0.8), 0 0 1px rgba(255, 255, 255, 0.1);
+   --shadow-xl: 0 32px 128px rgba(0, 0, 0, 1), 0 0 2px rgba(255, 255, 255, 0.2);
+   --shadow-glow: 0 0 20px rgba(0, 242, 254, 0.3);
+   --shadow-hover: 0 0 30px rgba(0, 242, 254, 0.5), 0 10px 40px rgba(0, 0, 0, 0.6);
+
+   /* Z-index Layers */
+   --z-index-dropdown: 100;
+   --z-index-modal: 200;
+   --z-index-tooltip: 300;
+   --z-index-notification: 400;
+
+
+   /* ============================================
      애니메이션 (Animation)
      ============================================ */
-  
-  /* Transition Durations */
-  --transition-fast: 0.15s;
-  --transition-base: 0.3s;
-  --transition-slow: 0.5s;
-  
-  /* Transition Easings */
-  --ease-in: cubic-bezier(0.4, 0, 1, 1);
-  --ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  
-  
-  /* ============================================
+
+   /* Transition Durations */
+   --transition-fast: 0.2s;
+   --transition-base: 0.4s;
+   --transition-slow: 0.8s;
+
+   /* Transition Easings - Custom Bezier */
+   --ease-in: cubic-bezier(0.4, 0, 1, 1);
+   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+   --ease-elastic: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+
+
+   /* ============================================
      컴포넌트별 변수 (Component Variables)
      ============================================ */
-  
-  /* Button */
-  --btn-padding-y: 12px;
-  --btn-padding-x: 25px;
-  --btn-border-radius: var(--radius-full);
-  --btn-font-size: var(--font-size-base);
-  --btn-font-weight: var(--font-weight-medium);
-  --btn-transition: all var(--transition-base) var(--ease-in-out);
-  --btn-transform-hover: translateY(-3px);
-  --btn-transform-active: translateY(-1px);
-  
-  /* Card */
-  --card-padding: 25px;
-  --card-border-radius: var(--radius-lg);
-  --card-bg: var(--color-bg-secondary);
-  --card-border: 1px solid var(--color-border-light);
-  --card-shadow: var(--shadow-md);
-  
-  /* Input */
-  --input-padding-y: 10px;
-  --input-padding-x: 15px;
-  --input-border-radius: var(--radius-md);
-  --input-border: 1px solid var(--color-border-medium);
-  --input-focus-border: var(--color-primary);
-  
-  /* Progress Bar */
-  --progress-height: 10px;
-  --progress-border-radius: var(--radius-sm);
-  --progress-bg: var(--color-gray-200);
-  --progress-fill-bg: var(--color-primary);
-  --progress-transition: width var(--transition-slow) var(--ease-in-out);
-  
-  /* Upload Section */
-  --upload-border-width: 3px;
-  --upload-border-style: dashed;
-  --upload-border-color: var(--color-border-light);
-  --upload-border-radius: var(--radius-lg);
-  --upload-padding: 30px;
-  --upload-bg: var(--color-bg-secondary);
-  --upload-hover-border: var(--color-primary);
-  --upload-hover-bg: #fdfdff;
-  
-  /* Notice Box */
-  --notice-padding: 15px;
-  --notice-border-width: 5px;
-  --notice-border-radius: var(--radius-sm);
-  --notice-gap: 15px;
-  
-  
-  /* ============================================
+
+   /* Button - Minimalist Glow */
+   --btn-padding-y: 16px;
+   --btn-padding-x: 32px;
+   --btn-border-radius: var(--radius-md);
+   --btn-font-size: var(--font-size-base);
+   --btn-font-weight: var(--font-weight-semibold);
+   --btn-transition: all var(--transition-base) var(--ease-out);
+   --btn-transform-hover: translateY(-4px);
+   --btn-transform-active: translateY(-1px);
+
+   /* Card - Glassmorphism */
+   --card-padding: 32px;
+   --card-border-radius: var(--radius-lg);
+   --card-bg: var(--glass-bg);
+   --card-border: 1px solid var(--glass-border);
+   --card-shadow: var(--shadow-md);
+   --card-backdrop: blur(var(--glass-blur));
+
+   /* Input */
+   --input-padding-y: 14px;
+   --input-padding-x: 20px;
+   --input-border-radius: var(--radius-sm);
+   --input-border: 1px solid var(--color-border-light);
+   --input-focus-border: var(--color-primary);
+
+   /* Progress Bar */
+   --progress-height: 8px;
+   --progress-border-radius: var(--radius-full);
+   --progress-bg: var(--color-gray-200);
+   --progress-fill-bg: var(--gradient-primary);
+   --progress-transition: width 1s var(--ease-in-out);
+
+   /* Upload Section */
+   --upload-border-width: 2px;
+   --upload-border-style: solid;
+   --upload-border-color: var(--color-border-light);
+   --upload-border-radius: var(--radius-lg);
+   --upload-padding: 48px;
+   --upload-bg: rgba(255, 255, 255, 0.02);
+   --upload-hover-border: var(--color-primary);
+   --upload-hover-bg: rgba(0, 242, 254, 0.05);
+
+   /* Notice Box */
+   --notice-padding: 24px;
+   --notice-border-width: 1px;
+   --notice-border-radius: var(--radius-md);
+   --notice-gap: 20px;
+
+
+   /* ============================================
      반응형 브레이크포인트 (Responsive Breakpoints)
      ============================================ */
-  
-  --breakpoint-xs: 0;
-  --breakpoint-sm: 576px;
-  --breakpoint-md: 768px;
-  --breakpoint-lg: 992px;
-  --breakpoint-xl: 1200px;
-  --breakpoint-2xl: 1400px;
+
+   --breakpoint-xs: 0;
+   --breakpoint-sm: 576px;
+   --breakpoint-md: 768px;
+   --breakpoint-lg: 992px;
+   --breakpoint-xl: 1200px;
+   --breakpoint-2xl: 1400px;
 }
 
 /* ============================================
@@ -236,6 +259,5 @@
 /*@media (prefers-color-scheme: dark) {
   :root {
     /* 다크 모드 색상은 필요 시 추가 */
-    /* --color-bg-primary: #1a1a1a; */
-    /* --color-text-primary: #ffffff; */
-  
+/* --color-bg-primary: #1a1a1a; */
+/* --color-text-primary: #ffffff; */
