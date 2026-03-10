@@ -112,7 +112,7 @@ class GradCAM:
             output_size  : 히트맵 출력 크기 (width, height)
 
         Returns:
-            heatmap      : np.ndarray [H, W], 값 범위 0.0 ~ 1.0
+            heatmap      : np.ndarray [H, W], 값 범위 0.0 ~ 1.0 (보장)
                            1.0에 가까울수록 AI가 그 위치를 강하게 주목
             target_class : 사용된 클래스 인덱스
             probabilities: 모든 클래스의 소프트맥스 확률 np.ndarray
@@ -160,22 +160,29 @@ class GradCAM:
         """
         히트맵을 목표 크기로 보간 (업샘플링)
 
-        INTER_CUBIC: 4×4 이웃 픽셀을 이용한 3차 스플라인 보간.
-        INTER_LINEAR(기본) 보다 경계가 부드러워 의료 영상에 적합.
+        INTER_CUBIC 보간 시 주의사항:
+          Bicubic(3차 스플라인)은 monotone 보간이 아니므로
+          업샘플링 경계에서 링잉(ringing/overshoot) 아티팩트가 발생하여
+          입력 범위 [0, 1] 을 벗어나는 음수 또는 1 초과 값이 나올 수 있음.
+          → resize 직후 np.clip(0.0, 1.0) 으로 반드시 후처리.
         """
         if CV2_AVAILABLE:
-            return cv2.resize(
+            resized = cv2.resize(
                 cam.astype(np.float32),
                 size,  # (width, height)
                 interpolation=cv2.INTER_CUBIC,
             )
-        # opencv 미설치 시 numpy 기반 단순 반복 확대 (품질 낮음)
-        h, w = size[1], size[0]
-        zoom_h = h / cam.shape[0]
-        zoom_w = w / cam.shape[1]
-        from numpy import repeat
-        result = repeat(repeat(cam, int(zoom_h) or 1, axis=0), int(zoom_w) or 1, axis=1)
-        return result[:h, :w].astype(np.float32)
+        else:
+            # opencv 미설치 시 numpy 기반 단순 반복 확대 (품질 낮음)
+            h, w = size[1], size[0]
+            zoom_h = h / cam.shape[0]
+            zoom_w = w / cam.shape[1]
+            from numpy import repeat
+            resized = repeat(repeat(cam, int(zoom_h) or 1, axis=0), int(zoom_w) or 1, axis=1)
+            resized = resized[:h, :w].astype(np.float32)
+
+        # Bicubic 링잉 아티팩트 제거: 보간 후 [0, 1] 범위 보장
+        return np.clip(resized, 0.0, 1.0)
 
 
 def get_reliability_level(probability: float) -> str:
