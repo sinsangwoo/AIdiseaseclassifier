@@ -56,6 +56,9 @@ def create_app(config_name=None):
     logger.info("=" * 70)
 
     # ===== CORS 설정 =====
+    # flask-cors 가 모든 경로의 OPTIONS preflight 를 자동 처리하므로
+    # 별도의 와일드카드 OPTIONS 핸들러는 등록하지 않습니다.
+    # (와일드카드 핸들러가 있으면 존재하지 않는 경로에서 404 대신 405 반환)
     CORS(
         app,
         resources={r"/*": {"origins": "*"}},
@@ -92,8 +95,6 @@ def create_app(config_name=None):
     logger.info("✓ 이미지 프로세서 초기화")
 
     # ── PyTorch Grad-CAM 예측기 초기화 (Phase A) ─────────────────────────
-    # 가중치 파일 경로: 환경변수 PYTORCH_WEIGHTS_PATH 로 지정 가능
-    # 파일이 없으면 랜덤 초기화 모델로 동작 (히트맵 품질은 낮지만 구조 검증용)
     pytorch_weights = os.environ.get(
         'PYTORCH_WEIGHTS_PATH',
         os.path.join(os.path.dirname(__file__), '..', 'backend', 'models', 'model_weights.pth')
@@ -101,7 +102,7 @@ def create_app(config_name=None):
     app.pytorch_predictor = PyTorchPredictor(
         weights_path=pytorch_weights if os.path.exists(pytorch_weights) else None,
         labels_path=config.LABELS_PATH,
-        num_classes=2,  # labels.txt: 0 정상 / 1 폐렴
+        num_classes=2,
     )
     if app.pytorch_predictor.is_ready:
         logger.info("✓ PyTorch Grad-CAM 예측기 초기화 완료")
@@ -117,11 +118,6 @@ def create_app(config_name=None):
     app.register_blueprint(model_bp)
     app.register_blueprint(predict_bp)
     logger.info("✓ 블루프린트 등록 완료")
-
-    @app.route("/", methods=["OPTIONS"])
-    @app.route("/<path:path>", methods=["OPTIONS"])
-    def options_preflight(path=None):
-        return "", 200
 
     # ===== 전역 에러 핸들러 =====
 
