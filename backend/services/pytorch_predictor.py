@@ -1,26 +1,22 @@
 """
-PyTorch 기반 예측기 + Grad-CAM 통합 서비스 (Phase A)
+PyTorch 기반 예측기 + Grad-CAM 통합 서비스 (Phase E 개선)
 
-기존 ONNX 기반 ModelService를 대체하지 않고 병렬로 운영합니다.
-Grad-CAM이 필요한 /predict 엔드포인트에서만 이 클래스를 사용합니다.
-
-폴백(Fallback) 전략:
-  PyTorch 또는 모델 가중치 미존재 시 → ONNX 예측 결과를 그대로 사용하되
-  gradcam.available = false 를 응답에 포함합니다.
-  이렇게 하면 기존 기능을 해치지 않으면서 점진적으로 Grad-CAM을 도입합니다.
+Phase E 변경사항:
+  E-2: LOW 신뢰도(< 0.50) 시 히트맵 이미지 미생성, low_confidence 플래그 반환
+  E-4: gradcam_time_ms 필드로 성능 측정값 응답에 포함
+  기타: 원본 이미지 크기 검증 (최소 32×32)
 """
 
 from __future__ import annotations
 
 import io
-import os
+import time
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 
 import numpy as np
 from PIL import Image
 
-# PyTorch 조건부 임포트 (미설치 환경에서도 서버가 기동되어야 함)
 try:
     import torch
     import torchvision.transforms as T
@@ -40,14 +36,20 @@ from backend.services.gradcam import GradCAM, get_reliability_level
 from backend.services.heatmap_renderer import HeatmapRenderer
 from backend.utils import get_logger
 
+# Phase E-2: LOW 신뢰도 시 히트맵 생성 억제 임계값
+LOW_CONFIDENCE_THRESHOLD = 0.50
+# Phase E: 이미지 최소 크기
+MIN_IMAGE_DIMENSION = 32
+
 
 class PyTorchPredictor:
     """
     PyTorch 모델로 예측 + Grad-CAM 히트맵을 한 번에 생성하는 서비스 클래스
 
-    주요 메서드:
-        predict_with_gradcam(image_bytes) -> dict
-            예측 결과 + gradcam 필드가 포함된 딕셔너리 반환
+    Phase E 추가:
+      - LOW 신뢰도 이미지에 대한 히트맵 생성 억제
+      - gradcam_time_ms 성능 측정
+      - 이미지 크기 사전 검증
     """
 
     def __init__(
@@ -56,13 +58,6 @@ class PyTorchPredictor:
         labels_path: Optional[str] = None,
         num_classes: int = 2,
     ):
-        """
-        Args:
-            weights_path : .pth 가중치 파일 경로
-                           None 또는 파일 없음 → 폴백 모드로 동작
-            labels_path  : labels.txt 경로
-            num_classes  : 분류 클래스 수
-        """
         self.logger = get_logger("aiclassifier.gradcam")
         self._ready = False
         self.model = None
@@ -70,7 +65,6 @@ class PyTorchPredictor:
         self.class_names: List[str] = []
         self.num_classes = num_classes
 
-        # ── 레이블 로드 ───────────────────────────────────────────────────
         if labels_path and Path(labels_path).exists():
             with open(labels_path, "r", encoding="utf-8") as f:
                 self.class_names = [
@@ -81,7 +75,6 @@ class PyTorchPredictor:
             self.num_classes = len(self.class_names)
             self.logger.info(f"레이블 로드: {self.class_names}")
 
-        # ── PyTorch 모델 로드 ─────────────────────────────────────────────
         if not TORCH_AVAILABLE:
             self.logger.warning(
                 "PyTorch 미설치 → Grad-CAM 비활성화. "
@@ -101,13 +94,8 @@ class PyTorchPredictor:
         except Exception as exc:
             self.logger.warning(f"PyTorch 모델 로드 실패 → Grad-CAM 비활성화: {exc}")
 
-    # ------------------------------------------------------------------ #
-    #  Public API                                                          #
-    # ------------------------------------------------------------------ #
-
     @property
     def is_ready(self) -> bool:
-        """Grad-CAM 사용 가능 여부"""
         return self._ready
 
     def predict_with_gradcam(
@@ -118,63 +106,82 @@ class PyTorchPredictor:
         """
         이미지 바이트를 받아 Grad-CAM 히트맵 딕셔너리를 반환합니다.
 
-        Args:
-            image_bytes          : 원본 이미지의 raw bytes
-            existing_predictions : 이미 계산된 ONNX 예측 결과 (있으면 재사용)
-                                   None 이면 PyTorch로 독립적으로 예측
-
-        Returns:
-            {
-              "available"             : bool,
-              "heatmap_overlay_base64": str | None,  # 원본 + 히트맵 합성
-              "heatmap_only_base64"   : str | None,  # 히트맵만
-              "target_class"          : str | None,  # 예측 클래스명
-              "target_class_index"    : int | None,
-              "attention_score"       : float | None,  # 히트맵 최대값
-              "reliability"           : str | None,    # HIGH / MEDIUM / LOW
-              "error"                 : str | None,
-            }
+        Phase E 추가 반환 필드:
+          gradcam_time_ms : float  - Grad-CAM 생성 소요 시간 (ms)
+          low_confidence  : bool   - True 면 신뢰도 낮아 히트맵 미생성
         """
         if not self._ready:
-            return {"available": False, "error": "PyTorch 모델 미준비"}
+            return {"available": False, "error": "PyTorch 모델 미준비",
+                    "gradcam_time_ms": 0.0, "low_confidence": False}
+
+        t_start = time.time()
 
         try:
-            # ── 1. 원본 이미지 → RGB numpy array 보존 (오버레이용) ────────
+            # ── E: 이미지 크기 사전 검증 ──────────────────────────────
+            self._validate_image_size(image_bytes)
+
+            # ── 원본 이미지 RGB 보존 (오버레이용) ─────────────────────
             original_rgb = HeatmapRenderer.bytes_to_rgb_array(image_bytes)
 
-            # ── 2. PyTorch 텐서로 전처리 ─────────────────────────────────
-            input_tensor = self._preprocess(image_bytes)  # [1, 3, 224, 224]
+            # ── PyTorch 텐서로 전처리 ──────────────────────────────────
+            input_tensor = self._preprocess(image_bytes)
 
-            # ── 3. Grad-CAM 생성 ─────────────────────────────────────────
-            # target_class=None → 가장 높은 확률 클래스 자동 선택
+            # ── Grad-CAM 생성 ──────────────────────────────────────────
             heatmap, target_idx, probs = self.gradcam.generate(
                 input_tensor,
                 target_class=None,
                 output_size=MODEL_INPUT_SIZE,
             )
 
-            # ── 4. 신뢰도 계산 ───────────────────────────────────────────
+            # ── 신뢰도 계산 ───────────────────────────────────────────
             top_prob = float(probs[target_idx])
             reliability = get_reliability_level(top_prob)
 
-            # ── 5. 히트맵 이미지 생성 ────────────────────────────────────
-            # 원본을 224×224 로 리사이즈해 히트맵과 크기 맞춤
+            # ── E-2: LOW 신뢰도 → 히트맵 이미지 생성 억제 ─────────────
+            # 확률 50% 미만이면 히트맵 자체가 신뢰할 수 없으므로
+            # 이미지 생성을 건너뛰고 low_confidence 플래그를 반환
+            if top_prob < LOW_CONFIDENCE_THRESHOLD:
+                elapsed_ms = (time.time() - t_start) * 1000
+                self.logger.warning(
+                    f"낮은 신뢰도({top_prob:.3f}) → 히트맵 생성 억제 "
+                    f"(임계값: {LOW_CONFIDENCE_THRESHOLD})"
+                )
+                if self.class_names and target_idx < len(self.class_names):
+                    target_class_name = self.class_names[target_idx]
+                else:
+                    target_class_name = str(target_idx)
+                return {
+                    "available"              : True,
+                    "heatmap_overlay_base64" : None,
+                    "heatmap_only_base64"    : None,
+                    "target_class"           : target_class_name,
+                    "target_class_index"     : int(target_idx),
+                    "attention_score"        : float(heatmap.max()),
+                    "reliability"            : reliability,
+                    "low_confidence"         : True,
+                    "gradcam_time_ms"        : round(elapsed_ms, 2),
+                    "error"                  : None,
+                }
+
+            # ── 히트맵 이미지 생성 ────────────────────────────────────
             original_resized = np.array(
                 Image.fromarray(original_rgb).resize(MODEL_INPUT_SIZE, Image.BILINEAR),
                 dtype=np.uint8,
             )
-            overlay_img  = HeatmapRenderer.overlay(original_resized, heatmap)
-            heatmap_img  = HeatmapRenderer.apply_colormap(heatmap)
+            overlay_img = HeatmapRenderer.overlay(original_resized, heatmap)
+            heatmap_img = HeatmapRenderer.apply_colormap(heatmap)
 
-            # ── 6. 클래스명 결정 ─────────────────────────────────────────
+            # ── 클래스명 결정 ─────────────────────────────────────────
             if self.class_names and target_idx < len(self.class_names):
                 target_class_name = self.class_names[target_idx]
             else:
                 target_class_name = str(target_idx)
 
+            elapsed_ms = (time.time() - t_start) * 1000
             self.logger.info(
                 f"Grad-CAM 생성 완료: class={target_class_name} "
-                f"prob={top_prob:.3f} reliability={reliability}"
+                f"prob={top_prob:.3f} reliability={reliability} "
+                f"time={elapsed_ms:.1f}ms"  # E-4
             )
 
             return {
@@ -185,33 +192,43 @@ class PyTorchPredictor:
                 "target_class_index"     : int(target_idx),
                 "attention_score"        : float(heatmap.max()),
                 "reliability"            : reliability,
+                "low_confidence"         : False,
+                "gradcam_time_ms"        : round(elapsed_ms, 2),  # E-4
                 "error"                  : None,
             }
 
         except Exception as exc:
+            elapsed_ms = (time.time() - t_start) * 1000
             self.logger.warning(f"Grad-CAM 생성 실패 (예측은 정상 반환): {exc}")
-            return {"available": False, "error": str(exc)}
+            return {
+                "available"      : False,
+                "error"          : str(exc),
+                "gradcam_time_ms": round(elapsed_ms, 2),
+                "low_confidence" : False,
+            }
 
     # ------------------------------------------------------------------ #
     #  Private helpers                                                     #
     # ------------------------------------------------------------------ #
 
-    def _preprocess(self, image_bytes: bytes) -> "torch.Tensor":
+    def _validate_image_size(self, image_bytes: bytes) -> None:
         """
-        이미지 바이트 → PyTorch 텐서 전처리
+        Phase E: 이미지 최소 크기 검증
+        최소 32×32 이하는 Grad-CAM 품질이 너무 낮아 의미 없으므로 거부
+        """
+        pil_img = Image.open(io.BytesIO(image_bytes))
+        w, h = pil_img.size
+        if w < MIN_IMAGE_DIMENSION or h < MIN_IMAGE_DIMENSION:
+            raise ValueError(
+                f"이미지가 너무 작습니다 ({w}×{h}px). "
+                f"최소 {MIN_IMAGE_DIMENSION}×{MIN_IMAGE_DIMENSION}px 이상이어야 합니다."
+            )
 
-        전처리 파이프라인:
-          1. JPEG/PNG → PIL RGB
-          2. 224×224 리사이즈
-          3. numpy float32 → Tensor [C, H, W]
-          4. ImageNet 정규화 (mean, std)
-          5. 배치 차원 추가 → [1, C, H, W]
-        """
+    def _preprocess(self, image_bytes: bytes) -> "torch.Tensor":
         pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         transform = T.Compose([
             T.Resize(MODEL_INPUT_SIZE),
-            T.ToTensor(),                       # [0,255] uint8 → [0,1] float32
+            T.ToTensor(),
             T.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
         ])
-        tensor = transform(pil_img).unsqueeze(0)  # [1, 3, 224, 224]
-        return tensor
+        return transform(pil_img).unsqueeze(0)
