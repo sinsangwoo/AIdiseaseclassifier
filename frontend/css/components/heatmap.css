@@ -1,16 +1,14 @@
 /**
- * Grad-CAM Heatmap Viewer Styles (Phase D)
+ * Grad-CAM Heatmap Viewer Styles (Phase E)
  *
- * 히트맵 뷰어 컴포넌트 전용 스타일.
- * - 원본 / 히트맵 오버레이 / 히트맵 단독 탭 전환
- * - 신뢰도 배지 (HIGH / MEDIUM / LOW)
- * - 범례(Legend) 그라디언트 바
- * - 반응형 2열 레이아웃
+ * Phase E 추가:
+ *   - .heatmap-watermark : 이미지 우하단 반투명 경고 오버레이
+ *   - .heatmap-warning 색상 변수화
  */
 
-/* ───────────────────────────────────────────
+/* ─────────────────────────────────────────────
    1. 뷰어 래퍼
-─────────────────────────────────────────── */
+───────────────────────────────────────────── */
 .heatmap-viewer {
     margin-top: 1.5rem;
     border: 1px solid var(--color-border-light, rgba(255,255,255,0.08));
@@ -24,15 +22,15 @@
     display: none;
 }
 
-/* ───────────────────────────────────────────
-   2. 헤더 (제목 + 배지)
-─────────────────────────────────────────── */
+/* ─────────────────────────────────────────────
+   2. 헤더
+───────────────────────────────────────────── */
 .heatmap-viewer__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0.875rem 1.25rem;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255,255,255,0.03);
     border-bottom: 1px solid var(--color-border-light, rgba(255,255,255,0.08));
     flex-wrap: wrap;
     gap: 0.5rem;
@@ -49,13 +47,11 @@
     gap: 0.4rem;
 }
 
-.heatmap-viewer__title i {
-    color: var(--color-primary, #c9a96e);
-}
+.heatmap-viewer__title i { color: var(--color-primary, #c9a96e); }
 
-/* ───────────────────────────────────────────
+/* ─────────────────────────────────────────────
    3. 신뢰도 배지
-─────────────────────────────────────────── */
+───────────────────────────────────────────── */
 .heatmap-badge {
     display: inline-flex;
     align-items: center;
@@ -69,41 +65,22 @@
     border: 1px solid currentColor;
 }
 
-.heatmap-badge--high {
-    color: #4ade80;
-    background: rgba(74, 222, 128, 0.1);
-}
+.heatmap-badge--high        { color: #4ade80; background: rgba(74,222,128,0.1); }
+.heatmap-badge--medium      { color: #fbbf24; background: rgba(251,191,36,0.1); }
+.heatmap-badge--low         { color: #f87171; background: rgba(248,113,113,0.1); }
+.heatmap-badge--unavailable { color: var(--color-text-muted,#8a8a8e); background: rgba(138,138,142,0.1); }
 
-.heatmap-badge--medium {
-    color: #fbbf24;
-    background: rgba(251, 191, 36, 0.1);
-}
-
-.heatmap-badge--low {
-    color: #f87171;
-    background: rgba(248, 113, 113, 0.1);
-}
-
-.heatmap-badge--unavailable {
-    color: var(--color-text-muted, #8a8a8e);
-    background: rgba(138, 138, 142, 0.1);
-}
-
-/* ───────────────────────────────────────────
+/* ─────────────────────────────────────────────
    4. 탭 버튼 그룹
-─────────────────────────────────────────── */
+───────────────────────────────────────────── */
 .heatmap-tabs {
     display: flex;
-    gap: 0;
     border-bottom: 1px solid var(--color-border-light, rgba(255,255,255,0.08));
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0,0,0,0.2);
     overflow-x: auto;
     scrollbar-width: none;
 }
-
-.heatmap-tabs::-webkit-scrollbar {
-    display: none;
-}
+.heatmap-tabs::-webkit-scrollbar { display: none; }
 
 .heatmap-tab {
     flex: 1;
@@ -123,55 +100,23 @@
     justify-content: center;
     gap: 0.35rem;
 }
+.heatmap-tab:hover           { color: var(--color-text,#e8e8ea); background: rgba(255,255,255,0.03); }
+.heatmap-tab--active         { color: var(--color-primary,#c9a96e); border-bottom-color: var(--color-primary,#c9a96e); background: rgba(201,169,110,0.05); }
+.heatmap-tab:disabled        { opacity: 0.35; cursor: not-allowed; }
 
-.heatmap-tab:hover {
-    color: var(--color-text, #e8e8ea);
-    background: rgba(255, 255, 255, 0.03);
-}
-
-.heatmap-tab--active {
-    color: var(--color-primary, #c9a96e);
-    border-bottom-color: var(--color-primary, #c9a96e);
-    background: rgba(201, 169, 110, 0.05);
-}
-
-.heatmap-tab:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-}
-
-/* ───────────────────────────────────────────
+/* ─────────────────────────────────────────────
    5. 이미지 패널
-─────────────────────────────────────────── */
-.heatmap-panels {
-    padding: 1.25rem;
-}
+───────────────────────────────────────────── */
+.heatmap-panels { padding: 1.25rem; }
 
-.heatmap-panel {
-    display: none;
-    animation: fadeIn 0.25s ease;
-}
+.heatmap-panel              { display: none; animation: fadeIn 0.25s ease; }
+.heatmap-panel--active      { display: block; }
 
-.heatmap-panel--active {
-    display: block;
-}
-
-/* 2열 그리드: 원본 + 히트맵 나란히 */
-.heatmap-panel--compare {
-    display: none;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    align-items: start;
-}
-
-.heatmap-panel--compare.heatmap-panel--active {
-    display: grid;
-}
+.heatmap-panel--compare                       { display: none; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+.heatmap-panel--compare.heatmap-panel--active { display: grid; }
 
 @media (max-width: 600px) {
-    .heatmap-panel--compare.heatmap-panel--active {
-        grid-template-columns: 1fr;
-    }
+    .heatmap-panel--compare.heatmap-panel--active { grid-template-columns: 1fr; }
 }
 
 .heatmap-img-wrap {
@@ -194,11 +139,9 @@
 
 .heatmap-img-label {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 0; left: 0; right: 0;
     padding: 0.35rem 0.6rem;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0,0,0,0.6);
     backdrop-filter: blur(4px);
     font-size: 0.65rem;
     font-weight: 600;
@@ -208,25 +151,35 @@
     text-align: center;
 }
 
-/* ───────────────────────────────────────────
-   6. 범례 (색상 → 주목도 바)
-─────────────────────────────────────────── */
-.heatmap-legend {
-    margin-top: 0.75rem;
-    padding: 0 0.25rem;
+/* ─────────────────────────────────────────────
+   6. Phase E-3: 워터마크 오버레이
+───────────────────────────────────────────── */
+.heatmap-watermark {
+    position: absolute;
+    bottom: 28px;         /* heatmap-img-label 위 */
+    right: 6px;
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.45);
+    background: rgba(0,0,0,0.35);
+    padding: 2px 5px;
+    border-radius: 3px;
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
 }
+
+/* ─────────────────────────────────────────────
+   7. 범례 (색상 → 주목도 바)
+───────────────────────────────────────────── */
+.heatmap-legend { margin-top: 0.75rem; padding: 0 0.25rem; }
 
 .heatmap-legend__bar {
     height: 8px;
     border-radius: 999px;
-    background: linear-gradient(
-        to right,
-        #000080,   /* 파랑 - 낮은 주목도 */
-        #00aaff,
-        #00ff88,   /* 초록 */
-        #ffff00,   /* 노랑 */
-        #ff4400,   /* 주황 */
-        #ff0000    /* 빨강 - 높은 주목도 */
+    background: linear-gradient(to right,
+        #000080, #00aaff, #00ff88, #ffff00, #ff4400, #ff0000
     );
 }
 
@@ -235,16 +188,11 @@
     justify-content: space-between;
     margin-top: 0.3rem;
 }
+.heatmap-legend__label { font-size: 0.62rem; color: var(--color-text-muted,#8a8a8e); letter-spacing: 0.04em; }
 
-.heatmap-legend__label {
-    font-size: 0.62rem;
-    color: var(--color-text-muted, #8a8a8e);
-    letter-spacing: 0.04em;
-}
-
-/* ───────────────────────────────────────────
-   7. 설명 텍스트 + 주의 문구
-─────────────────────────────────────────── */
+/* ─────────────────────────────────────────────
+   8. 경고 / 고지 박스
+───────────────────────────────────────────── */
 .heatmap-desc {
     margin-top: 0.75rem;
     font-size: 0.72rem;
@@ -256,8 +204,8 @@
 .heatmap-warning {
     margin-top: 0.75rem;
     padding: 0.6rem 0.85rem;
-    background: rgba(248, 113, 113, 0.07);
-    border: 1px solid rgba(248, 113, 113, 0.2);
+    background: rgba(248,113,113,0.07);
+    border: 1px solid rgba(248,113,113,0.2);
     border-radius: var(--radius-sm, 8px);
     font-size: 0.7rem;
     color: #f87171;
@@ -266,93 +214,39 @@
     gap: 0.5rem;
     line-height: 1.5;
 }
+.heatmap-warning i { flex-shrink: 0; margin-top: 0.05rem; }
 
-.heatmap-warning i {
-    flex-shrink: 0;
-    margin-top: 0.05rem;
-}
-
-/* ───────────────────────────────────────────
-   8. 비활성화 상태 (PyTorch 미설치)
-─────────────────────────────────────────── */
+/* ─────────────────────────────────────────────
+   9. 비활성화 상태
+───────────────────────────────────────────── */
 .heatmap-unavailable {
     padding: 2rem 1.5rem;
     text-align: center;
     color: var(--color-text-muted, #8a8a8e);
 }
+.heatmap-unavailable i  { font-size: 2rem; margin-bottom: 0.75rem; display: block; opacity: 0.4; }
+.heatmap-unavailable p  { font-size: 0.78rem; line-height: 1.6; max-width: 280px; margin: 0 auto; }
 
-.heatmap-unavailable i {
-    font-size: 2rem;
-    margin-bottom: 0.75rem;
-    display: block;
-    opacity: 0.4;
-}
-
-.heatmap-unavailable p {
-    font-size: 0.78rem;
-    line-height: 1.6;
-    max-width: 280px;
-    margin: 0 auto;
-}
-
-/* ───────────────────────────────────────────
-   9. 어텐션 스코어 인포
-─────────────────────────────────────────── */
+/* ─────────────────────────────────────────────
+   10. 주목도 스코어 바
+───────────────────────────────────────────── */
 .heatmap-score {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     margin-top: 0.75rem;
     padding: 0.6rem 0.85rem;
-    background: rgba(201, 169, 110, 0.06);
-    border: 1px solid rgba(201, 169, 110, 0.15);
+    background: rgba(201,169,110,0.06);
+    border: 1px solid rgba(201,169,110,0.15);
     border-radius: var(--radius-sm, 8px);
 }
+.heatmap-score__label   { font-size: 0.7rem; color: var(--color-text-muted,#8a8a8e); white-space: nowrap; }
+.heatmap-score__bar-wrap { flex: 1; height: 5px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; }
+.heatmap-score__bar     { height: 100%; background: var(--color-primary,#c9a96e); border-radius: 999px; transition: width 0.6s cubic-bezier(0.25,0.46,0.45,0.94); }
+.heatmap-score__value   { font-size: 0.72rem; font-weight: 700; color: var(--color-primary,#c9a96e); min-width: 2.5rem; text-align: right; }
 
-.heatmap-score__label {
-    font-size: 0.7rem;
-    color: var(--color-text-muted, #8a8a8e);
-    white-space: nowrap;
-}
-
-.heatmap-score__bar-wrap {
-    flex: 1;
-    height: 5px;
-    background: rgba(255,255,255,0.06);
-    border-radius: 999px;
-    overflow: hidden;
-}
-
-.heatmap-score__bar {
-    height: 100%;
-    background: var(--color-primary, #c9a96e);
-    border-radius: 999px;
-    transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.heatmap-score__value {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--color-primary, #c9a96e);
-    min-width: 2.5rem;
-    text-align: right;
-}
-
-/* ───────────────────────────────────────────
-   10. 애니메이션
-─────────────────────────────────────────── */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(12px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+/* ─────────────────────────────────────────────
+   11. 애니메이션
+───────────────────────────────────────────── */
+@keyframes fadeIn    { from { opacity: 0; }            to { opacity: 1; } }
+@keyframes fadeInUp  { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
