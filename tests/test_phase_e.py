@@ -12,8 +12,9 @@ Phase E 통합 테스트 — 품질 검증 및 안전장치
 import io
 import pytest
 import numpy as np
+from io import BytesIO
 from PIL import Image
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 try:
     import torch
@@ -27,15 +28,15 @@ requires_torch = pytest.mark.skipif(
 )
 
 
-# ─────────────────────────────────────────────────────────── #
-#  Fixtures                                                   #
-# ─────────────────────────────────────────────────────────── #
+# ─────────────────────────────────────────────────────────────────────────── #
+#  로컬 Fixtures (conftest 와 별개로 이 파일에서만 사용)                       #
+# ─────────────────────────────────────────────────────────────────────────── #
 
 @pytest.fixture
 def valid_image_bytes():
-    """정상 크기 224×224 테스트 이미지"""
+    """정상 크기 224×224 테스트 이미지 (bytes)"""
     img = Image.new("RGB", (224, 224), color=(100, 120, 140))
-    buf = io.BytesIO()
+    buf = BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()
 
@@ -44,7 +45,7 @@ def valid_image_bytes():
 def tiny_image_bytes():
     """너무 작은 16×16 이미지 (E-2 크기 검증)"""
     img = Image.new("RGB", (16, 16), color=(128, 128, 128))
-    buf = io.BytesIO()
+    buf = BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()
 
@@ -56,9 +57,9 @@ def predictor_no_weights():
     return PyTorchPredictor(weights_path=None, labels_path=None, num_classes=2)
 
 
-# ─────────────────────────────────────────────────────────── #
-#  E-2: LOW 신뢰도 히트맵 차단                               #
-# ─────────────────────────────────────────────────────────── #
+# ─────────────────────────────────────────────────────────────────────────── #
+#  E-2: LOW 신뢰도 히트맵 차단                                                #
+# ─────────────────────────────────────────────────────────────────────────── #
 
 @requires_torch
 class TestLowConfidenceBlock:
@@ -70,10 +71,6 @@ class TestLowConfidenceBlock:
         """
         from backend.services.pytorch_predictor import LOW_CONFIDENCE_THRESHOLD
         from backend.services.gradcam import GradCAM
-
-        # GradCAM.generate 를 mock 해 낮은 확률 강제 반환
-        if not TORCH_AVAILABLE:
-            pytest.skip("PyTorch 없음")
 
         low_prob = LOW_CONFIDENCE_THRESHOLD - 0.1  # 0.40
         fake_probs = np.array([1.0 - low_prob, low_prob], dtype=np.float32)
@@ -91,9 +88,6 @@ class TestLowConfidenceBlock:
         """
         50% 이상 확률이면 히트맵 이미지가 생성되어야 함.
         """
-        if not TORCH_AVAILABLE:
-            pytest.skip("PyTorch 없음")
-
         from backend.services.gradcam import GradCAM
 
         high_prob = 0.85
@@ -109,9 +103,9 @@ class TestLowConfidenceBlock:
         assert result['heatmap_only_base64'] is not None
 
 
-# ─────────────────────────────────────────────────────────── #
-#  E-2: 이미지 최소 크기 검증                                 #
-# ─────────────────────────────────────────────────────────── #
+# ─────────────────────────────────────────────────────────────────────────── #
+#  E-2: 이미지 최소 크기 검증                                                 #
+# ─────────────────────────────────────────────────────────────────────────── #
 
 @requires_torch
 class TestImageSizeValidation:
@@ -123,28 +117,37 @@ class TestImageSizeValidation:
         result = predictor_no_weights.predict_with_gradcam(tiny_image_bytes)
         assert result['available'] is False
         assert result.get('error') is not None
-        assert '작' in result['error'] or 'small' in result['error'].lower() or '32' in result['error']
+        assert ('작' in result['error'] or 'small' in result['error'].lower() or '32' in result['error'])
 
     def test_valid_image_passes_size_check(self, predictor_no_weights, valid_image_bytes):
         """정상 크기 이미지는 크기 검증 통과."""
         result = predictor_no_weights.predict_with_gradcam(valid_image_bytes)
-        # 크기 검증 오류가 아닌 다른 이유로 실패할 수 있으므로 error 내용만 체크
+        # 크기 검증 오류가 아닌 다른 이유로 실패할 수 있으므로 error 내용만 확인
         if result.get('error'):
             assert '작' not in result['error']  # 크기 오류가 아님
 
 
-# ─────────────────────────────────────────────────────────── #
-#  E-3: 법적 고지 (xai_disclaimer) API 응답 포함 여부         #
-# ─────────────────────────────────────────────────────────── #
+# ─────────────────────────────────────────────────────────────────────────── #
+#  E-3: 법적 고지 (xai_disclaimer) API 응답 포함 여부                         #
+# ─────────────────────────────────────────────────────────────────────────── #
 
 class TestXaiDisclaimer:
 
     @pytest.mark.api
-    def test_predict_response_contains_disclaimer(self, client, sample_image_valid):
+    def test_predict_response_contains_disclaimer(self, client):
         """
         /predict 응답의 metadata.xai_disclaimer 필드가 존재하고 비어있지 않아야 함.
+
+        sample_image_valid 대신 이 테스트 내부에서 BytesIO 를 직접 생성합니다.
+        scope='function' fixture 를 쓰더라도 Werkzeug 가 스트림을 닫은 뒤
+        재사용될 수 있으므로, 가장 안전한 방법은 테스트 내부에서 직접 생성.
         """
-        data = {'file': (sample_image_valid, 'test.jpg', 'image/jpeg')}
+        img = Image.new('RGB', (224, 224), color=(100, 120, 140))
+        buf = BytesIO()
+        img.save(buf, format='JPEG')
+        buf.seek(0)
+
+        data = {'file': (buf, 'test.jpg', 'image/jpeg')}
         response = client.post('/predict', data=data, content_type='multipart/form-data')
 
         if response.status_code == 200:
@@ -155,18 +158,23 @@ class TestXaiDisclaimer:
             assert len(disclaimer) > 20, "xai_disclaimer가 너무 짧음"
 
 
-# ─────────────────────────────────────────────────────────── #
-#  E-4: 성능 측정 필드 존재 확인                              #
-# ─────────────────────────────────────────────────────────── #
+# ─────────────────────────────────────────────────────────────────────────── #
+#  E-4: 성능 측정 필드 존재 확인                                               #
+# ─────────────────────────────────────────────────────────────────────────── #
 
 class TestPerformanceFields:
 
     @pytest.mark.api
-    def test_predict_response_has_timing_fields(self, client, sample_image_valid):
+    def test_predict_response_has_timing_fields(self, client):
         """
         /predict 응답의 metadata에 성능 측정 필드가 포함되어야 함.
         """
-        data = {'file': (sample_image_valid, 'test.jpg', 'image/jpeg')}
+        img = Image.new('RGB', (224, 224), color=(100, 120, 140))
+        buf = BytesIO()
+        img.save(buf, format='JPEG')
+        buf.seek(0)
+
+        data = {'file': (buf, 'test.jpg', 'image/jpeg')}
         response = client.post('/predict', data=data, content_type='multipart/form-data')
 
         if response.status_code == 200:
@@ -175,7 +183,6 @@ class TestPerformanceFields:
             assert 'processing_time_ms' in metadata, "processing_time_ms 누락"
             assert 'onnx_time_ms'        in metadata, "onnx_time_ms 누락"
             assert 'gradcam_time_ms'     in metadata, "gradcam_time_ms 누락"
-            # 모든 timing 은 0 이상의 수치여야 함
             assert metadata['processing_time_ms'] >= 0
             assert metadata['onnx_time_ms']        >= 0
             assert metadata['gradcam_time_ms']     >= 0
@@ -189,9 +196,9 @@ class TestPerformanceFields:
         assert result['gradcam_time_ms'] >= 0
 
 
-# ─────────────────────────────────────────────────────────── #
-#  E-5: 전체 통합 파이프라인 검증                             #
-# ─────────────────────────────────────────────────────────── #
+# ─────────────────────────────────────────────────────────────────────────── #
+#  E-5: 전체 통합 파이프라인 검증                                              #
+# ─────────────────────────────────────────────────────────────────────────── #
 
 @requires_torch
 class TestFullPipelineIntegration:
@@ -202,7 +209,6 @@ class TestFullPipelineIntegration:
         """
         result = predictor_no_weights.predict_with_gradcam(valid_image_bytes)
 
-        # 필수 필드 (Phase A ~ E)
         required = [
             'available', 'target_class', 'target_class_index',
             'attention_score', 'reliability', 'error',

@@ -30,11 +30,8 @@ def test_config():
 def app(test_config):
     """Flask 앱 인스턴스 (각 테스트마다 새로 생성)"""
     app = create_app('testing')
-    
-    # 테스트 컨텍스트 설정
     app.config['TESTING'] = True
     app.config['WTF_CSRF_ENABLED'] = False
-    
     yield app
 
 
@@ -139,6 +136,22 @@ def sample_numpy_array():
 
 
 @pytest.fixture(scope='function')
+def sample_image_valid():
+    """
+    API 테스트용 유효한 이미지 BytesIO 객체.
+
+    scope='function' 으로 각 테스트마다 새로운 BytesIO 인스턴스를 생성합니다.
+    scope='session' 으로 설정하면 첫 번째 테스트가 스트림을 소비한 뒤
+    닫힌 상태로 재사용되어 'ValueError: I/O operation on closed file' 이 발생합니다.
+    """
+    img = Image.new('RGB', (224, 224), color=(128, 128, 128))
+    buf = BytesIO()
+    img.save(buf, format='JPEG')
+    buf.seek(0)
+    return buf
+
+
+@pytest.fixture(scope='function')
 def temp_dir():
     """
     임시 디렉토리 생성 (테스트 후 자동 삭제)
@@ -164,7 +177,6 @@ def mock_model_path(tmp_path_factory):
     """
     model_dir = tmp_path_factory.mktemp("models")
     model_path = model_dir / "mock_model.onnx"
-    # 실제 모델 파일은 생성하지 않음 (로딩 테스트용)
     return str(model_path)
 
 
@@ -175,8 +187,6 @@ def mock_labels_path(tmp_path_factory):
     """
     labels_dir = tmp_path_factory.mktemp("labels")
     labels_path = labels_dir / "labels.txt"
-    
-    # 샘플 레이블 작성
     labels_content = """0 Normal
 1 Pneumonia
 2 COVID-19
@@ -190,14 +200,10 @@ def reset_singletons():
     """
     각 테스트 전에 싱글톤 인스턴스 리셋
     """
-    # ModelPredictor 싱글톤 리셋
     from models.predictor import ModelPredictor
     ModelPredictor._instance = None
     ModelPredictor._is_initialized = False
-    
     yield
-    
-    # 테스트 후 정리
     ModelPredictor._instance = None
     ModelPredictor._is_initialized = False
 
@@ -208,11 +214,11 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "unit: Unit tests")
     config.addinivalue_line("markers", "integration: Integration tests")
     config.addinivalue_line("markers", "slow: Slow tests")
+    config.addinivalue_line("markers", "api: API integration tests")
 
 
 def pytest_collection_modifyitems(config, items):
     """테스트 아이템 수정"""
     for item in items:
-        # 통합 테스트는 느림으로 표시
         if "integration" in item.keywords:
             item.add_marker(pytest.mark.slow)
