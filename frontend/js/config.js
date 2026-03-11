@@ -40,9 +40,20 @@ const CONFIG = {
   },
   
   // ===== 요청 설정 =====
+  //
+  // TIMEOUT 변경 이유:
+  //   Render 무료 플랜 콜드 스타트(~30s) + ONNX 추론(~100ms) + Grad-CAM(~500ms)
+  //   합산해도 60s 이내이지만, 서버 부하 시 여유를 두어 180s 로 설정.
+  //   180s × 1회(RETRY_ATTEMPTS=1) = 최대 대기 180s
+  //   기존 90s × 3회 = 270s 대기 후 실패하던 문제 해소.
+  //
+  // RETRY_ATTEMPTS 변경 이유:
+  //   Grad-CAM 요청은 무거운 연산이므로 같은 요청을 여러 번 재시도하면
+  //   서버 과부하가 발생할 수 있습니다. 1회 시도 후 실패 시 사용자에게
+  //   명확한 오류 메시지를 표시하는 것이 더 좋은 UX입니다.
   REQUEST: {
-    TIMEOUT: 90000,
-    RETRY_ATTEMPTS: 3,
+    TIMEOUT: 180000,
+    RETRY_ATTEMPTS: 1,
     RETRY_DELAY: 1000,
     RETRY_BACKOFF_MULTIPLIER: 2,
     RETRYABLE_STATUS_CODES: [408, 429, 500, 502, 503, 504],
