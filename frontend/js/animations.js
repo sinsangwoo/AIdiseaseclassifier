@@ -12,18 +12,12 @@
     const nav = document.getElementById('mainNav');
 
     if (nav) {
-        let lastScrollY = 0;
-
         window.addEventListener('scroll', () => {
-            const currentScrollY = window.scrollY;
-
-            if (currentScrollY > 60) {
+            if (window.scrollY > 60) {
                 nav.classList.add('nav--scrolled');
             } else {
                 nav.classList.remove('nav--scrolled');
             }
-
-            lastScrollY = currentScrollY;
         }, { passive: true });
     }
 
@@ -47,12 +41,10 @@
         });
 
         revealElements.forEach((el, index) => {
-            // Stagger the delay for sequential reveals
             el.style.transitionDelay = `${index * 0.1}s`;
             revealObserver.observe(el);
         });
     } else {
-        // Fallback: show everything immediately
         revealElements.forEach((el) => {
             el.classList.add('revealed');
         });
@@ -61,19 +53,22 @@
 
     // ============================================
     // Smooth Anchor Scrolling
+    // href="#" 단독(빈 앵커)은 querySelector가 SyntaxError를 던지므로
+    // 실제 섹션 ID가 있는 경우에만 스크롤 처리합니다.
     // ============================================
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
-            const target = document.querySelector(this.getAttribute('href'));
+            const href = this.getAttribute('href');
+
+            // '#' 단독이거나 '#' 뒤에 아무것도 없으면 건너뜀
+            if (!href || href === '#') return;
+
+            const target = document.querySelector(href);
             if (target) {
                 e.preventDefault();
                 const navHeight = nav ? nav.offsetHeight : 0;
                 const targetPosition = target.getBoundingClientRect().top + window.scrollY - navHeight - 20;
-
-                window.scrollTo({
-                    top: targetPosition,
-                    behavior: 'smooth'
-                });
+                window.scrollTo({ top: targetPosition, behavior: 'smooth' });
             }
         });
     });
