@@ -6,29 +6,29 @@
  */
 
 import CONFIG from '../config.js';
-import { GradCAMViewer } from './gradcam_viewer.js';
+import GradCAMViewer from './gradcam_viewer.js';   // default export → default import
 
 export default class UIController {
     constructor() {
         // ── DOM 참조 ──────────────────────────────────────────────────────
-        this.uploadSection    = document.getElementById('uploadSection');
-        this.imageInput       = document.getElementById('imageInput');
-        this.previewContainer = document.getElementById('previewContainer');
-        this.imagePreview     = document.getElementById('imagePreview');
-        this.analyzeBtn       = document.getElementById('analyzeBtn');
-        this.clearBtn         = document.getElementById('clearBtn');
-        this.agreeCheckbox    = document.getElementById('agreeCheckbox');
+        this.uploadSection     = document.getElementById('uploadSection');
+        this.imageInput        = document.getElementById('imageInput');
+        this.previewContainer  = document.getElementById('previewContainer');
+        this.imagePreview      = document.getElementById('imagePreview');
+        this.analyzeBtn        = document.getElementById('analyzeBtn');
+        this.clearBtn          = document.getElementById('clearBtn');
+        this.agreeCheckbox     = document.getElementById('agreeCheckbox');
         this.progressContainer = document.getElementById('progressContainer');
-        this.progressBarFill  = document.getElementById('progressBarFill');
-        this.reportContainer  = document.getElementById('reportContainer');
-        this.reportImage      = document.getElementById('reportImage');
-        this.resultsContent   = document.getElementById('resultsContent');
-        this.resultComment    = document.getElementById('resultComment');
-        this.reportTimestamp  = document.getElementById('reportTimestamp');
-        this.reportId         = document.getElementById('reportId');
-        this.savePngBtn       = document.getElementById('savePngBtn');
-        this.savePdfBtn       = document.getElementById('savePdfBtn');
-        this.progressLabel    = document.querySelector('#progressContainer .text-muted.mb-lg');
+        this.progressBarFill   = document.getElementById('progressBarFill');
+        this.reportContainer   = document.getElementById('reportContainer');
+        this.reportImage       = document.getElementById('reportImage');
+        this.resultsContent    = document.getElementById('resultsContent');
+        this.resultComment     = document.getElementById('resultComment');
+        this.reportTimestamp   = document.getElementById('reportTimestamp');
+        this.reportId          = document.getElementById('reportId');
+        this.savePngBtn        = document.getElementById('savePngBtn');
+        this.savePdfBtn        = document.getElementById('savePdfBtn');
+        this.progressLabel     = document.querySelector('#progressContainer .text-muted.mb-lg');
 
         // ── 콜백 (app.js에서 주입) ────────────────────────────────────────
         this.onAnalyze         = null;
@@ -51,12 +51,16 @@ export default class UIController {
     // 이벤트 바인딩
     // ────────────────────────────────────────────────────────────────────
     _bindEvents() {
-        // 드래그 앤 드롭
         if (this.uploadSection) {
             this.uploadSection.addEventListener('click',     () => this.imageInput?.click());
-            this.uploadSection.addEventListener('dragover',  (e) => { e.preventDefault(); this.uploadSection.classList.add('upload--dragover'); });
-            this.uploadSection.addEventListener('dragleave', ()  => this.uploadSection.classList.remove('upload--dragover'));
-            this.uploadSection.addEventListener('drop',      (e) => {
+            this.uploadSection.addEventListener('dragover',  (e) => {
+                e.preventDefault();
+                this.uploadSection.classList.add('upload--dragover');
+            });
+            this.uploadSection.addEventListener('dragleave', () =>
+                this.uploadSection.classList.remove('upload--dragover')
+            );
+            this.uploadSection.addEventListener('drop', (e) => {
                 e.preventDefault();
                 this.uploadSection.classList.remove('upload--dragover');
                 const file = e.dataTransfer?.files?.[0];
@@ -71,26 +75,18 @@ export default class UIController {
             });
         }
 
-        if (this.analyzeBtn) {
-            this.analyzeBtn.addEventListener('click', () => this.onAnalyze?.());
-        }
-
-        if (this.clearBtn) {
-            this.clearBtn.addEventListener('click', () => this.onClear?.());
-        }
-
+        if (this.analyzeBtn)   this.analyzeBtn.addEventListener('click',  () => this.onAnalyze?.());
+        if (this.clearBtn)     this.clearBtn.addEventListener('click',    () => this.onClear?.());
         if (this.agreeCheckbox) {
-            this.agreeCheckbox.addEventListener('change', (e) => {
-                this.onAgreementChange?.(e.target.checked);
-            });
+            this.agreeCheckbox.addEventListener('change', (e) =>
+                this.onAgreementChange?.(e.target.checked)
+            );
         }
-
         if (this.savePngBtn) this.savePngBtn.addEventListener('click', () => this._saveAsPng());
         if (this.savePdfBtn) this.savePdfBtn.addEventListener('click', () => this._saveAsPdf());
     }
 
     _handleFileSelect(file) {
-        // 미리보기
         const reader = new FileReader();
         reader.onload = (e) => {
             if (this.imagePreview) this.imagePreview.src = e.target.result;
@@ -104,11 +100,11 @@ export default class UIController {
     // ────────────────────────────────────────────────────────────────────
     render(state) {
         switch (state.status) {
-            case 'idle':        this._renderIdle();              break;
-            case 'preview':     this._renderPreview(state);      break;
-            case 'analyzing':   this._renderAnalyzing(state);    break;
-            case 'complete':    this._renderComplete(state);     break;
-            case 'error':       this._renderError(state);        break;
+            case 'idle':      this._renderIdle();           break;
+            case 'preview':   this._renderPreview(state);   break;
+            case 'analyzing': this._renderAnalyzing(state); break;
+            case 'complete':  this._renderComplete(state);  break;
+            case 'error':     this._renderError(state);     break;
         }
     }
 
@@ -123,12 +119,8 @@ export default class UIController {
         this._show(this.previewContainer);
         this._hide(this.progressContainer);
         this._hide(this.reportContainer);
-        if (this.analyzeBtn) {
-            this.analyzeBtn.disabled = !state.agreeChecked;
-        }
-        if (this.agreeCheckbox) {
-            this.agreeCheckbox.checked = state.agreeChecked || false;
-        }
+        if (this.analyzeBtn)    this.analyzeBtn.disabled = !state.agreeChecked;
+        if (this.agreeCheckbox) this.agreeCheckbox.checked = state.agreeChecked || false;
     }
 
     _renderAnalyzing(state) {
@@ -136,7 +128,6 @@ export default class UIController {
         this._show(this.progressContainer);
         this._hide(this.reportContainer);
 
-        // 서버 웜업 중이면 라벨 변경
         if (this.progressLabel) {
             const isWarmingUp = !window.__serverReady__;
             this.progressLabel.textContent = isWarmingUp
@@ -154,23 +145,18 @@ export default class UIController {
 
         if (!state.result) return;
 
-        // 타임스탬프 & ID
         if (this.reportTimestamp) {
             this.reportTimestamp.textContent = new Date().toLocaleString('ko-KR');
         }
         if (this.reportId) {
             this.reportId.textContent = `REQ-${Date.now().toString(36).toUpperCase()}`;
         }
-
-        // 원본 이미지
         if (this.reportImage && state.uploadedImageUrl) {
             this.reportImage.src = state.uploadedImageUrl;
         }
 
-        // 예측 결과
         this._renderPredictions(state.result);
 
-        // Grad-CAM 뷰어
         if (state.result.gradcam) {
             this.gradcamViewer.render(state.result.gradcam, state.uploadedImageUrl);
         }
@@ -192,11 +178,11 @@ export default class UIController {
         const topResult   = predictions[0];
         const isPneumonia = topResult.className === '폐렴';
 
-        // 결과 카드
         this.resultsContent.innerHTML = predictions.map(pred => {
             const pct       = (pred.probability * 100).toFixed(1);
-            const isTop     = pred === topResult;
-            const cardClass = isTop ? (isPneumonia ? 'result-card--danger' : 'result-card--success') : '';
+            const cardClass = pred === topResult
+                ? (isPneumonia ? 'result-card--danger' : 'result-card--success')
+                : '';
             return `
                 <div class="result-card ${cardClass}">
                     <div class="result-card__header">
@@ -210,7 +196,6 @@ export default class UIController {
             `;
         }).join('');
 
-        // 코멘트
         if (this.resultComment) {
             const comment = isPneumonia
                 ? { icon: '⚠️', cls: 'notice--danger',  text: '폐렴 소견이 감지되었습니다. 전문의 상담을 권장합니다.' }
@@ -219,7 +204,6 @@ export default class UIController {
             this.resultComment.innerHTML = `<span>${comment.icon}</span><span>${comment.text}</span>`;
         }
 
-        // 처리 시간
         if (result.metadata?.processing_time_ms) {
             const timeEl = document.createElement('p');
             timeEl.className = 'text-tiny text-muted mt-sm text-right';
@@ -237,12 +221,11 @@ export default class UIController {
         if (!this.progressBarFill) return;
 
         this._progressInterval = setInterval(() => {
-            // 95%까지 서서히 증가 (완료는 _stopProgressAnimation에서)
             if (this._progressValue < 95) {
-                const increment = this._progressValue < 30 ? 2
-                                : this._progressValue < 60 ? 1
-                                : 0.3;
-                this._progressValue = Math.min(95, this._progressValue + increment);
+                const inc = this._progressValue < 30 ? 2
+                          : this._progressValue < 60 ? 1
+                          : 0.3;
+                this._progressValue = Math.min(95, this._progressValue + inc);
                 this.progressBarFill.style.width = `${this._progressValue}%`;
             }
         }, 200);
@@ -270,26 +253,22 @@ export default class UIController {
             link.download = `diagnosis_${Date.now()}.png`;
             link.href     = canvas.toDataURL('image/png');
             link.click();
-        } catch (e) {
-            CONFIG.log('PNG 저장 실패:', e);
-        }
+        } catch (e) { CONFIG.log('PNG 저장 실패:', e); }
     }
 
     async _saveAsPdf() {
         try {
             const reportCard = document.getElementById('reportCard');
             if (!reportCard || !window.html2canvas || !window.jspdf) return;
-            const canvas = await html2canvas(reportCard, { scale: 2, useCORS: true });
+            const canvas  = await html2canvas(reportCard, { scale: 2, useCORS: true });
             const { jsPDF } = window.jspdf;
-            const pdf    = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const pdf     = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
             const imgData = canvas.toDataURL('image/png');
             const w = pdf.internal.pageSize.getWidth();
             const h = (canvas.height * w) / canvas.width;
             pdf.addImage(imgData, 'PNG', 0, 0, w, h);
             pdf.save(`diagnosis_${Date.now()}.pdf`);
-        } catch (e) {
-            CONFIG.log('PDF 저장 실패:', e);
-        }
+        } catch (e) { CONFIG.log('PDF 저장 실패:', e); }
     }
 
     // ────────────────────────────────────────────────────────────────────
@@ -303,10 +282,11 @@ export default class UIController {
         this._hide(this.previewContainer);
         this._hide(this.progressContainer);
         this._hide(this.reportContainer);
-        if (this.imageInput)    this.imageInput.value    = '';
-        if (this.analyzeBtn)    this.analyzeBtn.disabled = true;
+        if (this.imageInput)    this.imageInput.value     = '';
+        if (this.analyzeBtn)    this.analyzeBtn.disabled  = true;
         if (this.agreeCheckbox) this.agreeCheckbox.checked = false;
         this._stopProgressAnimation();
-        this.gradcamViewer?.reset();
+        // gradcamViewer.hide() 로 초기화 (reset() 메서드는 GradCAMViewer에 없음)
+        this.gradcamViewer?.hide();
     }
 }
