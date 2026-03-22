@@ -1,356 +1,312 @@
 /**
- * UI Controller (Phase D - Grad-CAM 통합)
+ * UI Controller Module
  *
- * 상태 변경에 따른 UI 업데이트 담당
- * Phase D: GradCAMViewer 연동 추가
+ * 상태에 따른 UI 렌더링 및 이벤트 핸들링
+ * Phase D: GradCAMViewer 연동
  */
 
-import GradCAMViewer from './gradcam_viewer.js';
+import CONFIG from '../config.js';
+import { GradCAMViewer } from './gradcam_viewer.js';
 
-class UIController {
+export default class UIController {
     constructor() {
-        console.log('\u2705 UIController Initialized');
-        this.elements = {
-            uploadSection:    document.getElementById('uploadSection'),
-            imageInput:       document.getElementById('imageInput'),
-            previewContainer: document.getElementById('previewContainer'),
-            imagePreview:     document.getElementById('imagePreview'),
-            analyzeBtn:       document.getElementById('analyzeBtn'),
-            clearBtn:         document.getElementById('clearBtn'),
-            reportContainer:  document.getElementById('reportContainer'),
-            resultsContent:   document.getElementById('resultsContent'),
-            resultComment:    document.getElementById('resultComment'),
-            reportTimestamp:  document.getElementById('reportTimestamp'),
-            agreementBox:     document.getElementById('agreementBox'),
-            agreeCheckbox:    document.getElementById('agreeCheckbox'),
-            progressContainer:document.getElementById('progressContainer'),
-            progressBarFill:  document.getElementById('progressBarFill'),
-            // Optional elements
-            savePngBtn:       document.getElementById('savePngBtn'),
-            savePdfBtn:       document.getElementById('savePdfBtn'),
-            reportImage:      document.getElementById('reportImage'),
-        };
+        // ── DOM 참조 ──────────────────────────────────────────────────────
+        this.uploadSection    = document.getElementById('uploadSection');
+        this.imageInput       = document.getElementById('imageInput');
+        this.previewContainer = document.getElementById('previewContainer');
+        this.imagePreview     = document.getElementById('imagePreview');
+        this.analyzeBtn       = document.getElementById('analyzeBtn');
+        this.clearBtn         = document.getElementById('clearBtn');
+        this.agreeCheckbox    = document.getElementById('agreeCheckbox');
+        this.progressContainer = document.getElementById('progressContainer');
+        this.progressBarFill  = document.getElementById('progressBarFill');
+        this.reportContainer  = document.getElementById('reportContainer');
+        this.reportImage      = document.getElementById('reportImage');
+        this.resultsContent   = document.getElementById('resultsContent');
+        this.resultComment    = document.getElementById('resultComment');
+        this.reportTimestamp  = document.getElementById('reportTimestamp');
+        this.reportId         = document.getElementById('reportId');
+        this.savePngBtn       = document.getElementById('savePngBtn');
+        this.savePdfBtn       = document.getElementById('savePdfBtn');
+        this.progressLabel    = document.querySelector('#progressContainer .text-muted.mb-lg');
 
-        // Grad-CAM 히트맵 뷰어
+        // ── 콜백 (app.js에서 주입) ────────────────────────────────────────
+        this.onAnalyze         = null;
+        this.onFileSelect      = null;
+        this.onClear           = null;
+        this.onAgreementChange = null;
+
+        // ── Grad-CAM 뷰어 ─────────────────────────────────────────────────
         this.gradcamViewer = new GradCAMViewer('gradcamViewer');
 
-        // Callbacks
-        this.onAnalyze           = null;
-        this.onFileSelect        = null;
-        this.onClear             = null;
-        this.onAgreementChange   = null;
+        // ── 진행 상태 추적 ────────────────────────────────────────────────
+        this._progressInterval = null;
+        this._progressValue    = 0;
 
-        this.bindEvents();
+        this._bindEvents();
+        CONFIG.log('UIController Initialized');
     }
 
-    bindEvents() {
-        // File Input Change
-        this.elements.imageInput?.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file && this.onFileSelect) this.onFileSelect(file);
-        });
-
-        // Upload Section Drag & Drop / Click
-        if (this.elements.uploadSection) {
-            this.elements.uploadSection.addEventListener('click', () => {
-                this.elements.imageInput?.click();
-            });
-            this.elements.uploadSection.addEventListener('dragover', (e) => {
+    // ────────────────────────────────────────────────────────────────────
+    // 이벤트 바인딩
+    // ────────────────────────────────────────────────────────────────────
+    _bindEvents() {
+        // 드래그 앤 드롭
+        if (this.uploadSection) {
+            this.uploadSection.addEventListener('click',     () => this.imageInput?.click());
+            this.uploadSection.addEventListener('dragover',  (e) => { e.preventDefault(); this.uploadSection.classList.add('upload--dragover'); });
+            this.uploadSection.addEventListener('dragleave', ()  => this.uploadSection.classList.remove('upload--dragover'));
+            this.uploadSection.addEventListener('drop',      (e) => {
                 e.preventDefault();
-                e.currentTarget.classList.add('upload--active');
-            });
-            this.elements.uploadSection.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                e.currentTarget.classList.remove('upload--active');
-            });
-            this.elements.uploadSection.addEventListener('drop', (e) => {
-                e.preventDefault();
-                e.currentTarget.classList.remove('upload--active');
-                const file = e.dataTransfer.files[0];
-                if (file && this.onFileSelect) this.onFileSelect(file);
+                this.uploadSection.classList.remove('upload--dragover');
+                const file = e.dataTransfer?.files?.[0];
+                if (file) this._handleFileSelect(file);
             });
         }
 
-        // Analyze Button
-        this.elements.analyzeBtn?.addEventListener('click', () => {
-            if (this.onAnalyze) this.onAnalyze();
-        });
+        if (this.imageInput) {
+            this.imageInput.addEventListener('change', (e) => {
+                const file = e.target.files?.[0];
+                if (file) this._handleFileSelect(file);
+            });
+        }
 
-        // Clear Button
-        this.elements.clearBtn?.addEventListener('click', () => {
-            this.resetUI();
-            if (this.onClear) this.onClear();
-        });
+        if (this.analyzeBtn) {
+            this.analyzeBtn.addEventListener('click', () => this.onAnalyze?.());
+        }
 
-        // Agreement Checkbox
-        this.elements.agreeCheckbox?.addEventListener('change', (e) => {
-            if (this.onAgreementChange) this.onAgreementChange(e.target.checked);
-        });
+        if (this.clearBtn) {
+            this.clearBtn.addEventListener('click', () => this.onClear?.());
+        }
 
-        // Save PNG Button
-        this.elements.savePngBtn?.addEventListener('click', () => this.handleSavePng());
+        if (this.agreeCheckbox) {
+            this.agreeCheckbox.addEventListener('change', (e) => {
+                this.onAgreementChange?.(e.target.checked);
+            });
+        }
 
-        // Save PDF Button
-        this.elements.savePdfBtn?.addEventListener('click', () => this.handleSavePdf());
+        if (this.savePngBtn) this.savePngBtn.addEventListener('click', () => this._saveAsPng());
+        if (this.savePdfBtn) this.savePdfBtn.addEventListener('click', () => this._saveAsPdf());
     }
 
-    resetUI() {
-        console.log('\U0001f9f9 UI Reset Triggered');
-        if (this.elements.imageInput)   this.elements.imageInput.value = '';
-        if (this.elements.imagePreview) this.elements.imagePreview.src = '';
-        if (this.elements.reportImage)  this.elements.reportImage.src  = '';
-        if (this.elements.agreeCheckbox) this.elements.agreeCheckbox.checked = false;
-
-        if (this._currentObjectURL) {
-            URL.revokeObjectURL(this._currentObjectURL);
-            this._currentObjectURL = null;
-            this._lastFile = null;
-        }
-
-        if (this.elements.uploadSection) {
-            this.elements.uploadSection.style.display = 'block';
-            this.elements.uploadSection.classList.remove('hidden', 'upload--disabled');
-        }
-        if (this.elements.previewContainer) {
-            this.elements.previewContainer.style.display = 'none';
-            this.elements.previewContainer.classList.add('hidden');
-        }
-        if (this.elements.reportContainer) {
-            this.elements.reportContainer.style.display = 'none';
-            this.elements.reportContainer.classList.add('hidden');
-        }
-        if (this.elements.progressContainer) {
-            this.elements.progressContainer.style.display = 'none';
-            this.elements.progressContainer.classList.add('hidden');
-        }
-        if (this.elements.analyzeBtn) this.elements.analyzeBtn.disabled = true;
-
-        // Grad-CAM 뷰어 리셋
-        this.gradcamViewer.hide();
+    _handleFileSelect(file) {
+        // 미리보기
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            if (this.imagePreview) this.imagePreview.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+        this.onFileSelect?.(file);
     }
 
+    // ────────────────────────────────────────────────────────────────────
+    // 상태 기반 렌더링
+    // ────────────────────────────────────────────────────────────────────
     render(state) {
-        this.renderUploadArea(state);
-        this.renderAnalyzeButton(state);
-        this.renderResults(state);
-        this.renderProgress(state);
-        this.renderError(state);
-    }
-
-    renderUploadArea(state) {
-        if (state.uploadedImage) {
-            if (this.elements.imagePreview) {
-                if (this._lastFile !== state.uploadedImage) {
-                    if (this._currentObjectURL) URL.revokeObjectURL(this._currentObjectURL);
-                    this._currentObjectURL = URL.createObjectURL(state.uploadedImage);
-                    this._lastFile = state.uploadedImage;
-                }
-                this.elements.imagePreview.src = this._currentObjectURL;
-                this.elements.imagePreview.classList.add('preview__image--visible');
-            }
-            if (this.elements.uploadSection) {
-                this.elements.uploadSection.style.display = 'none';
-                this.elements.uploadSection.classList.add('upload--disabled');
-            }
-            if (this.elements.previewContainer) {
-                this.elements.previewContainer.style.display = 'block';
-                this.elements.previewContainer.classList.remove('hidden');
-            }
-        } else {
-            if (this.elements.uploadSection)  this.elements.uploadSection.style.display  = 'block';
-            if (this.elements.previewContainer) this.elements.previewContainer.style.display = 'none';
+        switch (state.status) {
+            case 'idle':        this._renderIdle();              break;
+            case 'preview':     this._renderPreview(state);      break;
+            case 'analyzing':   this._renderAnalyzing(state);    break;
+            case 'complete':    this._renderComplete(state);     break;
+            case 'error':       this._renderError(state);        break;
         }
     }
 
-    renderAnalyzeButton(state) {
-        if (this.elements.analyzeBtn) {
-            const isEnabled = state.uploadedImage && state.agreeChecked;
-            this.elements.analyzeBtn.disabled  = !isEnabled || state.isAnalyzing;
-            this.elements.analyzeBtn.textContent = state.isAnalyzing ? '\ubd84\uc11d \uc911...' : 'AI \uc815\ubc00 \ubd84\uc11d \uc2dc\uc791';
+    _renderIdle() {
+        this._hide(this.previewContainer);
+        this._hide(this.progressContainer);
+        this._hide(this.reportContainer);
+        this._show(this.uploadSection);
+    }
+
+    _renderPreview(state) {
+        this._show(this.previewContainer);
+        this._hide(this.progressContainer);
+        this._hide(this.reportContainer);
+        if (this.analyzeBtn) {
+            this.analyzeBtn.disabled = !state.agreeChecked;
         }
-        if (this.elements.agreeCheckbox) {
-            this.elements.agreeCheckbox.checked = !!state.agreeChecked;
+        if (this.agreeCheckbox) {
+            this.agreeCheckbox.checked = state.agreeChecked || false;
         }
     }
 
-    renderResults(state) {
-        if (!this.elements.reportContainer) return;
+    _renderAnalyzing(state) {
+        this._hide(this.previewContainer);
+        this._show(this.progressContainer);
+        this._hide(this.reportContainer);
 
-        if (state.analysisResult && state.analysisResult.success) {
-            this.elements.reportContainer.style.display = 'block';
-            this.elements.reportContainer.classList.remove('hidden');
-            this.elements.previewContainer.style.display = 'none';
-            this.elements.previewContainer.classList.add('hidden');
+        // 서버 웜업 중이면 라벨 변경
+        if (this.progressLabel) {
+            const isWarmingUp = !window.__serverReady__;
+            this.progressLabel.textContent = isWarmingUp
+                ? '서버를 깨우는 중입니다. 처음 접속 시 최대 2분이 소요됩니다...'
+                : '딥러닝 모델이 흉부 영상을 분석하고 있습니다.';
+        }
 
-            if (this.elements.reportImage && this._currentObjectURL) {
-                this.elements.reportImage.src = this._currentObjectURL;
-                this.elements.reportImage.classList.add('preview__image--visible');
-            }
+        this._startProgressAnimation();
+    }
 
-            this.renderPredictions(state.analysisResult.predictions);
-            this.renderMetadata(state.analysisResult.metadata || {});
+    _renderComplete(state) {
+        this._stopProgressAnimation();
+        this._hide(this.progressContainer);
+        this._show(this.reportContainer);
 
-            // ── Grad-CAM 히트맵 렌더링 ────────────────────────────
-            const gradcam = state.analysisResult.gradcam;
-            if (gradcam) {
-                this.gradcamViewer.render(gradcam, this._currentObjectURL || '');
-            } else {
-                this.gradcamViewer.hide();
-            }
-        } else {
-            this.elements.reportContainer.style.display = 'none';
-            this.elements.reportContainer.classList.add('hidden');
-            this.gradcamViewer.hide();
+        if (!state.result) return;
+
+        // 타임스탬프 & ID
+        if (this.reportTimestamp) {
+            this.reportTimestamp.textContent = new Date().toLocaleString('ko-KR');
+        }
+        if (this.reportId) {
+            this.reportId.textContent = `REQ-${Date.now().toString(36).toUpperCase()}`;
+        }
+
+        // 원본 이미지
+        if (this.reportImage && state.uploadedImageUrl) {
+            this.reportImage.src = state.uploadedImageUrl;
+        }
+
+        // 예측 결과
+        this._renderPredictions(state.result);
+
+        // Grad-CAM 뷰어
+        if (state.result.gradcam) {
+            this.gradcamViewer.render(state.result.gradcam, state.uploadedImageUrl);
         }
     }
 
-    renderPredictions(predictions) {
-        if (!this.elements.resultsContent) return;
+    _renderError(state) {
+        this._stopProgressAnimation();
+        this._hide(this.progressContainer);
+        this._show(this.previewContainer);
+    }
 
-        const sorted = [...predictions].sort((a, b) => b.probability - a.probability);
+    // ────────────────────────────────────────────────────────────────────
+    // 예측 결과 렌더링
+    // ────────────────────────────────────────────────────────────────────
+    _renderPredictions(result) {
+        if (!this.resultsContent || !result.predictions) return;
 
-        this.elements.resultsContent.innerHTML = sorted.map(pred => {
-            const percentage = (pred.probability * 100).toFixed(1);
-            const isNormal   = pred.className.toLowerCase().includes('\uc815\uc0c1') ||
-                               pred.className.toLowerCase().includes('normal');
+        const predictions = result.predictions;
+        const topResult   = predictions[0];
+        const isPneumonia = topResult.className === '폐렴';
+
+        // 결과 카드
+        this.resultsContent.innerHTML = predictions.map(pred => {
+            const pct       = (pred.probability * 100).toFixed(1);
+            const isTop     = pred === topResult;
+            const cardClass = isTop ? (isPneumonia ? 'result-card--danger' : 'result-card--success') : '';
             return `
-                <div class="card--result card--result-${isNormal ? 'normal' : 'pneumonia'}">
-                    <span>${pred.className}</span>
-                    <span class="card__result-percentage">${percentage}%</span>
+                <div class="result-card ${cardClass}">
+                    <div class="result-card__header">
+                        <span class="result-card__label">${pred.className}</span>
+                        <span class="result-card__value">${pct}%</span>
+                    </div>
+                    <div class="result-card__bar">
+                        <div class="result-card__bar-fill" style="width: ${pct}%"></div>
+                    </div>
                 </div>
             `;
         }).join('');
 
-        const pneumonia = sorted.find(p =>
-            !p.className.toLowerCase().includes('\uc815\uc0c1') &&
-            !p.className.toLowerCase().includes('normal')
-        );
-        if (pneumonia && this.elements.resultComment) {
-            const prob = pneumonia.probability * 100;
-            let text = '', className = '';
-            if (prob > 90) {
-                text = '<strong>\ub192\uc740 \uc704\ud5d8:</strong> \ud3d0\ub834\uc77c \uac00\ub2a5\uc131\uc774 \ub9e4\uc6b0 \ub192\uc2b5\ub2c8\ub2e4.';
-                className = 'warning';
-            } else if (prob > 70) {
-                text = '<strong>\uc8fc\uc758 \ud544\uc694:</strong> \ud3d0\ub834 \uac00\ub2a5\uc131\uc774 \uc788\uc2b5\ub2c8\ub2e4.';
-                className = 'warning';
-            } else {
-                text = '<strong>\ub099\uc740 \uc704\ud5d8:</strong> \uc815\uc0c1 \ubc94\uc704\ub85c \ubcf4\uc785\ub2c8\ub2e4.';
-                className = 'privacy';
-            }
-            this.elements.resultComment.innerHTML =
-                `<i class="fa-solid fa-comment-medical"></i> <div>${text}</div>`;
-            this.elements.resultComment.className =
-                `notice notice--diagnosis ${className}`;
+        // 코멘트
+        if (this.resultComment) {
+            const comment = isPneumonia
+                ? { icon: '⚠️', cls: 'notice--danger',  text: '폐렴 소견이 감지되었습니다. 전문의 상담을 권장합니다.' }
+                : { icon: '✅', cls: 'notice--success', text: '정상 소견입니다. 정기적인 검진을 권장합니다.' };
+            this.resultComment.className = `notice notice--diagnosis ${comment.cls}`;
+            this.resultComment.innerHTML = `<span>${comment.icon}</span><span>${comment.text}</span>`;
         }
 
-        if (this.elements.reportTimestamp) {
-            this.elements.reportTimestamp.textContent =
-                `\uc9c4\ub2e8 \uc2dc\uac01: ${new Date().toLocaleString()}`;
-        }
-
-        const reportIdElem = document.getElementById('reportId');
-        if (reportIdElem && reportIdElem.textContent.includes('REQ-2026-AI')) {
-            reportIdElem.textContent = 'REQ-' +
-                Math.random().toString(16).slice(2, 8).toUpperCase();
+        // 처리 시간
+        if (result.metadata?.processing_time_ms) {
+            const timeEl = document.createElement('p');
+            timeEl.className = 'text-tiny text-muted mt-sm text-right';
+            timeEl.textContent = `처리 시간: ${result.metadata.processing_time_ms.toFixed(0)}ms`;
+            this.resultsContent.appendChild(timeEl);
         }
     }
 
-    /** PNG \uc800\uc7a5 */
-    async handleSavePng() {
-        const reportCard = document.getElementById('reportCard');
-        if (!reportCard) return;
+    // ────────────────────────────────────────────────────────────────────
+    // 프로그레스 바 애니메이션
+    // ────────────────────────────────────────────────────────────────────
+    _startProgressAnimation() {
+        this._stopProgressAnimation();
+        this._progressValue = 0;
+        if (!this.progressBarFill) return;
+
+        this._progressInterval = setInterval(() => {
+            // 95%까지 서서히 증가 (완료는 _stopProgressAnimation에서)
+            if (this._progressValue < 95) {
+                const increment = this._progressValue < 30 ? 2
+                                : this._progressValue < 60 ? 1
+                                : 0.3;
+                this._progressValue = Math.min(95, this._progressValue + increment);
+                this.progressBarFill.style.width = `${this._progressValue}%`;
+            }
+        }, 200);
+    }
+
+    _stopProgressAnimation() {
+        if (this._progressInterval) {
+            clearInterval(this._progressInterval);
+            this._progressInterval = null;
+        }
+        if (this.progressBarFill) {
+            this.progressBarFill.style.width = '100%';
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // 저장 기능
+    // ────────────────────────────────────────────────────────────────────
+    async _saveAsPng() {
         try {
-            const canvas = await html2canvas(reportCard, {
-                useCORS: true, scale: 3, backgroundColor: '#0B0B0D', logging: false,
-                onclone: (clonedDoc) => {
-                    const el = clonedDoc.getElementById('reportCard');
-                    if (el) {
-                        [...el.getElementsByTagName('*')].forEach(e => {
-                            e.style.letterSpacing = 'normal';
-                            e.style.wordSpacing   = 'normal';
-                        });
-                        const btns = el.querySelector('.card__footer .btn-group');
-                        if (btns) btns.style.display = 'none';
-                    }
-                }
-            });
-            const link = document.createElement('a');
-            link.download = `AI_Diagnosis_Result_${Date.now()}.png`;
-            link.href = canvas.toDataURL('image/png');
+            const reportCard = document.getElementById('reportCard');
+            if (!reportCard || !window.html2canvas) return;
+            const canvas = await html2canvas(reportCard, { scale: 2, useCORS: true });
+            const link   = document.createElement('a');
+            link.download = `diagnosis_${Date.now()}.png`;
+            link.href     = canvas.toDataURL('image/png');
             link.click();
-        } catch (err) {
-            console.error('PNG \uc800\uc7a5 \uc2e4\ud328:', err);
-            alert('PNG \uc800\uc7a5 \uc911 \uc624\ub958\uac00 \ubc1c\uc0dd\ud588\uc2b5\ub2c8\ub2e4.');
+        } catch (e) {
+            CONFIG.log('PNG 저장 실패:', e);
         }
     }
 
-    /** PDF \ub9ac\ud3ec\ud2b8 \uc0dd\uc131 */
-    async handleSavePdf() {
-        const reportCard = document.getElementById('reportCard');
-        if (!reportCard) return;
+    async _saveAsPdf() {
         try {
+            const reportCard = document.getElementById('reportCard');
+            if (!reportCard || !window.html2canvas || !window.jspdf) return;
+            const canvas = await html2canvas(reportCard, { scale: 2, useCORS: true });
             const { jsPDF } = window.jspdf;
-            const canvas = await html2canvas(reportCard, {
-                useCORS: true, scale: 3, backgroundColor: '#0B0B0D',
-                onclone: (clonedDoc) => {
-                    const el = clonedDoc.getElementById('reportCard');
-                    if (el) {
-                        [...el.getElementsByTagName('*')].forEach(e => {
-                            e.style.letterSpacing = 'normal';
-                            e.style.wordSpacing   = 'normal';
-                        });
-                        const btns = el.querySelector('.card__footer .btn-group');
-                        if (btns) btns.style.display = 'none';
-                    }
-                }
-            });
+            const pdf    = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
             const imgData = canvas.toDataURL('image/png');
-            const doc = new jsPDF('p', 'mm', 'a4');
-            const pageW = doc.internal.pageSize.getWidth();
-            const pageH = doc.internal.pageSize.getHeight();
-            const imgW  = pageW - 20;
-            const imgH  = (canvas.height * imgW) / canvas.width;
-
-            doc.setFontSize(18);
-            doc.setTextColor(201, 169, 110);
-            doc.text('AI Diagnosis Official Report', 10, 15);
-            doc.addImage(imgData, 'PNG', 10, 25, imgW, imgH);
-            doc.setFontSize(9);
-            doc.setTextColor(150, 150, 150);
-            doc.text(`Generated on ${new Date().toLocaleString()}`, 10, pageH - 10);
-            doc.text(
-                'Disclaimer: This report is for reference only and does not replace medical professional judgment.',
-                50, pageH - 10
-            );
-            const reportId = document.getElementById('reportId')?.textContent || 'N/A';
-            doc.save(`AI_Diagnosis_Report_${reportId}.pdf`);
-        } catch (err) {
-            console.error('PDF \uc0dd\uc131 \uc2e4\ud328:', err);
-            alert('PDF \ub9ac\ud3ec\ud2b8 \uc0dd\uc131 \uc911 \uc624\ub958\uac00 \ubc1c\uc0dd\ud588\uc2b5\ub2c8\ub2e4.');
+            const w = pdf.internal.pageSize.getWidth();
+            const h = (canvas.height * w) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 0, 0, w, h);
+            pdf.save(`diagnosis_${Date.now()}.pdf`);
+        } catch (e) {
+            CONFIG.log('PDF 저장 실패:', e);
         }
     }
 
-    renderMetadata(_metadata) { /* \ud655\uc7a5\uc6a9 */ }
+    // ────────────────────────────────────────────────────────────────────
+    // 유틸
+    // ────────────────────────────────────────────────────────────────────
+    _show(el) { el?.classList.remove('hidden'); }
+    _hide(el) { el?.classList.add('hidden'); }
 
-    renderProgress(state) {
-        const { progress } = state;
-        if (this.elements.progressContainer) {
-            if (state.isAnalyzing) {
-                this.elements.progressContainer.style.display = 'block';
-                this.elements.progressContainer.classList.remove('hidden');
-                if (this.elements.progressBarFill)
-                    this.elements.progressBarFill.style.width = `${progress.percent}%`;
-            } else {
-                this.elements.progressContainer.style.display = 'none';
-                this.elements.progressContainer.classList.add('hidden');
-            }
-        }
-    }
-
-    renderError(state) {
-        if (state.error) alert(state.error);
+    resetUI() {
+        CONFIG.log('🧹 UI Reset Triggered');
+        this._hide(this.previewContainer);
+        this._hide(this.progressContainer);
+        this._hide(this.reportContainer);
+        if (this.imageInput)    this.imageInput.value    = '';
+        if (this.analyzeBtn)    this.analyzeBtn.disabled = true;
+        if (this.agreeCheckbox) this.agreeCheckbox.checked = false;
+        this._stopProgressAnimation();
+        this.gradcamViewer?.reset();
     }
 }
-
-export default UIController;
