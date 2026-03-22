@@ -31,7 +31,6 @@ def create_app(config_name=None):
     """
     Flask 애플리케이션 팩토리 함수
     """
-    # 프론트엔드 경로 설정 (Robust path)
     base_dir = os.path.abspath(os.path.dirname(__file__))
     frontend_dir = os.path.abspath(os.path.join(base_dir, '..', 'frontend'))
 
@@ -56,20 +55,27 @@ def create_app(config_name=None):
     logger.info("=" * 70)
 
     # ===== CORS 설정 =====
-    # flask-cors 가 모든 경로의 OPTIONS preflight 를 자동 처리하므로
-    # 별도의 와일드카드 OPTIONS 핸들러는 등록하지 않습니다.
-    # (와일드카드 핸들러가 있으면 존재하지 않는 경로에서 404 대신 405 반환)
+    #
+    # ★ origins="*" (와일드카드) 를 명시적으로 사용합니다.
+    #
+    # 이유: Render 무료 플랜에서 슬립 해제 중 502/503 응답이 올 때
+    #   flask-cors 가 헤더를 붙이기 전에 Render 게이트웨이가 먼저 응답합니다.
+    #   이 경우 Access-Control-Allow-Origin 헤더가 누락되어 브라우저에서
+    #   CORS 에러로 보입니다. (실제 원인은 서버 슬립이지만 브라우저는 CORS 에러 표시)
+    #
+    #   after_request 훅으로 모든 응답에 CORS 헤더를 추가하는 방어 로직도
+    #   함께 유지합니다.
     CORS(
         app,
         resources={r"/*": {"origins": "*"}},
         methods=['GET', 'POST', 'OPTIONS'],
-        allow_headers=getattr(config, 'CORS_ALLOW_HEADERS', None),
-        expose_headers=getattr(config, 'CORS_EXPOSE_HEADERS', None),
-        max_age=getattr(config, 'CORS_MAX_AGE', None),
-        supports_credentials=getattr(config, 'CORS_SUPPORTS_CREDENTIALS', False),
+        allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
+        expose_headers=['Content-Type', 'X-Request-ID'],
+        max_age=3600,
+        supports_credentials=False,
         send_wildcard=True
     )
-    logger.info("✓ CORS 설정 완료")
+    logger.info("✓ CORS 설정 완료 (origins=*, send_wildcard=True)")
 
     # ===== 종속성 서비스 초기화 =====
     app.health_checker = init_health_checker(app)
@@ -77,7 +83,6 @@ def create_app(config_name=None):
         min_width=32, min_height=32, max_width=4096, max_height=4096, max_aspect_ratio=10.0
     )
 
-    # ONNX 모델 서비스 (기존 유지)
     app.model_service = ModelService(
         model_path=config.MODEL_PATH,
         labels_path=config.LABELS_PATH,
@@ -90,11 +95,9 @@ def create_app(config_name=None):
     except ModelLoadError as e:
         logger.error(f"✗ 모델 로드 실패: {e.message}")
 
-    # 이미지 프로세서
     app.image_processor = ImageProcessor(target_size=config.TARGET_IMAGE_SIZE)
     logger.info("✓ 이미지 프로세서 초기화")
 
-    # ── PyTorch Grad-CAM 예측기 초기화 (Phase A) ─────────────────────────
     pytorch_weights = os.environ.get(
         'PYTORCH_WEIGHTS_PATH',
         os.path.join(os.path.dirname(__file__), '..', 'backend', 'models', 'model_weights.pth')
@@ -137,9 +140,19 @@ def create_app(config_name=None):
     def internal_server_error(error):
         return error_response("서버 내부 오류가 발생했습니다", status_code=500, error_type="InternalServerError")
 
-    # ===== HTTP 캐싱 및 보안 헤더 =====
+    # ===== 모든 응답에 CORS 헤더 강제 삽입 (방어 로직) =====
+    #
+    # flask-cors 가 헤더를 붙이지 못하는 엣지 케이스(에러 응답, 모델 로드 실패 등)
+    # 에도 CORS 헤더가 항상 포함되도록 after_request 에서 한 번 더 보장합니다.
     @app.after_request
-    def add_cache_and_security_headers(response):
+    def ensure_cors_and_cache_headers(response):
+        # CORS 헤더 강제 보장
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response.headers['Access-Control-Max-Age'] = '3600'
+
+        # 캐시 헤더
         if request.path.startswith('/static/') or \
                 request.path.endswith(('.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico')):
             response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
@@ -148,18 +161,10 @@ def create_app(config_name=None):
         else:
             response.headers['Cache-Control'] = 'no-store'
 
+        # 보안 헤더
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['X-XSS-Protection'] = '1; mode=block'
-
-        if 'Access-Control-Allow-Origin' not in response.headers:
-            response.headers['Access-Control-Allow-Origin'] = '*'
-        if 'Access-Control-Allow-Methods' not in response.headers:
-            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-        if 'Access-Control-Allow-Headers' not in response.headers:
-            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
-        if 'Access-Control-Max-Age' not in response.headers:
-            response.headers['Access-Control-Max-Age'] = str(getattr(config, 'CORS_MAX_AGE', 3600))
 
         return response
 
