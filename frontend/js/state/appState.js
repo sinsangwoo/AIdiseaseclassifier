@@ -1,174 +1,126 @@
 /**
- * Application State Management (Phase 4 Enhanced)
- * 
- * 애플리케이션의 전체 상태를 관리하는 모듈
- * Phase 4: 비동기 처리 및 UI 업데이트 강화
+ * Application State Management
+ *
+ * 상태 스키마 (uiController.render(state)와 일치 필수)
+ *
+ * state.status: 'idle' | 'preview' | 'analyzing' | 'complete' | 'error'
+ * state.uploadedImage:    File | null
+ * state.uploadedImageUrl: string | null   (예시리보기 DataURL)
+ * state.result:           Object | null   (API 응답)
+ * state.error:            string | null
+ * state.agreeChecked:     boolean
  */
 
 class AppState {
     constructor() {
-        this.state = {
-            isAnalyzing: false,
-            uploadedImage: null,
-            analysisResult: null,
-            error: null,
-            // Phase 4: 진행 상태 추가
-            progress: {
-                stage: '', // 'uploading', 'analyzing', 'complete'
-                percent: 0,
-                message: ''
-            },
-            agreeChecked: false,
-            // 캐시 통계
-            cacheStats: null
+        this._state = {
+            status:           'idle',   // UI 렌더링 기준
+            uploadedImage:    null,
+            uploadedImageUrl: null,
+            result:           null,
+            error:            null,
+            agreeChecked:     false,
         };
-
-        this.listeners = [];
+        this._listeners = [];
+        this._log('AppState 초기화 완료');
     }
 
-    /**
-     * 상태 변경 리스너 등록
-     * @param {Function} listener - 상태 변경 시 호출될 함수
-     */
+    // ── 구독 ─────────────────────────────────────────────────────────────────
     subscribe(listener) {
-        this.listeners.push(listener);
-        // 구독 해제 함수 반환
+        this._listeners.push(listener);
         return () => {
-            this.listeners = this.listeners.filter(l => l !== listener);
+            this._listeners = this._listeners.filter(l => l !== listener);
         };
     }
 
-    /**
-     * 상태 업데이트
-     * @param {Object} updates - 변경할 상태 값들
-     */
-    setState(updates) {
-        this.state = { ...this.state, ...updates };
-        this._notifyListeners();
-    }
-
-    /**
-     * 현재 상태 조회
-     * @returns {Object} - 현재 상태
-     */
     getState() {
-        return { ...this.state };
+        return { ...this._state };
     }
 
-    /**
-     * Phase 4: 분석 시작
-     */
-    startAnalysis() {
-        this.setState({
-            isAnalyzing: true,
-            error: null,
-            analysisResult: null,
-            progress: {
-                stage: 'uploading',
-                percent: 10,
-                message: '이미지 업로드 중...'
-            }
-        });
-    }
+    // ── 상태 전환 메서드 ────────────────────────────────────────────────
 
-    /**
-     * Phase 4: 분석 중 (서버 전송 완료)
-     */
-    analyzing() {
-        this.setState({
-            progress: {
-                stage: 'analyzing',
-                percent: 50,
-                message: 'AI 모델 분석 중...'
-            }
-        });
-    }
-
-    /**
-     * Phase 4: 분석 완료
-     * @param {Object} result - 분석 결과
-     */
-    completeAnalysis(result) {
-        this.setState({
-            isAnalyzing: false,
-            analysisResult: result,
-            progress: {
-                stage: 'complete',
-                percent: 100,
-                message: '분석 완료!'
-            }
-        });
-    }
-
-    /**
-     * 분석 실패
-     * @param {string|Error} error - 오류 메시지
-     */
-    setError(error) {
-        this.setState({
-            isAnalyzing: false,
-            error: error.message || error,
-            progress: {
-                stage: '',
-                percent: 0,
-                message: ''
-            }
-        });
-    }
-
-    /**
-     * 이미지 업로드
-     * @param {File} file - 업로드된 파일
-     */
+    /** 이미지 선택 시 → 'preview' 상태로 전환 */
     setUploadedImage(file) {
-        this.setState({
-            uploadedImage: file,
-            analysisResult: null,
-            error: null
-        });
+        // File → DataURL 변환
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this._setState({
+                status:           'preview',
+                uploadedImage:    file,
+                uploadedImageUrl: e.target.result,
+                result:           null,
+                error:            null,
+                agreeChecked:     false,
+            });
+            this._log(`이미지 선택: ${file.name} (${(file.size/1024).toFixed(1)} KB)`);
+        };
+        reader.onerror = (e) => {
+            this._error(`FileReader 실패: ${e.target.error}`);
+            this.setError('이미지를 읽는 중 오류가 발생했습니다.');
+        };
+        reader.readAsDataURL(file);
     }
 
     setAgreement(checked) {
-        this.setState({ agreeChecked: checked });
+        this._setState({ agreeChecked: checked });
+        this._log(`동의 체크박스: ${checked}`);
     }
 
-    setAnalysisResult(result) {
-        this.completeAnalysis(result);
+    /** 분석 버튼 클릭 시 → 'analyzing' */
+    startAnalysis() {
+        this._setState({ status: 'analyzing', error: null, result: null });
+        this._log('분석 시작');
     }
 
-    /**
-     * 상태 초기화
-     */
+    /** 서버 웹 업 대기 중에도 'analyzing' 유지 */
+    analyzing() {
+        if (this._state.status !== 'analyzing') {
+            this._setState({ status: 'analyzing' });
+        }
+    }
+
+    /** 분석 완료 → 'complete' */
+    completeAnalysis(result) {
+        this._setState({ status: 'complete', result, error: null });
+        this._log('분석 완료', result);
+    }
+
+    /** 오류 → 'error' */
+    setError(error) {
+        const msg = (error instanceof Error) ? error.message : String(error);
+        this._setState({ status: 'error', error: msg });
+        this._error('상태 오류:', msg);
+    }
+
+    /** 리셋 → 'idle' */
     reset() {
-        this.setState({
-            isAnalyzing: false,
-            uploadedImage: null,
-            analysisResult: null,
-            error: null,
-            agreeChecked: false,
-            progress: {
-                stage: '',
-                percent: 0,
-                message: ''
-            }
+        this._setState({
+            status:           'idle',
+            uploadedImage:    null,
+            uploadedImageUrl: null,
+            result:           null,
+            error:            null,
+            agreeChecked:     false,
+        });
+        this._log('상태 초기화');
+    }
+
+    // ── 내부 도우미 ─────────────────────────────────────────────────────
+    _setState(updates) {
+        const prev = this._state.status;
+        this._state = { ...this._state, ...updates };
+        if (prev !== this._state.status) {
+            this._log(`상태 전환: ${prev} → ${this._state.status}`);
+        }
+        this._listeners.forEach(fn => {
+            try { fn(this._state); }
+            catch (e) { this._error('리스너 오류:', e); }
         });
     }
 
-    /**
-     * 모든 리스너에게 변경 사항 알림
-     * @private
-     */
-    _notifyListeners() {
-        this.listeners.forEach(listener => {
-            try {
-                listener(this.state);
-            } catch (error) {
-                console.error('상태 리스너 오류:', error);
-            }
-        });
-    }
+    _log(...args)  { console.log ('[AppState]', ...args); }
+    _error(...args){ console.error('[AppState]', ...args); }
 }
 
-// 싱글턴 인스턴스 생성 및 export
 export const appState = new AppState();
 export default appState;
