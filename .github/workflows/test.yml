@@ -9,77 +9,144 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         python-version: ['3.10', '3.11', '3.12']
-    
+      # 한 버전 실패해도 나머지 계속 실행 (전체 호환성 파악)
+      fail-fast: false
+
     steps:
     - uses: actions/checkout@v4
       with:
-        lfs: true  # Git LFS로 큰 모델 파일 다운로드 (필요시)
-    
+        lfs: true
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip'  # pip 캐싱으로 빌드 속도 향상
-    
+        cache: 'pip'
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pytest pytest-cov pytest-timeout
-    
+
     - name: Verify model files exist
       run: |
-        echo "Checking for model files..."
-        if [ -f "backend/models/keras_model.h5" ]; then
-          echo "✓ keras_model.h5 found"
-          ls -lh backend/models/keras_model.h5
-        else
-          echo "✗ keras_model.h5 NOT FOUND"
-          exit 1
-        fi
-        
-        if [ -f "backend/models/model.onnx" ]; then
-          echo "✓ model.onnx found"
-          ls -lh backend/models/model.onnx
-        else
-          echo "✗ model.onnx NOT FOUND"
-          exit 1
-        fi
-        
-        if [ -f "backend/models/labels.txt" ]; then
-          echo "✓ labels.txt found"
-          cat backend/models/labels.txt
-        else
-          echo "✗ labels.txt NOT FOUND"
-          exit 1
-        fi
-    
+        echo "=== 모델 파일 존재 확인 ==="
+        for f in backend/models/keras_model.h5 backend/models/model.onnx backend/models/labels.txt; do
+          if [ -f "$f" ]; then
+            echo "✓ $f  ($(du -sh $f | cut -f1))"
+          else
+            echo "✗ $f  NOT FOUND"
+            exit 1
+          fi
+        done
+        echo "labels.txt 내용:"
+        cat backend/models/labels.txt
+
     - name: Set PYTHONPATH
       run: echo "PYTHONPATH=${{ github.workspace }}" >> $GITHUB_ENV
-    
+
+    # ── 단계 1: 단위 테스트 ──────────────────────────────────────────────
     - name: Run unit tests
+      id: unit_tests
       run: |
-        pytest tests/ -v -m "unit" --tb=short --timeout=30
-      continue-on-error: false
-    
+        pytest tests/ -v -m "unit" \
+          --tb=long \
+          --timeout=30 \
+          --no-header \
+          -rN \
+          2>&1 | tee unit_test_output.txt
+        echo "EXIT_CODE=${PIPESTATUS[0]}" >> $GITHUB_ENV
+      continue-on-error: true
+
+    - name: Unit test summary
+      if: always()
+      run: |
+        echo "## 단위 테스트 결과 (Python ${{ matrix.python-version }})" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        tail -30 unit_test_output.txt >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "(출력 없음)" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+
+    - name: Fail if unit tests failed
+      if: env.EXIT_CODE != '0'
+      run: exit 1
+
+    # ── 단계 2: API 테스트 ───────────────────────────────────────────────
     - name: Run API tests
+      id: api_tests
       run: |
-        pytest tests/ -v -m "api" --tb=short --timeout=60
-      continue-on-error: false
-    
+        pytest tests/ -v -m "api" \
+          --tb=long \
+          --timeout=60 \
+          --no-header \
+          -rN \
+          2>&1 | tee api_test_output.txt
+        echo "API_EXIT_CODE=${PIPESTATUS[0]}" >> $GITHUB_ENV
+      continue-on-error: true
+
+    - name: API test summary
+      if: always()
+      run: |
+        echo "## API 테스트 결과 (Python ${{ matrix.python-version }})" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        tail -50 api_test_output.txt >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "(출력 없음)" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        # 실패한 테스트만 별도 추출
+        if grep -q "FAILED" api_test_output.txt 2>/dev/null; then
+          echo "### ❌ 실패한 API 테스트" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep "FAILED\|AssertionError\|Error" api_test_output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Fail if API tests failed
+      if: env.API_EXIT_CODE != '0'
+      run: exit 1
+
+    # ── 단계 3: 전체 테스트 + 커버리지 ──────────────────────────────────
     - name: Run all tests with coverage
+      id: coverage_tests
       run: |
         pytest tests/ -v \
           --cov=backend \
           --cov-report=xml \
           --cov-report=term-missing \
           --cov-report=html \
-          --timeout=120
-    
+          --tb=long \
+          --timeout=120 \
+          --no-header \
+          -rN \
+          2>&1 | tee coverage_test_output.txt
+        echo "COV_EXIT_CODE=${PIPESTATUS[0]}" >> $GITHUB_ENV
+      continue-on-error: true
+
+    - name: Coverage test summary
+      if: always()
+      run: |
+        echo "## 전체 테스트 + 커버리지 (Python ${{ matrix.python-version }})" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        # 커버리지 요약 (TOTAL 라인)
+        grep "TOTAL\|FAILED\|passed\|failed\|error" coverage_test_output.txt \
+          | tail -20 >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "(출력 없음)" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        # 실패 상세
+        if grep -q "FAILED" coverage_test_output.txt 2>/dev/null; then
+          echo "### ❌ 실패 상세" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -A 20 "FAILURES\|AssertionError\|FAILED" coverage_test_output.txt \
+            | head -80 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Fail if coverage tests failed
+      if: env.COV_EXIT_CODE != '0'
+      run: exit 1
+
+    # ── 아티팩트 업로드 ──────────────────────────────────────────────────
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4
       with:
@@ -87,50 +154,61 @@ jobs:
         fail_ci_if_error: false
         token: ${{ secrets.CODECOV_TOKEN }}
       if: matrix.python-version == '3.11'
-    
-    - name: Archive coverage HTML report
+
+    - name: Archive test outputs & coverage
       uses: actions/upload-artifact@v4
       with:
-        name: coverage-report-${{ matrix.python-version }}
-        path: htmlcov/
+        name: test-results-py${{ matrix.python-version }}
+        path: |
+          htmlcov/
+          unit_test_output.txt
+          api_test_output.txt
+          coverage_test_output.txt
+          coverage.xml
       if: always()
-    
-    - name: Test Summary
-      if: always()
-      run: |
-        echo "## Test Results (Python ${{ matrix.python-version }})" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        if [ -f htmlcov/index.html ]; then
-          echo "✓ Coverage report generated" >> $GITHUB_STEP_SUMMARY
-        fi
 
+  # ── Lint 잡 ────────────────────────────────────────────────────────────
   lint:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
         cache: 'pip'
-    
+
     - name: Install linting tools
+      run: pip install flake8 black isort
+
+    - name: Check code formatting (black)
       run: |
-        pip install flake8 black isort
-    
-    - name: Check code formatting with black
-      run: |
-        black --check backend/ tests/ || echo "⚠ Code formatting issues found (non-blocking)"
+        black --check backend/ tests/ \
+          && echo "✓ black: 포맷 이상 없음" \
+          || echo "⚠ black: 포맷 이슈 발견 (non-blocking)"
       continue-on-error: true
-    
-    - name: Check imports with isort
+
+    - name: Check import order (isort)
       run: |
-        isort --check-only backend/ tests/ || echo "⚠ Import order issues found (non-blocking)"
+        isort --check-only backend/ tests/ \
+          && echo "✓ isort: import 순서 이상 없음" \
+          || echo "⚠ isort: import 순서 이슈 발견 (non-blocking)"
       continue-on-error: true
-    
-    - name: Lint with flake8
+
+    - name: Lint with flake8 (syntax errors only — blocking)
       run: |
-        # 경고만, 실패하지 않음
-        flake8 backend/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics || true
-        flake8 backend/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 backend/ tests/ \
+          --count \
+          --select=E9,F63,F7,F82 \
+          --show-source \
+          --statistics
+
+    - name: Lint with flake8 (style — non-blocking)
+      run: |
+        flake8 backend/ tests/ \
+          --count \
+          --exit-zero \
+          --max-complexity=10 \
+          --max-line-length=127 \
+          --statistics

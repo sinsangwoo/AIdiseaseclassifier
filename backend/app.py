@@ -5,7 +5,7 @@ ONNX 모델을 사용하여 의료 이미지를 분석하고 질병을 예측합
 """
 
 import os
-from flask import Flask, request, make_response
+from flask import Flask, request
 from flask_cors import CORS
 
 from backend.config import get_config
@@ -24,8 +24,8 @@ from backend.routes.health import health_bp
 from backend.routes.model import model_bp
 from backend.routes.predict import predict_bp
 
-# CORS 헤더 삽입 헬퍼 — Flask 애플리케이션 컨텍스트 밖에서도 호출 가능
-CORS_HEADERS = {
+# CORS 헤더 상수
+_CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
@@ -34,8 +34,8 @@ CORS_HEADERS = {
 
 
 def _add_cors(response):
-    """CORS 헤더를 response에 강제 삽입합니다."""
-    for k, v in CORS_HEADERS.items():
+    """response 에 CORS 헤더를 강제 삽입합니다."""
+    for k, v in _CORS_HEADERS.items():
         response.headers[k] = v
     return response
 
@@ -68,7 +68,17 @@ def create_app(config_name=None):
     logger.info(f"config.CORS_ORIGINS: {getattr(config, 'CORS_ORIGINS', '(없음)')}")
     logger.info("=" * 70)
 
-    # ===== CORS: flask-cors + after_request 이중 방어 =====
+    # ===== CORS 설정 =====
+    # flask-cors 를 origins='*', send_wildcard=True 로 설정합니다.
+    # after_request 훅에서 한 번 더 헤더를 강제 삽입하여
+    # Render 게이트웨이가 Flask 를 우회해 502 를 반환하는 케이스를 방어합니다.
+    #
+    # ⚠️  OPTIONS 전용 와일드카드 라우트(/<path:path>)는 등록하지 않습니다.
+    #    Flask 는 같은 URL 에 어떤 메서드 핸들러라도 있으면
+    #    다른 메서드 요청에 405 를 반환합니다.
+    #    → 존재하지 않는 경로에 GET 요청 시 404 대신 405 반환 버그 발생.
+    #    flask-cors 가 OPTIONS preflight 를 자동으로 처리하므로
+    #    별도 와일드카드 핸들러는 불필요합니다.
     CORS(
         app,
         resources={r"/*": {"origins": "*"}},
@@ -79,15 +89,7 @@ def create_app(config_name=None):
         supports_credentials=False,
         send_wildcard=True,
     )
-    logger.info("✓ CORS 설정 완료")
-
-    # ===== OPTIONS preflight 전용 엔드포인트 =====
-    # Render 프록시가 preflight에 Flask를 거치지 않고 응답할 때를 대비
-    @app.route('/', methods=['OPTIONS'])
-    @app.route('/<path:path>', methods=['OPTIONS'])
-    def handle_preflight(path=''):
-        resp = make_response('', 204)
-        return _add_cors(resp)
+    logger.info("✓ CORS 설정 완료 (flask-cors, origins=*, send_wildcard=True)")
 
     # ===== 종속성 서비스 초기화 =====
     app.health_checker = init_health_checker(app)
@@ -135,8 +137,7 @@ def create_app(config_name=None):
     # ===== 에러 핸들러 =====
     @app.errorhandler(413)
     def request_entity_too_large(error):
-        resp = error_response("파일 크기가 너무 큽니다", status_code=413, error_type="FileTooLargeError")
-        return _add_cors(resp[0] if isinstance(resp, tuple) else resp)
+        return error_response("파일 크기가 너무 큽니다", status_code=413, error_type="FileTooLargeError")
 
     @app.errorhandler(404)
     def not_found(error):
@@ -151,6 +152,8 @@ def create_app(config_name=None):
         return error_response("서버 내부 오류가 발생했습니다", status_code=500, error_type="InternalServerError")
 
     # ===== CORS 헤더 강제 삽입 (최종 방어선) =====
+    # flask-cors 가 처리한 응답, 에러 응답, 모든 케이스에 헤더를 보장합니다.
+    # Render 게이트웨이가 CORS 헤더를 제거하는 케이스를 방어합니다.
     @app.after_request
     def force_cors_headers(response):
         _add_cors(response)
