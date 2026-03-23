@@ -11,11 +11,9 @@
 
     <title>Smart Medical AI | 폐렴 진단 솔루션</title>
 
-    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1FAB7;</text></svg>">
 
-    <!-- ✅ 환경변수 주입 포인트 (GitHub Actions에서 치환) -->
     <script>
         window.ENV = {
             API_URL: '${VITE_API_URL}' || '',
@@ -23,7 +21,6 @@
         };
     </script>
 
-    <!-- CSS Modules -->
     <link rel="stylesheet" href="./css/components/variables.css">
     <link rel="stylesheet" href="./css/components/layout.css">
     <link rel="stylesheet" href="./css/components/typography.css">
@@ -33,49 +30,34 @@
     <link rel="stylesheet" href="./css/components/upload.css">
     <link rel="stylesheet" href="./css/components/progress.css">
     <link rel="stylesheet" href="./css/components/notice.css">
-    <!-- Phase D: Grad-CAM 히트맵 뷰어 스타일 -->
     <link rel="stylesheet" href="./css/components/heatmap.css">
 
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         crossorigin="anonymous">
 
-    <!-- External Libraries (for report saving) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 </head>
 
 <body>
 
-    <!-- ============================================
-         Navigation Bar
-         ============================================ -->
     <nav class="nav" id="mainNav">
         <div class="nav__inner">
             <a href="#" class="nav__logo">
-                <!-- 🫷 유니코드 이모지 직접 삽입 (&#x1FAB7; = 🫷 lung emoji) -->
                 <span class="nav__logo-icon">🫁</span>
                 <span class="nav__logo-text">SMART MEDICAL</span>
             </a>
             <div class="nav__links">
                 <a href="#upload-section" class="nav__link">Diagnosis</a>
-                <a href="#" class="nav__link nav__link--cta">
-                    <span>v7.0.0</span>
-                </a>
+                <a href="#" class="nav__link nav__link--cta"><span>v7.0.0</span></a>
             </div>
         </div>
     </nav>
 
-    <!-- Main Application Container -->
     <main class="container" role="main">
 
-        <!-- ============================================
-             1. Hero Section
-             ============================================ -->
         <header class="section section--hero mb-xl">
-            <div class="hero__label text-label reveal">
-                Medical AI Solution
-            </div>
+            <div class="hero__label text-label reveal">Medical AI Solution</div>
             <h1 class="heading-hero reveal">
                 <span>AI-Powered</span><br>
                 <em>Pneumonia</em><br>
@@ -85,9 +67,7 @@
                 딥러닝 알고리즘을 활용한 흉부 X-ray 실시간 정밀 분석 시스템
             </p>
             <div class="hero__meta reveal">
-                <span class="hero__tag">
-                    <i class="fa-solid fa-user-doctor"></i> Dev: 신상우
-                </span>
+                <span class="hero__tag"><i class="fa-solid fa-user-doctor"></i> Dev: 신상우</span>
             </div>
             <div class="hero__scroll-indicator reveal">
                 <span class="hero__scroll-text">SCROLL</span>
@@ -97,13 +77,12 @@
 
         <div class="section-divider" aria-hidden="true"></div>
 
-        <!-- ============================================
-             2. Workflow Section
-             ============================================ -->
         <div class="grid grid--1-col gap-xl" id="upload-section">
 
-            <!-- Step 1: Image Upload -->
-            <section aria-labelledby="upload-heading" class="reveal">
+            <!-- Step 1: 업로드
+                 id="uploadWrapper" 를 추가하여 JS에서 서션 전체를 show/hide
+            -->
+            <section id="uploadWrapper" aria-labelledby="upload-heading" class="reveal">
                 <div class="flex-between mb-md">
                     <h3 id="upload-heading" class="heading-4 mb-0">
                         <span class="text-primary mr-sm">01.</span>영상 업로드
@@ -117,12 +96,8 @@
                     <div class="upload__icon">
                         <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
                     </div>
-                    <div class="upload__text text-large">
-                        X-ray 이미지를 이곳에 드래그하세요
-                    </div>
-                    <div class="upload__subtext mb-md">
-                        또는 클릭하여 파일을 선택하십시오
-                    </div>
+                    <div class="upload__text text-large">X-ray 이미지를 이곳에 드래그하세요</div>
+                    <div class="upload__subtext mb-md">또는 클릭하여 파일을 선택하십시오</div>
                     <div class="upload__formats">
                         <i class="fa-solid fa-shield-halved"></i>
                         <span>의료 데이터 보안 프로토콜 적용됨</span>
@@ -132,13 +107,12 @@
                 <input type="file" id="imageInput" accept="image/jpeg,image/png,image/jpg" hidden>
             </section>
 
-            <!-- Step 2: Preview & Analysis -->
+            <!-- Step 2: 미리보기 -->
             <div id="previewContainer" class="preview-container preview hidden">
                 <section aria-labelledby="preview-heading" class="card card--bordered p-lg">
                     <h3 id="preview-heading" class="heading-4 text-center mb-lg">
                         <span class="text-primary mr-sm">02.</span>영상 확인 및 분석
                     </h3>
-
                     <div class="grid grid--2-cols gap-lg" style="align-items: center;">
                         <div class="card__image-container">
                             <img id="imagePreview" class="preview__image" alt="업로드된 X-ray 미리보기">
@@ -146,26 +120,22 @@
                                 <i class="fa-solid fa-microscope"></i> Analysis Ready
                             </div>
                         </div>
-
                         <div class="flex-column gap-md">
                             <div class="notice notice--info notice--small mb-md">
                                 <i class="notice__icon fa-solid fa-circle-info"></i>
                                 <div class="notice__content">
                                     <strong>분석 준비 완료</strong><br>
-                                    이미지가 정상적으로 로드되었습니다. 아래 버튼을 눌러 AI 진단을 시작하세요.
+                                    이미지가 로드되었습니다. 아래 버튼을 눌러 AI 진단을 시작하세요.
                                 </div>
                             </div>
-
                             <div class="agreement-box agreement agreement--visible" id="agreementBox">
                                 <input type="checkbox" id="agreeCheckbox" class="agreement__checkbox">
                                 <label for="agreeCheckbox" class="agreement__label text-small">
                                     본 결과는 보조적 수단이며, 전문의의 진단을 대체할 수 없음에 동의합니다.
                                 </label>
                             </div>
-
                             <div class="btn-group btn-group--start mt-md">
-                                <button id="analyzeBtn" class="btn btn--primary btn--large btn--block" type="button"
-                                    disabled>
+                                <button id="analyzeBtn" class="btn btn--primary btn--large btn--block" type="button" disabled>
                                     <i class="btn__icon fa-solid fa-brain"></i>
                                     <span>AI 정밀 분석 시작</span>
                                 </button>
@@ -179,7 +149,7 @@
                 </section>
             </div>
 
-            <!-- Step 3: Progress Indicator -->
+            <!-- Step 3: 진행 -->
             <section id="progressContainer" class="progress-container hidden" aria-live="polite">
                 <div class="card card--glass p-xl text-center">
                     <div class="spinner spinner--minimal spinner--large mb-lg"></div>
@@ -196,7 +166,7 @@
                 </div>
             </section>
 
-            <!-- Step 4: Diagnostic Report -->
+            <!-- Step 4: 리포트 -->
             <section id="reportContainer" class="report-container hidden" aria-labelledby="report-heading">
                 <div class="flex-between mb-md align-items-end">
                     <h3 id="report-heading" class="heading-4 mb-0">
@@ -204,7 +174,6 @@
                     </h3>
                     <span class="text-tiny text-muted" id="reportTimestamp"></span>
                 </div>
-
                 <article class="card card--report card--elevated" id="reportCard">
                     <header class="card__header card__header--accent flex-between">
                         <div class="flex-center gap-sm">
@@ -216,7 +185,6 @@
                             ID: <span id="reportId">REQ-2026-AI</span>
                         </div>
                     </header>
-
                     <div class="card__body card__body--divided">
                         <section class="card__section" style="flex: 1;">
                             <h4 class="card__section-title">분석된 영상</h4>
@@ -227,21 +195,18 @@
                                 * AI가 주요 특징을 추출하여 분석한 원본 이미지입니다.
                             </p>
                         </section>
-
                         <section class="card__section" style="flex: 1.2;">
                             <h4 class="card__section-title">상세 분석 결과</h4>
                             <div id="resultsContent" class="grid gap-sm mb-lg"></div>
                             <div id="resultComment" class="notice notice--diagnosis notice--info" role="alert"></div>
                         </section>
                     </div>
-
                     <div id="gradcamViewer"
                          class="heatmap-viewer heatmap-viewer--hidden"
                          style="margin: 0 1.5rem 1.5rem;"
                          role="region"
                          aria-label="Grad-CAM XAI 히트맵 시각화"
                     ></div>
-
                     <footer class="card__footer flex-between">
                         <div class="text-tiny text-muted flex-center gap-sm">
                             <i class="fa-solid fa-shield-halved"></i>
@@ -263,7 +228,6 @@
 
         <div class="section-divider" aria-hidden="true"></div>
 
-        <!-- Footer -->
         <footer class="section mt-xl">
             <div class="notice-box notice--warning notice--medical-warning mb-lg">
                 <i class="notice__icon fa-solid fa-triangle-exclamation"></i>
@@ -271,16 +235,14 @@
                     <strong class="notice__title">의료적 주의사항</strong>
                     <p class="mb-0">이 시스템은 <strong>교육 및 연구 목적</strong>으로 개발되었습니다.
                         제공되는 분석 결과는 참고용이며, 실제 환자의 진단 및 치료 결정은
-                        반드시 전문 의료진와의 상담을 통해 이루어져야 합니다.</p>
+                        반드시 전문 의료진와의 상담을 통해 이룤어져야 합니다.</p>
                 </div>
             </div>
             <div class="text-center text-muted">
                 <p class="text-small mb-xs">
                     <i class="fa-solid fa-code"></i> Developed by <strong>신상우 (30814)</strong>
                 </p>
-                <p class="text-tiny opacity-75">
-                    &copy; 2026 Smart Medical Diagnosis System. All rights reserved.
-                </p>
+                <p class="text-tiny opacity-75">&copy; 2026 Smart Medical Diagnosis System. All rights reserved.</p>
             </div>
         </footer>
 

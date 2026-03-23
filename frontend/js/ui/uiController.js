@@ -4,11 +4,15 @@
  * state.status 로 화면을 전환합니다.
  *
  * [화면 전환 정리]
- * idle      : uploadSection 표시, 나머지 숨김
- * preview   : previewContainer 표시, uploadSection 숨김, 나머지 숨김
- * analyzing : progressContainer 표시, 다른 설 숨김
- * complete  : reportContainer 표시, 다른 설 숨김
- * error     : previewContainer 표시(에러 메시지포함), uploadSection 숨김
+ * idle      : uploadWrapper 표시, 나머지 숨김
+ * preview   : previewContainer 표시, uploadWrapper 숨김, 나머지 숨김
+ * analyzing : progressContainer 표시, 모두 숨김
+ * complete  : reportContainer 표시, 모두 숨김
+ * error     : previewContainer 표시, uploadWrapper 숨김
+ *
+ * [수정 이력]
+ * - uploadSection 대신 uploadWrapper(부모 section)를 숨김 → 01.영상업로드 헤딩 함께 숨곯
+ * - imagePreview.src 설정 시 preview__image--visible 클래스 추가 → opacity:1 적용
  */
 
 import CONFIG from '../config.js';
@@ -16,6 +20,8 @@ import GradCAMViewer from './gradcam_viewer.js';
 
 export default class UIController {
     constructor() {
+        // uploadWrapper = 01.영상업로드 헤딩을 포함한 부모 section
+        this.uploadWrapper     = document.getElementById('uploadWrapper');  // ★ 수정
         this.uploadSection     = document.getElementById('uploadSection');
         this.imageInput        = document.getElementById('imageInput');
         this.previewContainer  = document.getElementById('previewContainer');
@@ -35,9 +41,15 @@ export default class UIController {
         this.savePngBtn        = document.getElementById('savePngBtn');
         this.savePdfBtn        = document.getElementById('savePdfBtn');
 
-        const required = { uploadSection: this.uploadSection, imageInput: this.imageInput, analyzeBtn: this.analyzeBtn };
+        const required = {
+            uploadWrapper:  this.uploadWrapper,
+            uploadSection:  this.uploadSection,
+            imageInput:     this.imageInput,
+            analyzeBtn:     this.analyzeBtn,
+            imagePreview:   this.imagePreview,
+        };
         Object.entries(required).forEach(([id, el]) => {
-            if (!el) console.error(`[UIController] #${id} 요소를 찾지 못함`);
+            if (!el) console.error(`[UIController] #${id} 요소 누락`);
         });
 
         this.onAnalyze         = null;
@@ -77,8 +89,7 @@ export default class UIController {
                 if (file) {
                     console.log('[UIController] 파일 선택:', file.name, file.type, file.size);
                     this.onFileSelect?.(file);
-                    // input 초기화: 같은 파일 재선택 허용
-                    e.target.value = '';
+                    e.target.value = '';  // 같은 파일 재선택 허용
                 }
             });
         }
@@ -95,7 +106,7 @@ export default class UIController {
         if (this.savePdfBtn) this.savePdfBtn.addEventListener('click', () => this._saveAsPdf());
     }
 
-    // ── 상태 기반 렌더링 ─────────────────────────────────────────────────────
+    // ── 상태 기반 렌더링 ────────────────────────────────────────────────────
     render(state) {
         console.log('[UIController] render:', state.status);
         switch (state.status) {
@@ -108,32 +119,31 @@ export default class UIController {
         }
     }
 
-    // idle: uploadSection 만 표시
     _renderIdle() {
-        this._show(this.uploadSection);
+        this._show(this.uploadWrapper);     // 01.영상업로드 전체 표시
         this._hide(this.previewContainer);
         this._hide(this.progressContainer);
         this._hide(this.reportContainer);
     }
 
-    // preview: previewContainer 만 표시, uploadSection 반드시 숨김
     _renderPreview(state) {
-        this._hide(this.uploadSection);      // ★ 핵심 수정 1: 업로드 영역 숨김
+        this._hide(this.uploadWrapper);     // ★ 01.영상업로드 전체(h3 헤딩 포함) 숨김
         this._show(this.previewContainer);
         this._hide(this.progressContainer);
         this._hide(this.reportContainer);
 
+        // ★ 미리보기: src 설정 + visible 클래스 사용 (CSS opacity:0 해결)
         if (this.imagePreview && state.uploadedImageUrl) {
             this.imagePreview.src = state.uploadedImageUrl;
-            console.log('[UIController] 미리보기 이미지 설정 완료');
+            this.imagePreview.classList.add('preview__image--visible');
+            console.log('[UIController] 미리보기 설정 완료 (visible 클래스 추가)');
         }
         if (this.analyzeBtn)    this.analyzeBtn.disabled  = !state.agreeChecked;
         if (this.agreeCheckbox) this.agreeCheckbox.checked = state.agreeChecked || false;
     }
 
-    // analyzing: progressContainer 만 표시
     _renderAnalyzing() {
-        this._hide(this.uploadSection);
+        this._hide(this.uploadWrapper);
         this._hide(this.previewContainer);
         this._show(this.progressContainer);
         this._hide(this.reportContainer);
@@ -141,10 +151,9 @@ export default class UIController {
         this._startProgressAnimation();
     }
 
-    // complete: reportContainer 만 표시
     _renderComplete(state) {
         this._stopProgressAnimation();
-        this._hide(this.uploadSection);
+        this._hide(this.uploadWrapper);
         this._hide(this.previewContainer);
         this._hide(this.progressContainer);
         this._show(this.reportContainer);
@@ -153,38 +162,36 @@ export default class UIController {
 
         if (this.reportTimestamp) this.reportTimestamp.textContent = new Date().toLocaleString('ko-KR');
         if (this.reportId)        this.reportId.textContent = `REQ-${Date.now().toString(36).toUpperCase()}`;
-        if (this.reportImage && state.uploadedImageUrl) this.reportImage.src = state.uploadedImageUrl;
+        if (this.reportImage && state.uploadedImageUrl) {
+            this.reportImage.src = state.uploadedImageUrl;
+            this.reportImage.classList.add('preview__image--visible');
+        }
 
         this._renderPredictions(state.result);
         if (state.result.gradcam) this.gradcamViewer.render(state.result.gradcam, state.uploadedImageUrl);
     }
 
-    // error: previewContainer 표시(uploadSection 숨김), 에러 메시지 표시
     _renderError(state) {
         this._stopProgressAnimation();
-        this._hide(this.uploadSection);      // ★ 핵심 수정 2: 에러 시에도 uploadSection 숨김
+        this._hide(this.uploadWrapper);     // ★ 에러 시에도 01.업로드 숨김
         this._show(this.previewContainer);
         this._hide(this.progressContainer);
         this._hide(this.reportContainer);
         console.error('[UIController] 에러:', state.error);
-
-        // 에러 메시지를 previewContainer 안에 표시
         this._showErrorBanner(state.error);
     }
 
     _showErrorBanner(msg) {
-        const existing = this.previewContainer?.querySelector('.ui-error-banner');
-        if (existing) existing.remove();
+        this.previewContainer?.querySelector('.ui-error-banner')?.remove();
         if (!msg || !this.previewContainer) return;
-
-        const banner = document.createElement('div');
-        banner.className = 'ui-error-banner notice notice--danger';
-        banner.style.cssText = 'margin-bottom:1rem;padding:0.75rem 1rem;border-radius:var(--radius-md,8px);background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;font-size:0.85rem;';
-        banner.innerHTML = `<i class="fa-solid fa-circle-exclamation" style="margin-right:0.5rem;"></i>${msg}<br><small style="opacity:0.7;">잠시 후 다시 시도하세요.</small>`;
-        this.previewContainer.insertBefore(banner, this.previewContainer.firstChild);
+        const b = document.createElement('div');
+        b.className = 'ui-error-banner';
+        b.style.cssText = 'margin-bottom:1rem;padding:0.75rem 1rem;border-radius:8px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;font-size:0.85rem;';
+        b.innerHTML = `<i class="fa-solid fa-circle-exclamation" style="margin-right:0.5rem;"></i>${msg}<br><small style="opacity:0.7;">잠시 후 다시 시도하세요.</small>`;
+        this.previewContainer.insertBefore(b, this.previewContainer.firstChild);
     }
 
-    // ── 예측 결과 렌더링 ─────────────────────────────────────────────────────
+    // ── 예측 결과 ──────────────────────────────────────────────────────────────
     _renderPredictions(result) {
         if (!this.resultsContent || !result.predictions) return;
         const top = result.predictions[0];
@@ -209,7 +216,7 @@ export default class UIController {
         }
     }
 
-    // ── 프로그레스 ───────────────────────────────────────────────────────────
+    // ── 프로그레스 ──────────────────────────────────────────────────────────────
     _startProgressAnimation() {
         this._stopProgressAnimation();
         this._progressValue = 0;
@@ -252,22 +259,22 @@ export default class UIController {
         } catch (e) { console.error('[UIController] PDF 실패:', e); }
     }
 
-    // ── 유틸 ────────────────────────────────────────────────────────────────
+    // ── 유틸 ──────────────────────────────────────────────────────────────
     _show(el) { el?.classList.remove('hidden'); }
     _hide(el) { el?.classList.add('hidden'); }
 
     resetUI() {
         console.log('[UIController] resetUI');
-        this._show(this.uploadSection);
+        this._show(this.uploadWrapper);
         this._hide(this.previewContainer);
         this._hide(this.progressContainer);
         this._hide(this.reportContainer);
-        if (this.imageInput)    this.imageInput.value      = '';
-        if (this.analyzeBtn)    this.analyzeBtn.disabled   = true;
-        if (this.agreeCheckbox) this.agreeCheckbox.checked  = false;
+        if (this.imageInput)     this.imageInput.value      = '';
+        if (this.analyzeBtn)     this.analyzeBtn.disabled   = true;
+        if (this.agreeCheckbox)  this.agreeCheckbox.checked  = false;
+        if (this.imagePreview)   this.imagePreview.classList.remove('preview__image--visible');
         this._stopProgressAnimation();
         this.gradcamViewer?.hide();
-        // 에러 배너 제거
         this.previewContainer?.querySelector('.ui-error-banner')?.remove();
     }
 }
