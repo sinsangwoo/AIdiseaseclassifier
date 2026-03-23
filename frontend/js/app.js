@@ -1,10 +1,14 @@
 /**
  * Main Application Entry Point
  *
- * [웜업 실패 정책 변경]
- * 기존: warmUpFailed=true -> throw Error -> setError() -> UI가 preview로 돌아감
- * 변경: warmUpFailed=true -> 경고만 하고 predict 직접 시도
- * 이유: CORS 메시지로 health fetch가 실패해도 서버는 살아있을 수 있음
+ * [Render 콜드 스타트 대응 전략]
+ *
+ * predict ERR_FAILED 대응:
+ *   apiClient.request() 에서 RETRY_ATTEMPTS=3, RETRY_DELAY=10s 이므로
+ *   ERR_FAILED 후 10s, 15s 대기 후 재시도 → Render 재시작 후 콴다라도 복구됨
+ *
+ * 웜업 실패 정책:
+ *   warmUpFailed=true 시 predict 를 차단하지 않고 직접 시도 (서버가 살아있을 수 있음)
  */
 
 import CONFIG from './config.js';
@@ -43,9 +47,16 @@ function warmUpServer() {
             if (i < MAX) await new Promise(r => setTimeout(r, DELAY));
         }
         warmUpFailed = true;
-        console.warn('[WarmUp] ⚠️ 웜업 실패 - predict 직접 시도 허용 (서버가 살아있을 수 있음)');
+        console.warn('[WarmUp] ⚠️ 웜업 실패 - predict 직접 시도 허용');
     })();
     return warmUpPromise;
+}
+
+/** 웜업 상태 완전 리셋 (재시도 허용) */
+function resetWarmUp() {
+    warmUpPromise = null;
+    serverReady   = false;
+    warmUpFailed  = false;
 }
 
 class Application {
@@ -95,22 +106,32 @@ class Application {
         appState.startAnalysis();
 
         try {
-            // 웜업이 진행 중이면 대기 (실패해도 통과)
             if (!serverReady && !warmUpFailed) {
                 console.log('[App] 웜업 대기...');
                 appState.analyzing();
                 await warmUpServer();
             }
-            if (warmUpFailed) console.warn('[App] 웜업 실패 상태 - predict 직접 시도');
+            if (warmUpFailed) console.warn('[App] 웜업 실패 - predict 직접 시도');
 
             appState.analyzing();
             console.log('[App] predict:', state.uploadedImage.name);
+
+            // apiClient 내부에서 RETRY_ATTEMPTS=3으로 자동 재시도
+            // ERR_FAILED 시 10s, 15s 대기 후 재시도 → Render 재시작 커버
             const result = await apiClient.predict(state.uploadedImage);
             console.log('[App] predict 성공');
             appState.completeAnalysis(result);
 
         } catch (error) {
             console.error('[App] 분석 실패:', error.message);
+
+            // ERR_FAILED 실패 후 웜업 상태 리셋 (다음 시도 시 웜업 재실행)
+            if (error.statusCode === 0) {
+                console.log('[App] ERR_FAILED - 웹업 상태 리셋');
+                resetWarmUp();
+                warmUpServer(); // 백그라운드 웹업 재시작
+            }
+
             appState.setError(error);
             ErrorHandler.handleError(error, 'Image Analysis');
         }

@@ -1,57 +1,45 @@
 /**
  * API Client Module
- * 
- * 백엔드 API와의 통신을 담당
+ *
  * - Exponential Backoff 재시도 로직
- * - 타임아웃 관리
- * - 에러 핸들링
+ * - ERR_FAILED (statusCode 0) = Render 재시작 과도기 또는 CORS 문제
+ *   → 웜업 재실행 후 재시도
  */
 
 import CONFIG from '../config.js';
 
-/**
- * API 에러 클래스
- */
 export class APIError extends Error {
     constructor(message, statusCode, response = null) {
         super(message);
-        this.name = 'APIError';
+        this.name       = 'APIError';
         this.statusCode = statusCode;
-        this.response = response;
+        this.response   = response;
     }
 }
 
-/**
- * API Client 클래스
- */
 export class APIClient {
     constructor(baseURL = CONFIG.API_BASE_URL, options = {}) {
-        this.baseURL = baseURL;
-        this.timeout = options.timeout || CONFIG.REQUEST.TIMEOUT;
+        this.baseURL       = baseURL;
+        this.timeout       = options.timeout       || CONFIG.REQUEST.TIMEOUT;
         this.retryAttempts = options.retryAttempts || CONFIG.REQUEST.RETRY_ATTEMPTS;
-        this.retryDelay = options.retryDelay || CONFIG.REQUEST.RETRY_DELAY;
+        this.retryDelay    = options.retryDelay    || CONFIG.REQUEST.RETRY_DELAY;
     }
 
-    /**
-     * 지수 백오프 계산 (Exponential Backoff)
-     * @param {number} attempt - 현재 시도 횟수 (1부터 시작)
-     * @returns {number} 대기 시간 (ms)
-     */
     calculateBackoff(attempt) {
-        const exponentialDelay = this.retryDelay * Math.pow(2, attempt - 1);
-        const jitter = Math.random() * 500;
-        return Math.min(exponentialDelay + jitter, 10000);
+        const base   = this.retryDelay * Math.pow(CONFIG.REQUEST.RETRY_BACKOFF_MULTIPLIER, attempt - 1);
+        const jitter = Math.random() * 1000;
+        return Math.min(base + jitter, 30000);
     }
 
-    /**
-     * 지연 함수
-     */
-    delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
+    delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
     /**
-     * HTTP 요청 실행 (재시도 로직 포함)
+     * HTTP 요청 (재시도 로직 포함)
+     *
+     * ERR_FAILED (statusCode 0) 처리:
+     *   Render 무료 플랜 재시작 과도기에 /predict 요청이 도달하면
+     *   Render 게이트웨이가 CORS 헤더 없이 ERR_FAILED 반환.
+     *   → 웜업을 다시 실행하여 서버 준비 후 재시도.
      */
     async request(endpoint, options = {}) {
         const url = `${this.baseURL}${endpoint}`;
@@ -59,17 +47,13 @@ export class APIClient {
 
         for (let attempt = 1; attempt <= this.retryAttempts; attempt++) {
             try {
-                CONFIG.log(`[APIClient] 요청 시도 ${attempt}/${this.retryAttempts}: ${url}`);
+                console.log(`[APIClient] 시도 ${attempt}/${this.retryAttempts}: ${endpoint}`);
 
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+                const tid        = setTimeout(() => controller.abort(), this.timeout);
 
-                const response = await fetch(url, {
-                    ...options,
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeoutId);
+                const response = await fetch(url, { ...options, signal: controller.signal });
+                clearTimeout(tid);
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
@@ -81,22 +65,24 @@ export class APIClient {
                 }
 
                 const data = await response.json();
-                CONFIG.log(`[APIClient] 요청 성공 (시도 ${attempt})`);
+                console.log(`[APIClient] 성공 (시도 ${attempt})`);
                 return data;
 
             } catch (error) {
                 lastError = error;
 
+                // 타임아웃
                 if (error.name === 'AbortError') {
-                    CONFIG.log(`[APIClient] 타임아웃 (시도 ${attempt})`);
+                    console.warn(`[APIClient] 타임아웃 (시도 ${attempt})`);
                     lastError = new APIError(
-                        '요청 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.',
+                        '요청 시간이 초과되었습니다. Render 무료 서버는 첫 접속 시 데우는 데 시간이 소요될 수 있습니다.',
                         408
                     );
                 }
 
+                // ERR_FAILED (CORS / 네트워크 실패)
                 if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-                    CONFIG.log(`[APIClient] 네트워크 오류 (시도 ${attempt})`);
+                    console.warn(`[APIClient] ERR_FAILED (시도 ${attempt}) - Render 재시작 과도기 가능성`);
                     lastError = new APIError(
                         '서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.',
                         0
@@ -104,77 +90,43 @@ export class APIClient {
                 }
 
                 if (attempt < this.retryAttempts) {
-                    const backoffDelay = this.calculateBackoff(attempt);
-                    CONFIG.log(`[APIClient] ${backoffDelay}ms 후 재시도...`);
-                    await this.delay(backoffDelay);
+                    const wait = this.calculateBackoff(attempt);
+                    console.log(`[APIClient] ${Math.round(wait / 1000)}s 후 재시도...`);
+                    await this.delay(wait);
                     continue;
                 }
             }
         }
 
-        CONFIG.log(`[APIClient] 모든 재시도 실패:`, lastError);
+        console.error(`[APIClient] 모든 재시도 실패:`, lastError);
         throw lastError;
     }
 
-    /**
-     * GET 요청
-     */
     async get(endpoint, options = {}) {
         return this.request(endpoint, {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-            },
+            headers: { 'Content-Type': 'application/json', ...options.headers },
             ...options
         });
     }
 
-    /**
-     * POST 요청
-     */
     async post(endpoint, data, options = {}) {
         const isFormData = data instanceof FormData;
-
         return this.request(endpoint, {
             method: 'POST',
-            headers: isFormData ? {} : {
-                'Content-Type': 'application/json',
-                ...options.headers
-            },
-            body: isFormData ? data : JSON.stringify(data),
+            headers: isFormData ? {} : { 'Content-Type': 'application/json', ...options.headers },
+            body:    isFormData ? data : JSON.stringify(data),
             ...options
         });
     }
 
-    /**
-     * 헬스체크
-     */
-    async healthCheck() {
-        return this.get('/health');
-    }
+    async healthCheck()         { return this.get('/health'); }
+    async detailedHealthCheck() { return this.get('/health/detailed'); }
+    async getModelInfo()        { return this.get('/model/info'); }
 
-    /**
-     * 상세 헬스체크
-     */
-    async detailedHealthCheck() {
-        return this.get('/health/detailed');
-    }
-
-    /**
-     * 모델 정보 조회
-     */
-    async getModelInfo() {
-        return this.get('/model/info');
-    }
-
-    /**
-     * 이미지 예측 요청
-     */
     async predict(imageFile) {
         const formData = new FormData();
         formData.append('file', imageFile);
-
         return this.post('/predict', formData);
     }
 }
