@@ -1,27 +1,30 @@
 /**
  * progress.css
- * Premium Minimal Progress & Loading Components
+ *
+ * [show/hide 일관성 수정 - 기존 버그 해결]
+ *
+ * 버그 원인:
+ *   .progress-container { display: none }  ← 기본값이 none
+ *   JS _show() 는 .hidden 클래스만 제거
+ *   → .hidden 제거 후에도 기본값 display:none 이 남아 화면에 안 보임
+ *
+ * 해결:
+ *   .progress-container 기본값을 display:block 으로 변경
+ *   숨김은 layout.css의 .hidden { display:none !important } 으로만 제어
  */
 
-/* ============================================
-   프로그레스 컨테이너
-   ============================================ */
-
 .progress-container {
-  display: none;
+  display: block;   /* ★ none → block */
   width: 100%;
   animation: section-reveal 0.6s var(--ease-out);
 }
 
+/* 하위 호환성 */
 .progress-container.progress--visible {
   display: block;
 }
 
-
-/* ============================================
-   프로그레스 바 — Thin Gold Line
-   ============================================ */
-
+/* 프로그레스 바 */
 .progress-bar {
   width: 100%;
   height: var(--progress-height);
@@ -41,86 +44,42 @@
   position: relative;
 }
 
-/* Shimmer effect on active progress bar */
 .progress--ai-analyzing .progress-bar-fill::after {
   content: '';
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 40px;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  top: 0; right: 0;
+  width: 40px; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
   animation: progress-shimmer 1.5s ease-in-out infinite;
 }
 
 @keyframes progress-shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-
-  100% {
-    transform: translateX(100px);
-  }
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100px); }
 }
 
+.progress--gradient .progress-bar-fill { background: var(--gradient-primary); }
+.progress--success  .progress-bar-fill { background: var(--gradient-success); }
+.progress--danger   .progress-bar-fill { background: var(--gradient-danger); }
 
-/* ============================================
-   프로그레스 바 변형 (Variants)
-   ============================================ */
-
-.progress--gradient .progress-bar-fill {
-  background: var(--gradient-primary);
-}
-
-.progress--success .progress-bar-fill {
-  background: var(--gradient-success);
-}
-
-.progress--danger .progress-bar-fill {
-  background: var(--gradient-danger);
-}
-
-
-/* ============================================
-   스피너 — Minimal Line Spinner
-   ============================================ */
-
+/* 스피너 */
 .spinner {
   position: relative;
   display: inline-block;
 }
 
 .spinner--minimal {
-  width: 40px;
-  height: 40px;
+  width: 40px; height: 40px;
   border: 2px solid var(--color-border-light);
   border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spinner-rotate 1s linear infinite;
 }
 
-.spinner--large {
-  width: 56px;
-  height: 56px;
-  border-width: 2px;
-}
+.spinner--large { width: 56px; height: 56px; border-width: 2px; }
+.spinner--small { width: 20px; height: 20px; border-width: 1.5px; }
 
-.spinner--small {
-  width: 20px;
-  height: 20px;
-  border-width: 1.5px;
-}
-
-@keyframes spinner-rotate {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-
-/* ============================================
-   프로그레스 텍스트
-   ============================================ */
+@keyframes spinner-rotate { to { transform: rotate(360deg); } }
 
 .progress__percentage {
   font-family: var(--font-family-monospace);
@@ -130,27 +89,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-
-/* ============================================
-   반응형
-   ============================================ */
-
 @media (max-width: 768px) {
-  .spinner--large {
-    width: 40px;
-    height: 40px;
-  }
+  .spinner--large { width: 40px; height: 40px; }
 }
 
-
-/* ============================================
-   프린트 스타일
-   ============================================ */
-
 @media print {
-
-  .progress-container,
-  .spinner {
-    display: none !important;
-  }
+  .progress-container, .spinner { display: none !important; }
 }

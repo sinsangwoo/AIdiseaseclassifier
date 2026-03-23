@@ -3,16 +3,18 @@
  *
  * state.status 로 화면을 전환합니다.
  *
- * [화면 전환 정리]
- * idle      : uploadWrapper 표시, 나머지 숨김
- * preview   : previewContainer 표시, uploadWrapper 숨김, 나머지 숨김
- * analyzing : progressContainer 표시, 모두 숨김
- * complete  : reportContainer 표시, 모두 숨김
- * error     : previewContainer 표시, uploadWrapper 숨김
+ * [화면 전환 매트릭스]
+ * idle      : uploadWrapper표시 / 나머지 숨김
+ * preview   : previewContainer / uploadWrapper 숨김
+ * analyzing : progressContainer / 모두 숨김
+ * complete  : reportContainer / 모두 숨김
+ * error     : previewContainer(+에러배너) / uploadWrapper 숨김
  *
- * [수정 이력]
- * - uploadSection 대신 uploadWrapper(부모 section)를 숨김 → 01.영상업로드 헤딩 함께 숨곯
- * - imagePreview.src 설정 시 preview__image--visible 클래스 추가 → opacity:1 적용
+ * [주요 버그 수정 이력]
+ * 1. uploadWrapper 를 숨김 → 01.영상업로드 h3 헤딩이 함께 숨곯
+ * 2. preview__image--visible 클래스 추가 → opacity:0 해결
+ * 3. progressContainer 기본값 display:none 충돌 제거
+ *    (progress.css에서 display:block 으로 수정 함께 적용)
  */
 
 import CONFIG from '../config.js';
@@ -20,8 +22,7 @@ import GradCAMViewer from './gradcam_viewer.js';
 
 export default class UIController {
     constructor() {
-        // uploadWrapper = 01.영상업로드 헤딩을 포함한 부모 section
-        this.uploadWrapper     = document.getElementById('uploadWrapper');  // ★ 수정
+        this.uploadWrapper     = document.getElementById('uploadWrapper');
         this.uploadSection     = document.getElementById('uploadSection');
         this.imageInput        = document.getElementById('imageInput');
         this.previewContainer  = document.getElementById('previewContainer');
@@ -41,17 +42,21 @@ export default class UIController {
         this.savePngBtn        = document.getElementById('savePngBtn');
         this.savePdfBtn        = document.getElementById('savePdfBtn');
 
-        const required = {
+        // DOM 누락 진단
+        const ids = {
             uploadWrapper:  this.uploadWrapper,
             uploadSection:  this.uploadSection,
             imageInput:     this.imageInput,
             analyzeBtn:     this.analyzeBtn,
             imagePreview:   this.imagePreview,
+            progressContainer: this.progressContainer,
+            previewContainer:  this.previewContainer,
         };
-        Object.entries(required).forEach(([id, el]) => {
-            if (!el) console.error(`[UIController] #${id} 요소 누락`);
+        Object.entries(ids).forEach(([id, el]) => {
+            if (!el) console.error(`[UIController] #${id} DOM 요소 누락 — id 확인 필요`);
         });
 
+        // 콜백
         this.onAnalyze         = null;
         this.onFileSelect      = null;
         this.onClear           = null;
@@ -63,10 +68,24 @@ export default class UIController {
         this._progressValue    = 0;
 
         this._bindEvents();
+        this._logDOMState('constructor');
         console.log('[UIController] 초기화 완료');
     }
 
-    // ── 이벤트 바인딩 ──────────────────────────────────────────────────────
+    // ── DOM 상태 로그 (디버깅용) ─────────────────────────────────────────
+    _logDOMState(context) {
+        const info = (el, name) => el
+            ? `${name}[hidden=${el.classList.contains('hidden')},display=${getComputedStyle(el).display}]`
+            : `${name}[NULL]`;
+        console.log(`[UIController:DOM] ${context} |`,
+            info(this.uploadWrapper,     'uploadWrapper'),
+            info(this.previewContainer,  'previewContainer'),
+            info(this.progressContainer, 'progressContainer'),
+            info(this.reportContainer,   'reportContainer')
+        );
+    }
+
+    // ── 이벤트 바인딩 ────────────────────────────────────────────────────
     _bindEvents() {
         if (this.uploadSection) {
             this.uploadSection.addEventListener('click', () => {
@@ -89,7 +108,7 @@ export default class UIController {
                 if (file) {
                     console.log('[UIController] 파일 선택:', file.name, file.type, file.size);
                     this.onFileSelect?.(file);
-                    e.target.value = '';  // 같은 파일 재선택 허용
+                    e.target.value = '';
                 }
             });
         }
@@ -106,7 +125,7 @@ export default class UIController {
         if (this.savePdfBtn) this.savePdfBtn.addEventListener('click', () => this._saveAsPdf());
     }
 
-    // ── 상태 기반 렌더링 ────────────────────────────────────────────────────
+    // ── 상태 기반 렌더링 ──────────────────────────────────────────────────
     render(state) {
         console.log('[UIController] render:', state.status);
         switch (state.status) {
@@ -117,26 +136,26 @@ export default class UIController {
             case 'error':     this._renderError(state);     break;
             default: console.warn('[UIController] 알 수 없는 status:', state.status);
         }
+        this._logDOMState(`after render:${state.status}`);
     }
 
     _renderIdle() {
-        this._show(this.uploadWrapper);     // 01.영상업로드 전체 표시
+        this._show(this.uploadWrapper);
         this._hide(this.previewContainer);
         this._hide(this.progressContainer);
         this._hide(this.reportContainer);
     }
 
     _renderPreview(state) {
-        this._hide(this.uploadWrapper);     // ★ 01.영상업로드 전체(h3 헤딩 포함) 숨김
+        this._hide(this.uploadWrapper);
         this._show(this.previewContainer);
         this._hide(this.progressContainer);
         this._hide(this.reportContainer);
 
-        // ★ 미리보기: src 설정 + visible 클래스 사용 (CSS opacity:0 해결)
         if (this.imagePreview && state.uploadedImageUrl) {
             this.imagePreview.src = state.uploadedImageUrl;
             this.imagePreview.classList.add('preview__image--visible');
-            console.log('[UIController] 미리보기 설정 완료 (visible 클래스 추가)');
+            console.log('[UIController] 미리보기 설정 (visible 클래스 추가)');
         }
         if (this.analyzeBtn)    this.analyzeBtn.disabled  = !state.agreeChecked;
         if (this.agreeCheckbox) this.agreeCheckbox.checked = state.agreeChecked || false;
@@ -149,6 +168,7 @@ export default class UIController {
         this._hide(this.reportContainer);
         if (this.progressLabel) this.progressLabel.textContent = '딥러닝 모델이 흉부 영상을 분석하고 있습니다.';
         this._startProgressAnimation();
+        console.log('[UIController] analyzing 렌더 완료, progressContainer.hidden=', this.progressContainer?.classList.contains('hidden'));
     }
 
     _renderComplete(state) {
@@ -173,7 +193,7 @@ export default class UIController {
 
     _renderError(state) {
         this._stopProgressAnimation();
-        this._hide(this.uploadWrapper);     // ★ 에러 시에도 01.업로드 숨김
+        this._hide(this.uploadWrapper);
         this._show(this.previewContainer);
         this._hide(this.progressContainer);
         this._hide(this.reportContainer);
@@ -191,7 +211,7 @@ export default class UIController {
         this.previewContainer.insertBefore(b, this.previewContainer.firstChild);
     }
 
-    // ── 예측 결과 ──────────────────────────────────────────────────────────────
+    // ── 예측 결과 ────────────────────────────────────────────────────────────
     _renderPredictions(result) {
         if (!this.resultsContent || !result.predictions) return;
         const top = result.predictions[0];
@@ -216,7 +236,7 @@ export default class UIController {
         }
     }
 
-    // ── 프로그레스 ──────────────────────────────────────────────────────────────
+    // ── 프로그레스 ────────────────────────────────────────────────────────────
     _startProgressAnimation() {
         this._stopProgressAnimation();
         this._progressValue = 0;
@@ -269,12 +289,13 @@ export default class UIController {
         this._hide(this.previewContainer);
         this._hide(this.progressContainer);
         this._hide(this.reportContainer);
-        if (this.imageInput)     this.imageInput.value      = '';
-        if (this.analyzeBtn)     this.analyzeBtn.disabled   = true;
-        if (this.agreeCheckbox)  this.agreeCheckbox.checked  = false;
-        if (this.imagePreview)   this.imagePreview.classList.remove('preview__image--visible');
+        if (this.imageInput)    this.imageInput.value      = '';
+        if (this.analyzeBtn)    this.analyzeBtn.disabled   = true;
+        if (this.agreeCheckbox) this.agreeCheckbox.checked  = false;
+        if (this.imagePreview)  this.imagePreview.classList.remove('preview__image--visible');
         this._stopProgressAnimation();
         this.gradcamViewer?.hide();
         this.previewContainer?.querySelector('.ui-error-banner')?.remove();
+        this._logDOMState('resetUI');
     }
 }
