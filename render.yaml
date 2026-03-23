@@ -1,8 +1,9 @@
 # Render.com 배포 설정
 #
-# 주의: Render 대시보드가 render.yaml을 무시하고 대시보드
-#        Start Command을 직접 관리하는 경우 여기 값이 적용안 될 수 있습니다.
-#        그 경우 대시보드에서 직접 autoDeploy 를 비활성화하는 것을 권장합니다.
+# ⚠️  Render 대시보드가 render.yaml을 무시하는 경우:
+#     대시보드 → Settings → Auto-Deploy 를 반드시 OFF 로 변경하세요.
+#     프론트엔드(CSS/JS) 수정은 Render 대시보드에 영향없음.
+#     백엔드(backend/) 수정 시만 Render 대시보드에서 수동 리디플로이하세요.
 
 services:
   - type: web
@@ -16,7 +17,6 @@ services:
       pip install --upgrade pip setuptools wheel
       pip install -r requirements.txt
 
-    # --preload 제거: 환경변수 주입 전 create_app() 실행 방지
     startCommand: |
       export PYTHONPATH=. && \
       gunicorn --bind 0.0.0.0:$PORT \
@@ -24,6 +24,7 @@ services:
                --worker-class gevent \
                --worker-tmp-dir /dev/shm \
                --timeout 180 \
+               --graceful-timeout 60 \
                --max-requests 1000 \
                --max-requests-jitter 50 \
                --access-logfile - \
@@ -32,12 +33,7 @@ services:
                backend.app:app
 
     healthCheckPath: /health/ready
-
-    # autoDeploy: false 를 권장하는 이유:
-    #   main 브랜치에 프론트엔드 CSS/JS 파일만 변경해도
-    #   Render가 서버를 재시작하여 90초 CORS 에러가 발생합니다.
-    #   프론트엔드만 변경 시는 Render 수동 배포를 해주세요.
-    autoDeploy: true
+    autoDeploy: false
     branch: main
 
     envVars:
