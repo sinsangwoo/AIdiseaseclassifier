@@ -1,9 +1,4 @@
 # Render.com 배포 설정
-#
-# ⚠️  Render 대시보드가 render.yaml을 무시하는 경우:
-#     대시보드 → Settings → Auto-Deploy 를 반드시 OFF 로 변경하세요.
-#     프론트엔드(CSS/JS) 수정은 Render 대시보드에 영향없음.
-#     백엔드(backend/) 수정 시만 Render 대시보드에서 수동 리디플로이하세요.
 
 services:
   - type: web
@@ -17,11 +12,21 @@ services:
       pip install --upgrade pip setuptools wheel
       pip install -r requirements.txt
 
+    # gevent → gthread 로 교체
+    # 원인: gevent의 monkey-patching이 PyTorch와 충돌하여
+    #   OPTIONS preflight 요청이 gevent에서 소켓을 변조하는 과정에서
+    #   플라스크에 도달하기 전에 연결이 끼집니다.
+    #   Render 로그에도 OPTIONS 요청이 단 한 줄도 찍히지 않음 = Flask 자체에 도달 안 함.
+    #   또한 Render 로그의 FutureWarning(torch.distributed.reduce_op) 이
+    #   gevent가 PyTorch 스레드 타입을 승인하는 과정에서 발생하는 충돌의 증거.
+    #
+    # gthread: 실제 OS 스레드 사용, monkey-patching 없음, PyTorch와 안정적으로 동작
     startCommand: |
       export PYTHONPATH=. && \
       gunicorn --bind 0.0.0.0:$PORT \
                --workers 1 \
-               --worker-class gevent \
+               --worker-class gthread \
+               --threads 4 \
                --worker-tmp-dir /dev/shm \
                --timeout 180 \
                --graceful-timeout 60 \
@@ -30,7 +35,7 @@ services:
                --access-logfile - \
                --error-logfile - \
                --log-level info \
-               backend.app:app
+               app:app
 
     healthCheckPath: /health/ready
     autoDeploy: false
@@ -40,7 +45,7 @@ services:
       - key: FLASK_ENV
         value: production
       - key: FLASK_APP
-        value: backend.app
+        value: app
       - key: PYTHONUNBUFFERED
         value: 1
       - key: PYTHONPATH
