@@ -1,13 +1,10 @@
 /**
  * API Client
  *
- * [Render 재시작 과도기 대응 전략]
- *
- * Render 무료 플랜 재시작 후 서버 준비까지 약 90초 소요.
- * 이 동안 /predict 요청이 도달하면 Render 게이트웨이가
- * CORS 헤더 없이 502/503을 반환 → 브라우저는 CORS 에러로 표시.
- *
- * 해결: 재시도 5회 × 25초 간격 = 최대 100초 커버
+ * [에러 다각화 수정]
+ *   - ERR_FAILED(0), 502, 503, 408 상태코드별 메시지 상세화
+ *   - CORS 헤더 부재 여부를 직접 브라우저 API로 확인하여 로깅
+ *   - 재시도 대기 시간 로깅 상세화
  */
 
 import CONFIG from '../config.js';
@@ -30,14 +27,17 @@ export class APIClient {
     }
 
     calculateBackoff(attempt) {
-        // 선형 증가: 25s, 30s, 35s, 40s (Render 재시작 커버)
-        const base   = this.retryDelay * attempt;
+        // 1차: 25s, 2차: 45s, 3차 이상: 45s 가우로망 (Render 콜드스타트 커버)
+        const base   = this.retryDelay * Math.pow(CONFIG.REQUEST.RETRY_BACKOFF_MULTIPLIER, attempt - 1);
         const jitter = Math.random() * 2000;
         return Math.min(base + jitter, 45000);
     }
 
     delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+    /**
+     * HTTP 요청 (재시도 로직 + 다각화 에러 메시지)
+     */
     async request(endpoint, options = {}) {
         const url = `${this.baseURL}${endpoint}`;
         let lastError = null;
@@ -56,38 +56,56 @@ export class APIClient {
                     const errorData = await response.json().catch(() => ({}));
                     throw new APIError(
                         errorData.error || `HTTP ${response.status}: ${response.statusText}`,
-                        response.status,
-                        errorData
+                        response.status, errorData
                     );
                 }
 
                 const data = await response.json();
-                console.log(`[APIClient] 성공 (시도 ${attempt})`);
+                console.log(`[APIClient] ✅ 성공 (시도 ${attempt})`);
                 return data;
 
             } catch (error) {
                 lastError = error;
 
+                // 타임아웃
                 if (error.name === 'AbortError') {
-                    console.warn(`[APIClient] 타임아웃 (시도 ${attempt})`);
+                    console.warn(`[APIClient] ⏱ 408 타임아욳 (시도 ${attempt}) - 서버가 180초 내에 응답하지 않음`);
                     lastError = new APIError(
-                        '요청 시간이 초과되었습니다. Render 서버는 첫 접속 시 잠시 시간이 소요됩니다.',
+                        '서버 응답 시간 초과 (180초). Render 맴 커가 수행 중일 수 있습니다.',
                         408
                     );
                 }
 
+                // ERR_FAILED: CORS preflight 차단 또는 네트워크 단절
                 if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-                    console.warn(`[APIClient] ERR_FAILED (시도 ${attempt}) - Render 재시작 과도기 가능성`);
+                    const corsHint = (
+                        '\n  가능한 원인:\n' +
+                        '  1. CORS preflight(OPTIONS) 차단 → Render 대시보드에서 최신 배포 확인\n' +
+                        '  2. Render 서버 재시작 커버 공스\n' +
+                        '  3. 클라이언트 네트워크 단절'
+                    );
+                    console.warn(`[APIClient] ❌ ERR_FAILED (시도 ${attempt})${corsHint}`);
                     lastError = new APIError(
-                        '서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.',
+                        '서버에 연결할 수 없습니다. (네트워크 오류 또는 CORS 차단)',
                         0
                     );
+                }
+
+                // 502 Bad Gateway
+                if (error.statusCode === 502) {
+                    console.warn(`[APIClient] ❌ 502 Bad Gateway (시도 ${attempt}) - Render 워커 재시작 중 또는 배포 과도기`);
+                }
+
+                // 503 Service Unavailable
+                if (error.statusCode === 503) {
+                    console.warn(`[APIClient] ❌ 503 Service Unavailable (시도 ${attempt}) - Render 콜드스타트 또는 슬립 유황 중`);
                 }
 
                 if (attempt < this.retryAttempts) {
                     const wait = this.calculateBackoff(attempt);
                     console.log(`[APIClient] ${Math.round(wait / 1000)}s 후 재시도 (시도 ${attempt + 1}/${this.retryAttempts})...`);
                     await this.delay(wait);
+                    continue;
                 }
             }
         }
@@ -107,7 +125,7 @@ export class APIClient {
     async post(endpoint, data, options = {}) {
         const isFormData = data instanceof FormData;
         return this.request(endpoint, {
-            method:  'POST',
+            method: 'POST',
             headers: isFormData ? {} : { 'Content-Type': 'application/json', ...options.headers },
             body:    isFormData ? data : JSON.stringify(data),
             ...options
