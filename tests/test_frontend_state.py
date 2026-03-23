@@ -75,7 +75,7 @@ class TestAppStateSchema:
 
         assert idx_preview != -1, (
             "setUploadedImage 안에 status=preview 우선 설정 없음\n"
-            f"func_src:\ n{func_src[:300]}"
+            f"func_src:\\ n{func_src[:300]}"
         )
         assert idx_onload != -1, "setUploadedImage 안에 reader.onload 없음"
         assert idx_preview < idx_onload, (
@@ -99,30 +99,36 @@ class TestUIControllerContract:
             assert f"'{s}'" in src or f'"{s}"' in src, f"render() 에 '{s}' case 없음"
 
     @pytest.mark.frontend
-    def test_preview_hides_upload_section(self):
+    def test_preview_hides_upload_wrapper(self):
         """
-        _renderPreview 는 uploadSection 을 hide 해야 한다.
-        기존 버그: preview 상태에서 01. 영상 업로드 섹션이 사라지지 않음
+        _renderPreview 는 uploadWrapper(01.영상업로드 헤딩 포함 부모 section) 를 hide 해야 한다.
+
+        수정 이력:
+          - 기존: uploadSection(드롭존 div만) hide → h3 헤딩이 남아있는 버그
+          - 현재: uploadWrapper(부모 section 전체) hide → 헤딩 포함 완전히 숨겨짐
+
+        uploadWrapper = index.html 의 <section id="uploadWrapper">
         """
         src = read_js('ui/uiController.js')
         func_src = extract_method_src(src, '_renderPreview', max_lines=20)
         assert func_src, "_renderPreview 메서드 없음"
-        assert '_hide(this.uploadSection)' in func_src, (
-            "_renderPreview 에서 uploadSection 을 hide 안 함 \u2014 "
-            "preview 상태에서 01. 업로드 영역이 사라지지 않는 버그"
+        assert '_hide(this.uploadWrapper)' in func_src, (
+            "_renderPreview 에서 uploadWrapper 를 hide 안 함 — "
+            "uploadWrapper 는 01.영상업로드 h3 헤딩을 포함한 부모 section. "
+            "uploadSection(드롭존만) 을 숨기면 헤딩이 남아있는 버그 발생."
         )
 
     @pytest.mark.frontend
-    def test_error_hides_upload_section(self):
+    def test_error_hides_upload_wrapper(self):
         """
-        _renderError 도 uploadSection 을 hide 해야 한다.
-        기존 버그: 에러 시 01. 영상 업로드 영역이 다시 나타남
+        _renderError 도 uploadWrapper 를 hide 해야 한다.
+        에러 시 01. 영상 업로드 영역이 다시 나타나면 안 됨.
         """
         src = read_js('ui/uiController.js')
         func_src = extract_method_src(src, '_renderError', max_lines=20)
         assert func_src, "_renderError 메서드 없음"
-        assert '_hide(this.uploadSection)' in func_src, (
-            "_renderError 에서 uploadSection 을 hide 안 함 \u2014 "
+        assert '_hide(this.uploadWrapper)' in func_src, (
+            "_renderError 에서 uploadWrapper 를 hide 안 함 — "
             "에러 시 01. 업로드 영역이 다시 나타나는 버그"
         )
 
